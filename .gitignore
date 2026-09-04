@@ -1,0 +1,29 @@
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+service-account*.json
+token.json
+
+# Dependencias
+node_modules/
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Logs y bases de datos temporales
+*.log
+npm-debug.log*
+*.sqlite
+*.db
+
+# Build y caches
+dist/
+build/
+.cache/
+.DS_Store
+Thumbs.db

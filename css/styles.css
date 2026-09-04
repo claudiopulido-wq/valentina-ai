@@ -1,0 +1,239 @@
+/* ==========================================================================
+   VALENTINA IA - MASTER STYLESHEET (Apple Pro & Obsidian Design System)
+   ========================================================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Variables de Color */
+  --color-obsidian: #08090e;
+  --color-obsidian-card: #0e111a;
+  --color-iris: #8b5cf6;
+  --color-iris-glow: rgba(139, 92, 246, 0.35);
+  --color-cyan: #06b6d4;
+  --color-cyan-glow: rgba(6, 182, 212, 0.35);
+  --color-emerald: #10b981;
+  --color-slate: #cbd5e1;
+  --color-muted: #94a3b8;
+
+  /* Fuentes */
+  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--color-obsidian);
+  color: var(--color-slate);
+  font-family: var(--font-main);
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Background Ambient Glows */
+.ambient-sphere {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.25;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  animation: pulseAmbient 12s ease-in-out infinite alternate;
+}
+
+.ambient-iris {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--color-iris) 0%, transparent 70%);
+  top: -150px;
+  left: 20%;
+}
+
+.ambient-cyan {
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, var(--color-cyan) 0%, transparent 70%);
+  top: 400px;
+  right: 10%;
+  animation-delay: -6s;
+}
+
+.ambient-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(circle at 50% 30%, black 40%, transparent 80%);
+}
+
+@keyframes pulseAmbient {
+  0% { transform: scale(1) translateY(0); opacity: 0.2; }
+  50% { transform: scale(1.1) translateY(30px); opacity: 0.3; }
+  100% { transform: scale(0.95) translateY(-20px); opacity: 0.25; }
+}
+
+/* Tipografía y Gradientes de Texto */
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #d8b4fe 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Botones Apple Pro */
+.btn-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px var(--color-iris-glow);
+  filter: brightness(1.08);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+/* Mockup Frame & Ambient Video */
+.video-mockup-frame {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: all 0.5s ease;
+}
+
+.badge-status-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #34d399;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.glass-pill {
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+}
+
+.glass-btn {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+/* Feed Buttons */
+.hero-feed-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.hero-feed-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.hero-feed-btn.active {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 0 15px -3px var(--color-iris-glow);
+}
+
+/* Tarjetas de Proyectos con Video */
+.project-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+}
+
+.badge-industry {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+/* Custom Range Input (Calculadora de ROI) */
+.custom-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  outline: none;
+}
+
+.custom-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--color-iris);
+  box-shadow: 0 0 10px var(--color-iris);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.custom-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Chat Modal */
+.chat-modal {
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
