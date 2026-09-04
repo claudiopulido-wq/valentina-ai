@@ -12,6 +12,37 @@ document.addEventListener('DOMContentLoaded', () => {
     window.lucide.createIcons();
   }
 
+  // ==================== 0. MENÚ RESPONSIVO MÓVIL ====================
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuIcon = document.getElementById('menu-icon');
+  const mobileLinks = document.querySelectorAll('.mobile-link');
+
+  if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', () => {
+      const isClosed = mobileMenu.classList.contains('hidden');
+      if (isClosed) {
+        mobileMenu.classList.remove('hidden');
+        mobileMenu.classList.add('flex');
+        if (menuIcon) menuIcon.setAttribute('data-lucide', 'x');
+      } else {
+        mobileMenu.classList.add('hidden');
+        mobileMenu.classList.remove('flex');
+        if (menuIcon) menuIcon.setAttribute('data-lucide', 'menu');
+      }
+      if (window.lucide) window.lucide.createIcons();
+    });
+
+    mobileLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+        mobileMenu.classList.remove('flex');
+        if (menuIcon) menuIcon.setAttribute('data-lucide', 'menu');
+        if (window.lucide) window.lucide.createIcons();
+      });
+    });
+  }
+
   // ==================== 1. HERO AMBIENT VIDEO STAGE ====================
   const heroVideo = document.getElementById('hero-video-player');
   const feedTitle = document.getElementById('hero-feed-title');

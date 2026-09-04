@@ -80,15 +80,32 @@
         <a href="#infraestructura" class="hover:text-white transition-colors">Infraestructura Física</a>
       </nav>
 
-      <!-- CTA Nav -->
-      <div class="flex items-center gap-4">
+      <!-- CTA Nav & Mobile Toggle -->
+      <div class="flex items-center gap-3">
         <button id="btn-open-chat-nav" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-semibold text-cyan bg-cyan/10 border border-cyan/30 hover:bg-cyan/20 transition-all">
           <span class="w-2 h-2 rounded-full bg-emerald animate-pulse"></span>
           AGENTE EN VIVO
         </button>
-        <a href="#contacto" class="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg shadow-iris/25 hover:shadow-iris/40 transition-all">
+        <a href="#contacto" class="btn-primary hidden xs:flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white shadow-lg shadow-iris/25 hover:shadow-iris/40 transition-all">
           <span>Agendar Demo</span>
           <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+        </a>
+        <!-- Botón Hamburguesa Móvil -->
+        <button id="mobile-menu-btn" class="md:hidden p-2.5 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 transition-colors">
+          <i data-lucide="menu" id="menu-icon" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Menú Móvil Desplegable -->
+    <div id="mobile-menu" class="hidden md:hidden px-6 py-4 bg-obsidian-card/95 border-b border-white/10 backdrop-blur-xl flex-col gap-4 text-sm font-medium">
+      <a href="#soluciones" class="py-2 text-slate hover:text-white transition-colors mobile-link">Soluciones</a>
+      <a href="#casos-estudio" class="py-2 text-slate hover:text-white transition-colors mobile-link">Casos Reales</a>
+      <a href="#calculadora-roi" class="py-2 text-slate hover:text-white transition-colors mobile-link">Calculadora ROI</a>
+      <a href="#infraestructura" class="py-2 text-slate hover:text-white transition-colors mobile-link">Infraestructura Física</a>
+      <div class="pt-2 border-t border-white/10 flex flex-col gap-3">
+        <a href="#contacto" class="btn-primary w-full py-3 rounded-xl text-center font-semibold text-white mobile-link">
+          Agendar Demo Técnica
         </a>
       </div>
     </div>
