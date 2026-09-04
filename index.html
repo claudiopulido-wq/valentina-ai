@@ -19,6 +19,30 @@
   <!-- Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
   
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#08090e',
+            'obsidian-card': '#0e111a',
+            iris: '#8b5cf6',
+            cyan: '#06b6d4',
+            emerald: '#10b981',
+            slate: '#cbd5e1',
+            muted: '#94a3b8'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
   <!-- Estilos Maestros -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -138,12 +162,32 @@
               loop 
               muted 
               playsinline
-              class="w-full h-full object-cover transition-opacity duration-700 opacity-90"
+              class="w-full h-full object-cover transition-opacity duration-700 opacity-90 relative z-10"
               poster="assets/posters/hero-poster.jpg"
             >
               <!-- Video cinemático de dron a oficinas + software corriendo -->
               <source src="assets/videos/hero-cinematic.mp4" type="video/mp4">
             </video>
+
+            <!-- Visual Fallback Cinematográfico Animado (Mientras se añaden los MP4s finales) -->
+            <div class="absolute inset-0 z-0 flex items-center justify-center bg-gradient-to-br from-[#0c0f1d] via-[#08090e] to-[#121829] overflow-hidden">
+              <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#8b5cf6_1px,transparent_1px)] [background-size:24px_24px]"></div>
+              
+              <!-- Círculos de Radar Orbital & Telemetría -->
+              <div class="relative w-80 h-80 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border border-iris/20 animate-ping" style="animation-duration: 3s;"></div>
+                <div class="absolute w-64 h-64 rounded-full border border-cyan/30 animate-spin" style="animation-duration: 20s;"></div>
+                <div class="absolute w-48 h-48 rounded-full border border-dashed border-iris/40"></div>
+                
+                <div class="text-center z-10 space-y-2 p-6 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-md">
+                  <div class="inline-flex p-3 rounded-xl bg-iris/20 text-iris border border-iris/30">
+                    <i data-lucide="crosshair" class="w-8 h-8 animate-pulse"></i>
+                  </div>
+                  <h4 class="text-sm font-mono font-bold text-white tracking-wider">MODO SIMULACIÓN EN VIVO</h4>
+                  <p class="text-xs text-muted font-mono">Carga tu clip: <span class="text-cyan">assets/videos/hero-cinematic.mp4</span></p>
+                </div>
+              </div>
+            </div>
 
             <!-- Video Overlay Dinámico de Datos & Telemetría -->
             <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-black/30 pointer-events-none"></div>

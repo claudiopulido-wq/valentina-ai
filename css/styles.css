@@ -2,9 +2,6 @@
    VALENTINA IA - MASTER STYLESHEET (Apple Pro & Obsidian Design System)
    ========================================================================== */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 :root {
   /* Variables de Color */
