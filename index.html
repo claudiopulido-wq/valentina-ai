@@ -552,10 +552,10 @@
 
               <!-- Botón CTA de la Calculadora -->
               <div class="pt-2">
-                <a href="#contacto" class="btn-primary w-full py-4 rounded-xl text-center font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-iris/25 hover:shadow-iris/40 transition-all">
+                <button type="button" id="btn-open-drawer-roi" class="btn-primary w-full py-4 rounded-xl text-center font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-iris/25 hover:shadow-iris/40 transition-all cursor-pointer">
                   <span>Recibir Diagnóstico de Automatización para mi Empresa</span>
                   <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </a>
+                </button>
               </div>
 
             </div>
@@ -691,6 +691,210 @@
     </button>
 
   </div>
+
+  <!-- ==================== DRAWER PREMIUM DE DIAGNÓSTICO EMPRESARIAL ==================== -->
+  <div id="diagnostic-drawer-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300"></div>
+
+  <aside id="diagnostic-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[540px] md:w-[600px] bg-obsidian-card/95 backdrop-blur-2xl border-l border-white/15 z-50 transform translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col shadow-2xl">
+    
+    <!-- Drawer Header -->
+    <div class="px-6 py-5 border-b border-white/10 bg-black/40 flex items-center justify-between shrink-0">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald animate-pulse"></span>
+          <span class="text-xs font-mono font-semibold text-iris uppercase tracking-wider">Scoping &amp; Diagnóstico Técnico</span>
+        </div>
+        <h3 class="text-xl font-bold text-white tracking-tight">Evaluación de Automatización</h3>
+      </div>
+      
+      <button id="btn-close-drawer" class="p-2 rounded-xl border border-white/10 bg-white/5 text-muted hover:text-white hover:bg-white/10 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Drawer Body / Formulario Enterprise -->
+    <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+      
+      <!-- Resumen Dinámico del ROI Seleccionado -->
+      <div class="p-4 rounded-xl bg-gradient-to-br from-iris/10 via-black/40 to-cyan/10 border border-white/10 space-y-2">
+        <div class="flex items-center justify-between text-xs font-mono">
+          <span class="text-muted">Parámetros de tu Cálculo:</span>
+          <span class="text-emerald font-semibold">Estimación Preliminar</span>
+        </div>
+        <div class="flex items-baseline justify-between">
+          <span id="drawer-roi-summary" class="text-lg font-bold text-white">400 hrs recuperables / mes</span>
+          <span id="drawer-savings-summary" class="text-base font-bold font-mono text-emerald">$48,000 MXN / mes</span>
+        </div>
+      </div>
+
+      <form id="diagnostic-form" class="space-y-5">
+        
+        <!-- 1. Sector de la Empresa -->
+        <div class="space-y-2">
+          <label class="block text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider">
+            1. Sector de tu Organización *
+          </label>
+          <div class="grid grid-cols-2 gap-2.5">
+            <label class="drawer-radio-pill">
+              <input type="radio" name="sector" value="Salud & Medicina Estética" checked>
+              <span>🏥 Salud &amp; Clínicas</span>
+            </label>
+            <label class="drawer-radio-pill">
+              <input type="radio" name="sector" value="Educación & Certificaciones">
+              <span>🎓 Educación &amp; EdTech</span>
+            </label>
+            <label class="drawer-radio-pill">
+              <input type="radio" name="sector" value="Legal, Notarías & Bufetes">
+              <span>⚖️ Legal &amp; Corporativo</span>
+            </label>
+            <label class="drawer-radio-pill">
+              <input type="radio" name="sector" value="Automotriz & Talleres">
+              <span>🚗 Automotriz &amp; Servicios</span>
+            </label>
+            <label class="drawer-radio-pill">
+              <input type="radio" name="sector" value="Financiero, Seguros & FinTech">
+              <span>💳 Finanzas &amp; Seguros</span>
+            </label>
+            <label class="drawer-radio-pill">
+              <input type="radio" name="sector" value="Otro Sector Empresarial">
+              <span>🏢 Otra Industria</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. Dolor Crítico / Proceso a Automatizar -->
+        <div class="space-y-2">
+          <label for="input-bottleneck" class="block text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider">
+            2. ¿Cuál es el cuello de botella o fricción operativa actual? *
+          </label>
+          <textarea 
+            id="input-bottleneck" 
+            rows="3" 
+            required
+            placeholder="Ej: Gestionamos 50 consultas diarias en WhatsApp y se pierden leads por demora, o necesitamos digitalizar firmas y expedientes para evitar papeleo físico..."
+            class="w-full bg-white/[0.04] border border-white/10 rounded-xl p-3.5 text-xs sm:text-sm text-white placeholder-muted focus:outline-none focus:border-iris transition-all resize-none"
+          ></textarea>
+        </div>
+
+        <!-- 3. Integraciones Clave / Stack Actual -->
+        <div class="space-y-2">
+          <label class="block text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider">
+            3. Canales o Sistemas que requieren conexión
+          </label>
+          <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-300 cursor-pointer hover:bg-white/[0.06]">
+              <input type="checkbox" name="stack" value="WhatsApp Cloud API" checked class="accent-iris rounded">
+              <span>WhatsApp Oficial</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-300 cursor-pointer hover:bg-white/[0.06]">
+              <input type="checkbox" name="stack" value="Firma y Documentos Digitales" class="accent-iris rounded">
+              <span>Firmas / PDF Móvil</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-300 cursor-pointer hover:bg-white/[0.06]">
+              <input type="checkbox" name="stack" value="Google Workspace / Calendar" class="accent-iris rounded">
+              <span>Google Calendar / CRM</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03] border border-white/5 text-slate-300 cursor-pointer hover:bg-white/[0.06]">
+              <input type="checkbox" name="stack" value="Base de Datos SQL / ERP" class="accent-iris rounded">
+              <span>Base de Datos / ERP</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 4. Plazo y Prioridad -->
+        <div class="space-y-2">
+          <label for="select-timeline" class="block text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider">
+            4. Plazo de Implementación Estimado
+          </label>
+          <select id="select-timeline" class="w-full bg-obsidian border border-white/10 rounded-xl p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-iris transition-colors">
+            <option value="Inmediato (menos de 2 semanas)">Prioridad Alta: En producción en menos de 2 semanas</option>
+            <option value="1 a 2 meses">Estándar: 1 a 2 meses (Fase de arquitectura y pruebas)</option>
+            <option value="Exploratorio / Presupuesto anual">Exploración técnica y presupuesto</option>
+          </select>
+        </div>
+
+        <!-- 5. Datos de Contacto Directo -->
+        <div class="pt-2 border-t border-white/10 space-y-3">
+          <label class="block text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider">
+            5. Datos del Tomador de Decisión
+          </label>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <input 
+                type="text" 
+                id="input-name" 
+                required 
+                placeholder="Nombre y Apellido *" 
+                class="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-muted focus:outline-none focus:border-iris transition-colors"
+              >
+            </div>
+            <div>
+              <input 
+                type="text" 
+                id="input-company" 
+                required 
+                placeholder="Nombre de la Empresa *" 
+                class="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-muted focus:outline-none focus:border-iris transition-colors"
+              >
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <input 
+                type="email" 
+                id="input-email" 
+                required 
+                placeholder="Correo Corporativo *" 
+                class="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-muted focus:outline-none focus:border-iris transition-colors"
+              >
+            </div>
+            <div>
+              <input 
+                type="tel" 
+                id="input-phone" 
+                required 
+                placeholder="WhatsApp Móvil (+52...) *" 
+                class="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder-muted focus:outline-none focus:border-iris transition-colors"
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Garantía de Confidencialidad -->
+        <div class="p-3 rounded-lg bg-white/[0.02] border border-white/5 flex items-start gap-2.5 text-[11px] text-muted">
+          <i data-lucide="shield-check" class="w-4 h-4 text-emerald shrink-0 mt-0.5"></i>
+          <span>Garantía de Confidencialidad: Toda la información compartida está protegida por acuerdo de no divulgación (NDA). Cero venta de datos.</span>
+        </div>
+
+        <!-- Botón Submit -->
+        <div class="pt-1">
+          <button type="submit" id="btn-submit-diagnostic" class="btn-primary w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-xl shadow-iris/30 hover:shadow-iris/50 transition-all cursor-pointer">
+            <span>Solicitar Diagnóstico Técnico &amp; Propuesta en PDF</span>
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Mensaje de Éxito al Enviar -->
+      <div id="drawer-success" class="hidden p-8 rounded-2xl bg-black/80 border border-emerald/30 text-center space-y-4">
+        <div class="w-14 h-14 rounded-full bg-emerald/15 border border-emerald/40 text-emerald mx-auto flex items-center justify-center">
+          <i data-lucide="check" class="w-7 h-7"></i>
+        </div>
+        <h4 class="text-xl font-bold text-white">Diagnóstico Solicitado con Éxito</h4>
+        <p class="text-xs text-muted leading-relaxed">
+          Hemos recibido los parámetros operativos de tu empresa. Nuestro equipo de ingeniería y Valentina analizarán la arquitectura y nos comunicaremos vía WhatsApp y correo en menos de 24 horas hábiles.
+        </p>
+        <button id="btn-close-success" class="btn-secondary px-6 py-2.5 rounded-xl text-xs font-semibold text-white">
+          Cerrar Panel
+        </button>
+      </div>
+
+    </div>
+
+  </aside>
 
   <!-- ==================== FOOTER ==================== -->
   <footer id="contacto" class="py-16 border-t border-white/10 bg-black text-xs text-muted relative z-10">

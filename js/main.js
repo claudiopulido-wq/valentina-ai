@@ -124,6 +124,12 @@ document.addEventListener('DOMContentLoaded', () => {
     resultHours.textContent = `${hoursSavedPerMonth.toLocaleString('es-MX')} hrs / mes`;
     resultSavings.textContent = `$${monthlySavings.toLocaleString('es-MX')} MXN`;
     resultAnnual.textContent = `$${annualSavings.toLocaleString('es-MX')} MXN al año`;
+
+    // Sincronizar en tiempo real con el Drawer
+    const drawerRoiSummary = document.getElementById('drawer-roi-summary');
+    const drawerSavingsSummary = document.getElementById('drawer-savings-summary');
+    if (drawerRoiSummary) drawerRoiSummary.textContent = `${hoursSavedPerMonth.toLocaleString('es-MX')} hrs recuperables / mes`;
+    if (drawerSavingsSummary) drawerSavingsSummary.textContent = `$${monthlySavings.toLocaleString('es-MX')} MXN / mes`;
   }
 
   if (rangeTeam && rangeHours && rangeCost) {
@@ -131,6 +137,78 @@ document.addEventListener('DOMContentLoaded', () => {
     rangeHours.addEventListener('input', calculateROI);
     rangeCost.addEventListener('input', calculateROI);
     calculateROI(); // Calcular valor inicial
+  }
+
+  // ==================== 2.1 DRAWER DE DIAGNÓSTICO ENTERPRISE ====================
+  const btnOpenDrawer = document.getElementById('btn-open-drawer-roi');
+  const btnCloseDrawer = document.getElementById('btn-close-drawer');
+  const drawerBackdrop = document.getElementById('diagnostic-drawer-backdrop');
+  const drawer = document.getElementById('diagnostic-drawer');
+  const diagnosticForm = document.getElementById('diagnostic-form');
+  const drawerSuccess = document.getElementById('drawer-success');
+  const btnCloseSuccess = document.getElementById('btn-close-success');
+
+  function toggleDrawer(open = true) {
+    if (!drawer || !drawerBackdrop) return;
+    if (open) {
+      drawerBackdrop.classList.remove('hidden');
+      setTimeout(() => {
+        drawerBackdrop.classList.remove('opacity-0');
+        drawer.classList.remove('translate-x-full');
+      }, 10);
+      document.body.style.overflow = 'hidden';
+    } else {
+      drawerBackdrop.classList.add('opacity-0');
+      drawer.classList.add('translate-x-full');
+      setTimeout(() => {
+        drawerBackdrop.classList.add('hidden');
+        document.body.style.overflow = '';
+      }, 300);
+    }
+  }
+
+  if (btnOpenDrawer) btnOpenDrawer.addEventListener('click', () => toggleDrawer(true));
+  if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', () => toggleDrawer(false));
+  if (drawerBackdrop) drawerBackdrop.addEventListener('click', () => toggleDrawer(false));
+  if (btnCloseSuccess) btnCloseSuccess.addEventListener('click', () => {
+    toggleDrawer(false);
+    setTimeout(() => {
+      if (diagnosticForm) {
+        diagnosticForm.reset();
+        diagnosticForm.classList.remove('hidden');
+      }
+      if (drawerSuccess) drawerSuccess.classList.add('hidden');
+    }, 400);
+  });
+
+  // Envío del Formulario de Diagnóstico
+  if (diagnosticForm) {
+    diagnosticForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('btn-submit-diagnostic');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+          <span class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
+          <span>Procesando Diagnóstico con Valentina...</span>
+        `;
+      }
+
+      // Simulación de procesamiento y guardado seguro (enviando a backend)
+      setTimeout(() => {
+        if (diagnosticForm) diagnosticForm.classList.add('hidden');
+        if (drawerSuccess) drawerSuccess.classList.remove('hidden');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `
+            <span>Solicitar Diagnóstico Técnico &amp; Propuesta en PDF</span>
+            <i data-lucide="send" class="w-4 h-4"></i>
+          `;
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }, 1200);
+    });
   }
 
   // ==================== 3. AGENTE VALENTINA CHAT WIDGET ====================

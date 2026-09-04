@@ -234,3 +234,36 @@ body {
   from { opacity: 0; transform: translateY(20px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Drawer Radio Pills */
+.drawer-radio-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-slate);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.drawer-radio-pill input[type="radio"] {
+  display: none;
+}
+
+.drawer-radio-pill:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.drawer-radio-pill:has(input:checked) {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--color-iris);
+  color: #ffffff;
+  box-shadow: 0 0 15px -3px var(--color-iris-glow);
+}
