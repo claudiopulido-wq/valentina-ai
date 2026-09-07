@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valentina AI — Ficha Técnica: Agentes Conversacionales B2B</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/branding/favicon.svg">
+  <link rel="stylesheet" href="dossier.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Barra de Herramientas Superior (Oculta al imprimir) -->
+  <header class="toolbar">
+    <div class="toolbar-title">
+      <img src="../assets/branding/valentina-symbol.svg" alt="Valentina Symbol" style="height: 22px; width: auto;">
+      <span>Ficha Técnica: Agentes Conversacionales B2B</span>
+      <span class="badge badge-cyan">Matriz de Complejidad</span>
+    </div>
+    <div class="toolbar-actions">
+      <a href="dossier-corporativo.html" class="btn btn-secondary">
+        <i data-lucide="book-open" style="width: 14px; height: 14px;"></i> Ver Dossier Maestro
+      </a>
+      <a href="../index.html" class="btn btn-secondary">
+        <i data-lucide="globe" style="width: 14px; height: 14px;"></i> Ir a la Landing
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Guardar / Imprimir PDF
+      </button>
+    </div>
+  </header>
+
+  <main class="document-container">
+
+    <!-- ==================== PÁGINA 1: RESUMEN EJECUTIVO & ARQUITECTURA ==================== -->
+    <article class="page">
+      <header class="page-header">
+        <img src="../assets/branding/valentina-logo-horizontal-dark.svg" alt="Valentina AI" class="page-header-logo">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span class="page-header-badge">Solución 01</span>
+          <span class="badge badge-iris">REF: VAL-SOL-CHAT-2026</span>
+        </div>
+      </header>
+
+      <section class="page-body" style="gap: 18px;">
+        <div>
+          <span class="badge badge-cyan" style="margin-bottom: 8px;">Ingeniería Conversacional</span>
+          <h1 class="title-xl" style="font-size: 26px; margin-bottom: 8px;">
+            Agentes Conversacionales Autónomos B2B &amp; Arquitectura Multicanal
+          </h1>
+          <p class="lead">
+            Los agentes de Valentina combinan procesamiento de lenguaje natural de última generación con integración transaccional directa a sistemas empresariales. No se limitan a emitir textos predeterminados: comprenden el contexto de la consulta, razonan sobre reglas de negocio autorizadas y ejecutan acciones operativas en tiempo real.
+          </p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div style="color: var(--cyan); margin-bottom: 8px;"><i data-lucide="message-square" style="width: 20px; height: 20px;"></i></div>
+            <h3 class="title-md" style="margin-bottom: 4px;">Comprensión Semántica</h3>
+            <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+              Interpretación de intenciones complejas, jerga del sector, notas de voz y documentos adjuntos sin menús numéricos rígidos.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="color: var(--iris); margin-bottom: 8px;"><i data-lucide="cpu" style="width: 20px; height: 20px;"></i></div>
+            <h3 class="title-md" style="margin-bottom: 4px;">Ejecución de Herramientas</h3>
+            <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+              Capacidad nativa de consultar bases de datos, calcular cotizaciones, agendar eventos en calendarios y actualizar el CRM.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="color: var(--emerald); margin-bottom: 8px;"><i data-lucide="shield-check" style="width: 20px; height: 20px;"></i></div>
+            <h3 class="title-md" style="margin-bottom: 4px;">Control &amp; Supervisión</h3>
+            <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+              Guardrails de seguridad que impiden respuestas fuera de política y derivación fluida a asesores humanos cuando se requiere.
+            </p>
+          </div>
+        </div>
+
+        <!-- Componente de Arquitectura Visual Simplificada -->
+        <div class="card card-highlight">
+          <h3 class="title-md" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="network" style="width: 18px; height: 18px; color: var(--cyan);"></i> Flujo Operativo de un Agente Valentina
+          </h3>
+          <div style="display: grid; grid-template-columns: 1fr auto 1.2fr auto 1fr; gap: 10px; align-items: center; text-align: center;">
+            <div style="background: rgba(255,255,255,0.04); padding: 12px 8px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <div style="font-size: 11px; font-weight: 700; color: #fff;">1. Canal de Entrada</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">WhatsApp Cloud API / Web / Redes</div>
+            </div>
+            <div style="color: var(--cyan); font-weight: bold;">&rarr;</div>
+            <div style="background: rgba(139,92,246,0.1); padding: 12px 8px; border-radius: 8px; border: 1px solid rgba(139,92,246,0.3);">
+              <div style="font-size: 11px; font-weight: 700; color: var(--iris);">2. Orquestador Valentina</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">Guardrails + Reglas de Negocio + RAG</div>
+            </div>
+            <div style="color: var(--cyan); font-weight: bold;">&rarr;</div>
+            <div style="background: rgba(255,255,255,0.04); padding: 12px 8px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+              <div style="font-size: 11px; font-weight: 700; color: #fff;">3. Acción &amp; Salida</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">CRM / Base de Datos / Cotización</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="title-md" style="margin-bottom: 8px;">Estándares Técnicos Garantizados en Toda Implementación:</h3>
+          <div class="grid-2">
+            <ul class="check-list">
+              <li><span class="check-icon">&check;</span> Conexión directa mediante la API oficial de Meta (sin riesgo de bloqueo de línea).</li>
+              <li><span class="check-icon">&check;</span> Registro completo de conversaciones con análisis de sentimiento y calificación de interés.</li>
+            </ul>
+            <ul class="check-list">
+              <li><span class="check-icon">&check;</span> Respuestas en menos de 1.8 segundos con tolerancia a fallos de red.</li>
+              <li><span class="check-icon">&check;</span> Transferencia a ejecutivos humanos con envío previo del resumen de la sesión.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <div>VALENTINA AI &bull; FICHA TÉCNICA AGENTES B2B</div>
+        <div>Página 01 de 04</div>
+      </footer>
+    </article>
+
+    <!-- ==================== PÁGINA 2: MATRIZ DE MADUREZ & NIVELES ==================== -->
+    <article class="page">
+      <header class="page-header">
+        <img src="../assets/branding/valentina-logo-horizontal-dark.svg" alt="Valentina AI" class="page-header-logo">
+        <span class="page-header-badge">02. Matriz de Complejidad</span>
+      </header>
+
+      <section class="page-body" style="gap: 16px;">
+        <div>
+          <span class="badge badge-iris" style="margin-bottom: 6px;">Escalabilidad Operativa</span>
+          <h2 class="title-lg">Tres niveles de madurez funcional para agentes B2B.</h2>
+          <p class="lead">
+            Diseñamos la solución en función del alcance operativo requerido, permitiendo comenzar en un nivel de atención esencial y escalar hacia transacciones complejas.
+          </p>
+        </div>
+
+        <!-- Nivel 1 -->
+        <div class="card" style="border-left: 3px solid var(--cyan); padding: 14px 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-cyan">Nivel 1</span>
+              <h3 class="title-md">Calificación Semántica &amp; Atención de Primer Contacto</h3>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);">Canal: WhatsApp Cloud API</span>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px;">
+            Orientado a empresas que buscan resolver consultas frecuentes de inmediato, orientar al prospecto según sus necesidades específicas y canalizar leads cualificados a su equipo comercial.
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10.5px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px;">
+            <div>&bull; <strong>Base Documental:</strong> Indexación de catálogos, preguntas frecuentes y políticas.</div>
+            <div>&bull; <strong>Filtro Comercial:</strong> Preguntas de calificación (presupuesto, ubicación, requerimiento).</div>
+            <div>&bull; <strong>Derivación:</strong> Traspaso a asesor humano por WhatsApp con alerta inmediata.</div>
+            <div>&bull; <strong>Métricas:</strong> Reporte periódico de volumen de consultas e intenciones.</div>
+          </div>
+        </div>
+
+        <!-- Nivel 2 -->
+        <div class="card" style="border-left: 3px solid var(--iris); padding: 14px 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-iris">Nivel 2</span>
+              <h3 class="title-md">Omnicanalidad &amp; Transacciones Comerciales (Cotizador en Vivo)</h3>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);">Canales: WhatsApp + Web + Redes</span>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px;">
+            Diseñado para áreas comerciales que requieren que el agente realice cálculos precisos de cotización, registre oportunidades en el CRM y reserve citas directamente en la agenda de los ejecutivos.
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10.5px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px;">
+            <div>&bull; <strong>Motor de Cotización:</strong> Cálculo automático según listas de precios, volumen y reglas.</div>
+            <div>&bull; <strong>Sincronización CRM:</strong> Creación y actualización de contactos en HubSpot o Google Sheets.</div>
+            <div>&bull; <strong>Agendamiento Automatizado:</strong> Reserva directa en Google Calendar o Cal.com.</div>
+            <div>&bull; <strong>Omnicanal Centralizado:</strong> Misma inteligencia en WhatsApp, Instagram DM y Web.</div>
+          </div>
+        </div>
+
+        <!-- Nivel 3 -->
+        <div class="card" style="border-left: 3px solid var(--emerald); padding: 14px 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="badge badge-emerald">Nivel 3</span>
+              <h3 class="title-md">Agente Autónomo Integrado al Core Empresarial (ERP &amp; Procesos)</h3>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);">Integración Total a Sistemas Core</span>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px;">
+            Para organizaciones que necesitan que el agente ejecute transacciones operativas completas, consulte saldos o expedientes en bases de datos internas y valide documentación de usuarios mediante visión artificial.
+          </p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10.5px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px;">
+            <div>&bull; <strong>Conexión a ERP / SQL:</strong> Consulta y escritura en bases de datos PostgreSQL o SQL Server.</div>
+            <div>&bull; <strong>Emisión de Folios / Comprobantes:</strong> Generación y envío dinámico de recibos en PDF.</div>
+            <div>&bull; <strong>Visión Computacional &amp; OCR:</strong> Validación de comprobantes bancarios y documentos oficiales.</div>
+            <div>&bull; <strong>Autenticación de Usuarios:</strong> Verificación mediante token temporal o número de cliente.</div>
+          </div>
+        </div>
+
+      </section>
+
+      <footer class="page-footer">
+        <div>VALENTINA AI &bull; FICHA TÉCNICA AGENTES B2B</div>
+        <div>Página 02 de 04</div>
+      </footer>
+    </article>
+
+    <!-- ==================== PÁGINA 3: TABLA COMPARATIVA & CONTROL ==================== -->
+    <article class="page">
+      <header class="page-header">
+        <img src="../assets/branding/valentina-logo-horizontal-dark.svg" alt="Valentina AI" class="page-header-logo">
+        <span class="page-header-badge">03. Matriz Comparativa</span>
+      </header>
+
+      <section class="page-body" style="gap: 16px;">
+        <div>
+          <span class="badge badge-cyan" style="margin-bottom: 6px;">Cuadro Comparativo</span>
+          <h2 class="title-lg">Comparativa funcional por nivel de implementación.</h2>
+          <p class="lead">
+            Resumen de capacidades técnicas, canales y requerimientos para facilitar la toma de decisiones.
+          </p>
+        </div>
+
+        <table class="table-executive" style="font-size: 10.5px;">
+          <thead>
+            <tr>
+              <th style="width: 25%;">Capacidad / Característica</th>
+              <th style="width: 25%;">Nivel 1: Calificación</th>
+              <th style="width: 25%;">Nivel 2: Transaccional</th>
+              <th style="width: 25%;">Nivel 3: Core &amp; ERP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Canales Soportados</strong></td>
+              <td>WhatsApp Cloud API</td>
+              <td>WhatsApp + Web + Instagram DM</td>
+              <td>Omnicanal + Telefonía / Canales Internos</td>
+            </tr>
+            <tr>
+              <td><strong>Base de Conocimiento</strong></td>
+              <td>Documentos estáticos / FAQ</td>
+              <td>RAG dinámico indexado</td>
+              <td>RAG Híbrido + Bases SQL en vivo</td>
+            </tr>
+            <tr>
+              <td><strong>Cotizador en Tiempo Real</strong></td>
+              <td>Orientativo / Rangos</td>
+              <td><span style="color: var(--emerald); font-weight: bold;">Cálculo exacto automatizado</span></td>
+              <td><span style="color: var(--emerald); font-weight: bold;">Cálculo exacto con inventario real</span></td>
+            </tr>
+            <tr>
+              <td><strong>Integración con CRM</strong></td>
+              <td>Registro básico de leads</td>
+              <td>Sincronización bidireccional completa</td>
+              <td>Actualización de pipeline y tareas</td>
+            </tr>
+            <tr>
+              <td><strong>Agendamiento de Citas</strong></td>
+              <td>Envío de enlace externo</td>
+              <td>Reserva directa dentro del chat</td>
+              <td>Reserva con confirmación multi-agenda</td>
+            </tr>
+            <tr>
+              <td><strong>Conexión a ERP / SQL</strong></td>
+              <td>No aplica</td>
+              <td>Opcional vía Webhook</td>
+              <td><span style="color: var(--emerald); font-weight: bold;">Conexión directa nativa (Read/Write)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Procesamiento OCR / Fotos</strong></td>
+              <td>No aplica</td>
+              <td>Recepción de archivos</td>
+              <td><span style="color: var(--emerald); font-weight: bold;">Lectura forense y validación con IA</span></td>
+            </tr>
+            <tr>
+              <td><strong>Tiempo de Despliegue</strong></td>
+              <td>10 a 14 días hábiles</td>
+              <td>15 a 21 días hábiles</td>
+              <td>3 a 5 semanas</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="card card-highlight" style="margin-top: 6px;">
+          <h3 class="title-md" style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="shield-alert" style="width: 18px; height: 18px; color: var(--emerald);"></i>
+            Protocolo Anti-Alucinaciones y Control Determinístico
+          </h3>
+          <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px;">
+            Para salvaguardar la reputación corporativa de nuestros clientes, los agentes de Valentina operan bajo cuatro filtros de contención antes de emitir cualquier mensaje:
+          </p>
+          <div class="grid-2" style="gap: 12px; font-size: 10.5px;">
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px;">
+              <strong style="color: #fff;">1. Sanitización de Entrada:</strong> Bloquea intentos de manipulación externa o inyecciones de instrucciones contrarias a la empresa.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px;">
+              <strong style="color: #fff;">2. Anclaje Documental Estricto:</strong> La IA solo responde si los datos figuran explícitamente en la base de conocimiento verificada.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px;">
+              <strong style="color: #fff;">3. Verificación de Fórmulas:</strong> Las cotizaciones numéricas son calculadas por código matemático determinista, no por el modelo de lenguaje.
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 6px;">
+              <strong style="color: #fff;">4. Trazabilidad de Auditoría:</strong> Cada interacción genera una ficha de contexto que permite auditar en segundos por qué el agente respondió de cierta manera.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <div>VALENTINA AI &bull; FICHA TÉCNICA AGENTES B2B</div>
+        <div>Página 03 de 04</div>
+      </footer>
+    </article>
+
+    <!-- ==================== PÁGINA 4: PRERREQUISITOS & SIGUIENTE PASO ==================== -->
+    <article class="page" style="justify-content: space-between;">
+      <header class="page-header">
+        <img src="../assets/branding/valentina-logo-horizontal-dark.svg" alt="Valentina AI" class="page-header-logo">
+        <span class="page-header-badge">04. Implementación &amp; Contacto</span>
+      </header>
+
+      <section class="page-body" style="gap: 18px;">
+        <div>
+          <span class="badge badge-emerald" style="margin-bottom: 6px;">Puesta en Marcha</span>
+          <h2 class="title-lg">Requerimientos técnicos y cronograma de entrega.</h2>
+          <p class="lead">
+            Valentina se encarga de la ingeniería integral del agente, requiriendo un involucramiento ágil y concreto por parte del equipo del cliente.
+          </p>
+        </div>
+
+        <div class="grid-2" style="gap: 16px;">
+          <div class="card">
+            <h3 class="title-md" style="margin-bottom: 8px; color: var(--cyan); display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i> Prerrequisitos por parte del Cliente
+            </h3>
+            <ul class="check-list">
+              <li><span class="check-icon">&check;</span> Cuenta de Meta Business Suite con acceso de administrador para WhatsApp.</li>
+              <li><span class="check-icon">&check;</span> Documentación corporativa (PDFs, manuales o tablas de precios vigentes).</li>
+              <li><span class="check-icon">&check;</span> Credenciales de API o Webhook del CRM o base de datos a vincular.</li>
+              <li><span class="check-icon">&check;</span> Designación de un responsable operativo para validar los casos de prueba.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3 class="title-md" style="margin-bottom: 8px; color: var(--iris); display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="package-check" style="width: 16px; height: 16px;"></i> Entregables de Valentina AI
+            </h3>
+            <ul class="check-list">
+              <li><span class="check-icon">&check;</span> Agente conversacional desplegado en entorno de producción certificado.</li>
+              <li><span class="check-icon">&check;</span> Panel de supervisión gerencial con métricas de uso y transcripciones.</li>
+              <li><span class="check-icon">&check;</span> Documentación técnica de arquitectura y manual de administración.</li>
+              <li><span class="check-icon">&check;</span> Sesión de capacitación ejecutiva para el equipo comercial y directivo.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card card-highlight" style="padding: 20px; text-align: center;">
+          <h3 class="title-lg" style="margin-bottom: 6px;">¿Desea evaluar qué nivel es el óptimo para su organización?</h3>
+          <p style="font-size: 11.5px; color: var(--text-muted); max-width: 540px; margin: 0 auto 16px auto; line-height: 1.5;">
+            Agende una sesión de diagnóstico técnico con nuestros arquitectos para revisar sus flujos actuales de atención y estimar el retorno de inversión esperado.
+          </p>
+          <div style="display: flex; justify-content: center; gap: 24px; font-family: var(--font-mono); font-size: 11px;">
+            <div><span style="color: var(--text-dim);">SEDE:</span> Santiago de Querétaro, Qro.</div>
+            <div><span style="color: var(--text-dim);">PORTAL:</span> <strong style="color: var(--cyan);">valentina-ai.mx</strong></div>
+            <div><span style="color: var(--text-dim);">CONTACTO:</span> contacto@valentina-ai.mx</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i data-lucide="shield" style="width: 20px; height: 20px; color: var(--emerald);"></i>
+            <div style="font-size: 10.5px; color: var(--text-muted);">
+              Arquitectura respaldada por la Universidad UGES y acreditaciones de validez federal CONOCER SEP.
+            </div>
+          </div>
+          <span class="badge badge-emerald">Seguridad Certificada</span>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <div>VALENTINA AI &copy; 2026 &bull; PROYECTO VALENTINA &bull; SANTIAGO DE QUERÉTARO, MÉXICO</div>
+        <div>Página 04 de 04</div>
+      </footer>
+    </article>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
