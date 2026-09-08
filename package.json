@@ -1,11 +1,14 @@
 {
   "name": "valentina-ai-workspace",
   "version": "1.0.0",
-  "description": "Valentina AI - Landing Corporativa & SaaS Multi-Tenant Platform",
+  "description": "Valentina AI - Landing Corporativa, SaaS Platform & Open Higgsfield Media Studio",
   "private": true,
   "scripts": {
     "platform:dev": "npm --prefix platform run dev",
     "platform:build": "npm --prefix platform run build",
-    "platform:start": "npm --prefix platform run start"
+    "platform:start": "npm --prefix platform run start",
+    "studio:dev": "npm --prefix studio run dev",
+    "studio:build": "npm --prefix studio run build",
+    "studio:start": "npm --prefix studio run start"
   }
 }
