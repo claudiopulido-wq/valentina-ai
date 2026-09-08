@@ -1,0 +1,11 @@
+{
+  "name": "valentina-ai-workspace",
+  "version": "1.0.0",
+  "description": "Valentina AI - Landing Corporativa & SaaS Multi-Tenant Platform",
+  "private": true,
+  "scripts": {
+    "platform:dev": "npm --prefix platform run dev",
+    "platform:build": "npm --prefix platform run build",
+    "platform:start": "npm --prefix platform run start"
+  }
+}
