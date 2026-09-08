@@ -1,0 +1,38 @@
+{
+  "name": "Valentina AI Workspace (Codespaces)",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    }
+  },
+  "forwardPorts": [3000, 3001, 5500],
+  "portsAttributes": {
+    "3000": {
+      "label": "Valentina Admin Platform",
+      "onAutoForward": "openPreview"
+    },
+    "3001": {
+      "label": "Open Higgsfield Media Studio",
+      "onAutoForward": "notify"
+    },
+    "5500": {
+      "label": "Landing Comercial Valentina AI",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "npm --prefix platform install",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}

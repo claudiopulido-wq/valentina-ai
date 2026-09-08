@@ -4,10 +4,11 @@
   "description": "Valentina AI - Landing Corporativa, SaaS Platform & Open Higgsfield Media Studio",
   "private": true,
   "scripts": {
-    "platform:dev": "npm --prefix platform run dev",
+    "landing:dev": "python -m http.server 5500",
+    "platform:dev": "npm --prefix platform run dev -- -p 3000",
     "platform:build": "npm --prefix platform run build",
     "platform:start": "npm --prefix platform run start",
-    "studio:dev": "npm --prefix studio run dev",
+    "studio:dev": "npm --prefix studio run dev -- -p 3001",
     "studio:build": "npm --prefix studio run build",
     "studio:start": "npm --prefix studio run start"
   }
