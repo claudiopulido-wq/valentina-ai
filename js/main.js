@@ -367,4 +367,186 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { threshold: 0.5 });
     observer.observe(metricsSection);
   }
+
+  // ==================== 5. INFOGRAFÍAS TÉCNICAS INTERACTIVAS ====================
+  // Alternar entre Pestañas de Infografía
+  const tabBtnArch = document.getElementById('tab-btn-arch');
+  const tabBtnSpec = document.getElementById('tab-btn-spec');
+  const tabArch = document.getElementById('infographic-tab-arch');
+  const tabSpec = document.getElementById('infographic-tab-spec');
+
+  if (tabBtnArch && tabBtnSpec && tabArch && tabSpec) {
+    tabBtnArch.addEventListener('click', () => {
+      tabBtnArch.classList.add('active');
+      tabBtnSpec.classList.remove('active');
+      tabArch.classList.remove('hidden');
+      tabSpec.classList.add('hidden');
+      if (window.lucide) window.lucide.createIcons();
+    });
+
+    tabBtnSpec.addEventListener('click', () => {
+      tabBtnSpec.classList.add('active');
+      tabBtnArch.classList.remove('active');
+      tabSpec.classList.remove('hidden');
+      tabArch.classList.add('hidden');
+      if (window.lucide) window.lucide.createIcons();
+    });
+  }
+
+  // Nodos Interactivos de Arquitectura (Tab 1)
+  const archNodes = document.querySelectorAll('.infographic-node');
+  const detailTitle = document.getElementById('detail-title');
+  const detailDesc = document.getElementById('detail-desc');
+  const detailSpec1 = document.getElementById('detail-spec-1');
+  const detailSpec2 = document.getElementById('detail-spec-2');
+  const detailSpec3 = document.getElementById('detail-spec-3');
+  const detailSpec4 = document.getElementById('detail-spec-4');
+
+  const nodeData = {
+    entry: {
+      title: '1. Canales Omnicanal de Entrada',
+      desc: 'Conexión directa y certificada con WhatsApp Cloud API oficial de Meta y widget webchat reactivo. Gestiona concurrencia masiva con confirmación criptográfica de entrega sin intermediarios no-code.',
+      s1: 'HTTPS Webhooks / TLS 1.3',
+      s2: '< 120ms',
+      s3: 'HMAC-SHA256 Secret',
+      s4: '+10,000 req/min'
+    },
+    gateway: {
+      title: '2. Gateway Criptográfico & HMAC',
+      desc: 'Capa perimetral de ciberseguridad. Valida la autenticidad matemática de cada paquete antes de permitir el ingreso a los modelos de lenguaje, neutralizando inyecciones de prompt y ataques de spoofing.',
+      s1: 'Validación X-Hub-Signature-256',
+      s2: '< 8ms (Edge Computing)',
+      s3: 'Token Sanitizer Activo',
+      s4: 'Cero Fugas de Credenciales'
+    },
+    brain: {
+      title: '3. Núcleo Valentina AI (RAG Semántico)',
+      desc: 'Cerebro de inferencia autónomo. Embebe el mensaje entrante y busca vectores en bases de conocimiento corporativas (catálogos, leyes, tarifas). Responde con precisión clínica, jurídica o académica sin alucinaciones.',
+      s1: 'Embeddings Cosine Similarity',
+      s2: '0.8s - 1.2s',
+      s3: 'Temperature 0.2 (Determinística)',
+      s4: 'Precisión > 99.4%'
+    },
+    rls: {
+      title: '4. Aislamiento Multi-Tenant (PostgreSQL RLS)',
+      desc: 'Cada empresa cliente cuenta con aislamiento estricto mediante Row Level Security. Ningún agente o usuario puede acceder o mezclar historiales, tokens o expedientes de otro tenant bajo ninguna circunstancia.',
+      s1: 'PostgreSQL Row Level Security',
+      s2: '< 15ms Query RLS',
+      s3: 'AES-256 en Reposo',
+      s4: '100% Hermético'
+    },
+    execution: {
+      title: '5. Ejecución en Tiempo Real & Handover',
+      desc: 'Llamadas a funciones reales (Function Calling): Bloqueo de citas en Google Calendar, emisión de webhooks hacia CRMs y activación del protocolo de transferencia instantánea a operadores humanos cuando se detecta urgencia.',
+      s1: 'REST APIs & Webhooks Outbound',
+      s2: '< 250ms Sync',
+      s3: 'Protocolo Handover Humano',
+      s4: 'SLA 99.98%'
+    }
+  };
+
+  archNodes.forEach(node => {
+    node.addEventListener('click', () => {
+      archNodes.forEach(n => n.classList.remove('active'));
+      node.classList.add('active');
+
+      const nodeKey = node.getAttribute('data-node');
+      const data = nodeData[nodeKey];
+
+      if (data && detailTitle) {
+        detailTitle.textContent = data.title;
+        detailDesc.textContent = data.desc;
+        detailSpec1.textContent = data.s1;
+        detailSpec2.textContent = data.s2;
+        detailSpec3.textContent = data.s3;
+        detailSpec4.textContent = data.s4;
+      }
+    });
+  });
+
+  // Simulador de Industria en la Ficha Técnica (Tab 2)
+  const specButtons = document.querySelectorAll('.spec-sim-btn');
+  const simAgentName = document.getElementById('sim-agent-name');
+  const simUserMsg = document.getElementById('sim-user-msg');
+  const simAgentReply = document.getElementById('sim-agent-reply');
+  const simMetricScore = document.getElementById('sim-metric-score');
+  const simBarScore = document.getElementById('sim-bar-score');
+  const simMetricRes = document.getElementById('sim-metric-res');
+  const simBarRes = document.getElementById('sim-bar-res');
+  const simMetricLat = document.getElementById('sim-metric-lat');
+  const simMetricCost = document.getElementById('sim-metric-cost');
+
+  const tenantSimData = {
+    botox: {
+      name: 'Agente Valentina (Clínica Botox)',
+      user: '"Hola buenas tardes! Quisiera saber el costo del botox para patas de gallo y entrecejo por favor"',
+      reply: '¡Hola Sofía! Con gusto. Para tercio superior utilizamos toxina botulínica Allergan certificada. El paquete ronda entre $3,800 y $4,500 MXN. ¿Te gustaría agendar cita diagnóstica este viernes en Polanco o Roma Norte?',
+      score: '95 / 100',
+      scorePct: '95%',
+      res: '91.4%',
+      resPct: '91%',
+      lat: '1.08 seg',
+      cost: '$0.024 MXN'
+    },
+    uges: {
+      name: 'Agente Valentina (Universidad UGES)',
+      user: '"Buenas tardes, me interesa la Licenciatura en Derecho Ejecutivo. ¿Tienen validez RVOE y modalidad sabatina?"',
+      reply: '¡Hola! Sí, nuestra Licenciatura en Derecho cuenta con RVOE Federal oficial de la SEP. Contamos con modalidad sabatina presencial o 100% online con titulación directa. ¿Te gustaría que te envíe el plan curricular al correo?',
+      score: '98 / 100',
+      scorePct: '98%',
+      res: '94.8%',
+      resPct: '95%',
+      lat: '0.94 seg',
+      cost: '$0.019 MXN'
+    },
+    legal: {
+      name: 'Agente Valentina (Vanguardia Jurídica)',
+      user: '"Requiero asesoría urgente sobre una rescisión laboral injustificada de un puesto gerencial"',
+      reply: 'Estimado cliente, comprendo la urgencia. En materia laboral protegemos la confidencialidad absoluta de su caso. Para calcular su liquidación conforme al artículo 48 de la LFT, ¿cuántos años de antigüedad y salario promedio mantenía?',
+      score: '92 / 100',
+      scorePct: '92%',
+      res: '88.5%',
+      resPct: '88%',
+      lat: '1.14 seg',
+      cost: '$0.028 MXN'
+    },
+    busa: {
+      name: 'Agente Valentina (Talleres Busa)',
+      user: '"Oye amigo, tienes balatas delanteras para un Mazda 3 modelo 2022 y cuánto sale el cambio?"',
+      reply: '¡Qué tal! Sí tenemos en existencia balatas de cerámica marca Brembo para Mazda 3 2022 ($1,450 MXN el par) más $450 de mano de obra con rectificado de discos. ¿Te aparto espacio en el taller para hoy a las 4:00 PM?',
+      score: '96 / 100',
+      scorePct: '96%',
+      res: '93.2%',
+      resPct: '93%',
+      lat: '0.86 seg',
+      cost: '$0.016 MXN'
+    }
+  };
+
+  specButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      specButtons.forEach(b => {
+        b.classList.remove('active', 'border-iris/40', 'bg-iris/15');
+        b.classList.add('border-white/10', 'bg-white/[0.02]');
+      });
+
+      btn.classList.add('active', 'border-iris/40', 'bg-iris/15');
+      btn.classList.remove('border-white/10', 'bg-white/[0.02]');
+
+      const tenant = btn.getAttribute('data-tenant');
+      const d = tenantSimData[tenant];
+
+      if (d && simAgentName) {
+        simAgentName.textContent = d.name;
+        simUserMsg.textContent = d.user;
+        simAgentReply.textContent = d.reply;
+        simMetricScore.textContent = d.score;
+        simBarScore.style.width = d.scorePct;
+        simMetricRes.textContent = d.res;
+        simBarRes.style.width = d.resPct;
+        simMetricLat.textContent = d.lat;
+        simMetricCost.textContent = d.cost;
+      }
+    });
+  });
 });

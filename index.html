@@ -295,6 +295,443 @@
     </div>
   </section>
 
+  <!-- ==================== SOLUCIONES & INFOGRAFÍAS INTERACTIVAS (Dossier & Ficha Técnica) ==================== -->
+  <section id="soluciones" class="py-24 relative z-10 border-b border-white/10 bg-gradient-to-b from-transparent via-black/40 to-transparent">
+    <div class="max-w-7xl mx-auto px-6 space-y-12">
+      
+      <!-- Encabezado de la Sección -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="max-w-3xl space-y-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-iris/10 border border-iris/25 text-xs font-mono font-semibold text-iris uppercase tracking-widest">
+            <i data-lucide="file-check" class="w-3.5 h-3.5 text-iris"></i>
+            <span>Blueprint Ejecutivo &amp; Ficha Técnica</span>
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+            Infografías Técnicas Interactivas. <br>
+            <span class="text-gradient">Arquitectura, seguridad y capacidades en vivo.</span>
+          </h2>
+          <p class="text-muted text-base sm:text-lg leading-relaxed">
+            Explora interactivamente el pipeline de ingeniería y la matriz de habilidades de Valentina basados en nuestros documentos oficiales. Haz clic en los nodos para inspeccionar los parámetros de producción.
+          </p>
+        </div>
+
+        <!-- Switcher de Pestañas de Infografía -->
+        <div class="flex items-center p-1.5 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl shrink-0">
+          <button id="tab-btn-arch" class="infographic-tab-btn active">
+            <i data-lucide="layers" class="w-4 h-4 text-iris"></i>
+            <span class="hidden sm:inline">1. Arquitectura &amp; Pipeline</span>
+            <span class="sm:hidden">1. Arquitectura</span>
+          </button>
+          <button id="tab-btn-spec" class="infographic-tab-btn">
+            <i data-lucide="cpu" class="w-4 h-4 text-cyan"></i>
+            <span class="hidden sm:inline">2. Ficha Técnica &amp; Simulador</span>
+            <span class="sm:hidden">2. Ficha Técnica</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== TAB 1: ARQUITECTURA & PIPELINE VALENTINA OS ==================== -->
+      <div id="infographic-tab-arch" class="space-y-8">
+        
+        <!-- Header Barra Informativa con Botón de Descarga del PDF -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-obsidian-card/90 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald"></span>
+            </span>
+            <div>
+              <p class="text-xs font-mono font-bold text-white uppercase tracking-wider">Flujo Criptográfico de Extremo a Extremo</p>
+              <p class="text-xs text-muted">Pipeline auditado: Latencia de webhook &lt; 118ms • Aislamiento RLS en PostgreSQL</p>
+            </div>
+          </div>
+
+          <a href="pdf/Valentina-AI-Dossier-Corporativo.pdf" download="Valentina-AI-Dossier-Corporativo.pdf" target="_blank" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-iris/15 border border-iris/35 text-xs font-bold text-white hover:bg-iris/25 transition-all shadow-lg shadow-iris/20 cursor-pointer">
+            <i data-lucide="download" class="w-4 h-4 text-iris"></i>
+            <span>Descargar Dossier Corporativo en PDF</span>
+            <span class="text-[10px] font-mono text-muted bg-black/40 px-1.5 py-0.5 rounded">1.2 MB</span>
+          </a>
+        </div>
+
+        <!-- Diagrama Interactivo de Nodos y Conexiones -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <!-- Columna Izquierda: Nodos del Pipeline (8 Columnas) -->
+          <div class="lg:col-span-8 space-y-4">
+            
+            <!-- NODO 1: Canales Omnicanal -->
+            <div class="infographic-node active" data-node="entry">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-emerald/15 border border-emerald/30 text-emerald flex items-center justify-center shrink-0">
+                    <i data-lucide="message-square" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-sm font-bold text-white">1. Canales Omnicanal de Entrada</h4>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald/10 text-emerald border border-emerald/30">Activo</span>
+                    </div>
+                    <p class="text-xs text-muted mt-0.5">WhatsApp Cloud API (Meta Oficial) + Webchat SDK Embebido</p>
+                  </div>
+                </div>
+                <span class="text-xs font-mono text-cyan shrink-0">latencia: ~45ms</span>
+              </div>
+            </div>
+
+            <!-- Conector Animado SVG 1 -> 2 -->
+            <div class="flex justify-center -my-2">
+              <svg width="24" height="28" viewBox="0 0 24 28" fill="none" class="text-iris/60">
+                <line x1="12" y1="0" x2="12" y2="28" stroke="currentColor" stroke-width="2" class="flow-dash-animated" />
+              </svg>
+            </div>
+
+            <!-- NODO 2: Webhook Gateway & Seguridad -->
+            <div class="infographic-node" data-node="gateway">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-iris/15 border border-iris/30 text-iris flex items-center justify-center shrink-0">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-sm font-bold text-white">2. Gateway Criptográfico &amp; HMAC</h4>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-iris/10 text-iris border border-iris/30">Cifrado AES-256</span>
+                    </div>
+                    <p class="text-xs text-muted mt-0.5">Validación de firmas SHA-256, filtrado de inyección y rate-limiting</p>
+                  </div>
+                </div>
+                <span class="text-xs font-mono text-emerald shrink-0">0 ataques tolerados</span>
+              </div>
+            </div>
+
+            <!-- Conector Animado SVG 2 -> 3 -->
+            <div class="flex justify-center -my-2">
+              <svg width="24" height="28" viewBox="0 0 24 28" fill="none" class="text-cyan/60">
+                <line x1="12" y1="0" x2="12" y2="28" stroke="currentColor" stroke-width="2" class="flow-dash-animated" />
+              </svg>
+            </div>
+
+            <!-- NODO 3: Motor Cognitivo Valentina -->
+            <div class="infographic-node" data-node="brain">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-iris to-cyan text-white flex items-center justify-center shrink-0 shadow-lg shadow-iris/25">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-sm font-bold text-white">3. Núcleo Valentina AI (RAG Semántico)</h4>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-gradient-to-r from-iris/20 to-cyan/20 text-white border border-white/15">Motor Autónomo</span>
+                    </div>
+                    <p class="text-xs text-muted mt-0.5">Recuperación contextual de conocimiento vectorial, cotización y function calling</p>
+                  </div>
+                </div>
+                <span class="text-xs font-mono text-iris shrink-0">precisión: 99.4%</span>
+              </div>
+            </div>
+
+            <!-- Conector Animado SVG 3 -> 4 -->
+            <div class="flex justify-center -my-2">
+              <svg width="24" height="28" viewBox="0 0 24 28" fill="none" class="text-iris/60">
+                <line x1="12" y1="0" x2="12" y2="28" stroke="currentColor" stroke-width="2" class="flow-dash-animated" />
+              </svg>
+            </div>
+
+            <!-- NODO 4: Aislamiento Multi-Tenant RLS -->
+            <div class="infographic-node" data-node="rls">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="lock" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-sm font-bold text-white">4. Aislamiento Multi-Tenant (PostgreSQL RLS)</h4>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/10 text-amber-400 border border-amber-500/30">Zero Data Leak</span>
+                    </div>
+                    <p class="text-xs text-muted mt-0.5">Seguridad a nivel de fila (Row Level Security): Datos de cada cliente estricta e irreversiblemente aislados</p>
+                  </div>
+                </div>
+                <span class="text-xs font-mono text-amber-400 shrink-0">Tenant RLS: 100%</span>
+              </div>
+            </div>
+
+            <!-- Conector Animado SVG 4 -> 5 -->
+            <div class="flex justify-center -my-2">
+              <svg width="24" height="28" viewBox="0 0 24 28" fill="none" class="text-emerald/60">
+                <line x1="12" y1="0" x2="12" y2="28" stroke="currentColor" stroke-width="2" class="flow-dash-animated" />
+              </svg>
+            </div>
+
+            <!-- NODO 5: Ejecución & Handover Humano -->
+            <div class="infographic-node" data-node="execution">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-cyan/15 border border-cyan/30 text-cyan flex items-center justify-center shrink-0">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-sm font-bold text-white">5. Ejecución en Tiempo Real &amp; Handover Humano</h4>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan/10 text-cyan border border-cyan/30">1-Click Control</span>
+                    </div>
+                    <p class="text-xs text-muted mt-0.5">Google Calendar Sync, Webhooks a CRM y transferencia suave a operador humano</p>
+                  </div>
+                </div>
+                <span class="text-xs font-mono text-cyan shrink-0">SLA: 99.98%</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Columna Derecha: Tarjeta de Especificación Dinámica (4 Columnas) -->
+          <div class="lg:col-span-4 sticky top-28">
+            <div id="arch-detail-box" class="rounded-2xl border border-iris/40 bg-obsidian-card p-6 space-y-6 shadow-2xl shadow-iris/10">
+              <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                <span id="detail-tag" class="text-xs font-mono uppercase tracking-wider text-iris font-semibold">Nodo Seleccionado</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald beacon-pulse"></span>
+              </div>
+
+              <div>
+                <h4 id="detail-title" class="text-xl font-bold text-white tracking-tight">1. Canales Omnicanal de Entrada</h4>
+                <p id="detail-desc" class="text-xs text-muted mt-2 leading-relaxed">
+                  Conexión directa y certificada con WhatsApp Cloud API oficial de Meta y widget webchat reactivo. Gestiona concurrencia ilimitada con confirmación criptográfica de entrega sin intermediarios no-code.
+                </p>
+              </div>
+
+              <!-- Ficha de Parámetros Técnicos -->
+              <div class="space-y-3 pt-2">
+                <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10 flex justify-between items-center text-xs font-mono">
+                  <span class="text-muted">Protocolo:</span>
+                  <span id="detail-spec-1" class="text-white font-bold">HTTPS Webhooks / TLS 1.3</span>
+                </div>
+                <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10 flex justify-between items-center text-xs font-mono">
+                  <span class="text-muted">Tiempo de Respuesta:</span>
+                  <span id="detail-spec-2" class="text-emerald font-bold">&lt; 120ms</span>
+                </div>
+                <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10 flex justify-between items-center text-xs font-mono">
+                  <span class="text-muted">Verificación:</span>
+                  <span id="detail-spec-3" class="text-cyan font-bold">HMAC-SHA256 Secret</span>
+                </div>
+                <div class="p-3 rounded-xl bg-white/[0.02] border border-white/10 flex justify-between items-center text-xs font-mono">
+                  <span class="text-muted">Capacidad Concurrente:</span>
+                  <span id="detail-spec-4" class="text-iris font-bold">+10,000 req/min</span>
+                </div>
+              </div>
+
+              <div class="pt-2">
+                <a href="https://valentina-ai-production.up.railway.app" target="_blank" class="w-full py-3 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-center text-xs font-bold text-white flex items-center justify-center gap-2 transition">
+                  <span>Ver Telemetría en el Portal Público</span>
+                  <i data-lucide="external-link" class="w-3.5 h-3.5 text-cyan"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ==================== TAB 2: FICHA TÉCNICA & SIMULADOR DE AGENTES ==================== -->
+      <div id="infographic-tab-spec" class="hidden space-y-8">
+        
+        <!-- Header Barra Informativa con Botón de Descarga de Ficha Técnica -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-obsidian-card/90 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan"></span>
+            </span>
+            <div>
+              <p class="text-xs font-mono font-bold text-white uppercase tracking-wider">Benchmark de Precisión &amp; Telemetría Conversacional</p>
+              <p class="text-xs text-muted">Resolución autónoma promedio del 89.2% • Cotizaciones y citas en tiempo real</p>
+            </div>
+          </div>
+
+          <a href="pdf/Valentina-AI-Ficha-Agentes-Conversacionales.pdf" download="Valentina-AI-Ficha-Agentes-Conversacionales.pdf" target="_blank" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan/15 border border-cyan/35 text-xs font-bold text-white hover:bg-cyan/25 transition-all shadow-lg shadow-cyan/20 cursor-pointer">
+            <i data-lucide="download" class="w-4 h-4 text-cyan"></i>
+            <span>Descargar Ficha Técnica en PDF</span>
+            <span class="text-[10px] font-mono text-muted bg-black/40 px-1.5 py-0.5 rounded">980 KB</span>
+          </a>
+        </div>
+
+        <!-- Simulador Interactivo de Casos en Vivo -->
+        <div class="rounded-2xl border border-white/15 bg-obsidian-card p-6 sm:p-8 space-y-8">
+          
+          <div>
+            <span class="text-xs font-mono font-semibold text-cyan uppercase tracking-wider">Simulador de Agente Especializado</span>
+            <h3 class="text-2xl font-bold text-white mt-1">Selecciona una Industria para Probar la Lógica del Agente</h3>
+            <p class="text-xs text-muted mt-1">Observa cómo Valentina adapta su prompt de sistema, base de conocimiento RAG y cálculo de cotización.</p>
+          </div>
+
+          <!-- Selector de Industria con Botones Interactivos -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <button class="spec-sim-btn active p-3 rounded-xl text-left border border-iris/40 bg-iris/15 text-white transition flex flex-col gap-1" data-tenant="botox">
+              <span class="text-base">💉</span>
+              <span class="text-xs font-bold">Doctor Botox</span>
+              <span class="text-[10px] text-iris font-mono">Salud &amp; Estética</span>
+            </button>
+
+            <button class="spec-sim-btn p-3 rounded-xl text-left border border-white/10 bg-white/[0.02] text-slate-300 hover:text-white hover:bg-white/[0.05] transition flex flex-col gap-1" data-tenant="uges">
+              <span class="text-base">🎓</span>
+              <span class="text-xs font-bold">Universidad UGES</span>
+              <span class="text-[10px] text-cyan font-mono">Educación Superior</span>
+            </button>
+
+            <button class="spec-sim-btn p-3 rounded-xl text-left border border-white/10 bg-white/[0.02] text-slate-300 hover:text-white hover:bg-white/[0.05] transition flex flex-col gap-1" data-tenant="legal">
+              <span class="text-base">⚖️</span>
+              <span class="text-xs font-bold">Vanguardia Jurídica</span>
+              <span class="text-[10px] text-amber-400 font-mono">Bufete Legal</span>
+            </button>
+
+            <button class="spec-sim-btn p-3 rounded-xl text-left border border-white/10 bg-white/[0.02] text-slate-300 hover:text-white hover:bg-white/[0.05] transition flex flex-col gap-1" data-tenant="busa">
+              <span class="text-base">🔧</span>
+              <span class="text-xs font-bold">Talleres Busa</span>
+              <span class="text-[10px] text-emerald font-mono">Automotriz &amp; Partes</span>
+            </button>
+          </div>
+
+          <!-- Consola Interactiva: Chat Simulado vs. Telemetría de la Ficha Técnica -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            
+            <!-- Ventana de Chat Simulado (7 Columnas) -->
+            <div class="lg:col-span-7 p-4 sm:p-5 rounded-2xl bg-black/60 border border-white/10 space-y-4">
+              <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald animate-pulse"></span>
+                  <span id="sim-agent-name" class="text-xs font-bold text-white">Agente Valentina (Clínica Botox)</span>
+                </div>
+                <span class="text-[10px] font-mono text-muted bg-white/[0.05] px-2 py-0.5 rounded">Canal: WhatsApp Cloud API</span>
+              </div>
+
+              <!-- Mensaje del Prospecto -->
+              <div class="flex flex-col items-start space-y-1">
+                <span class="text-[10px] font-mono text-muted pl-1">Prospecto WhatsApp</span>
+                <div class="p-3 rounded-2xl bg-white/[0.06] border border-white/10 text-xs text-white max-w-[85%] rounded-tl-sm leading-relaxed" id="sim-user-msg">
+                  "Hola buenas tardes! Quisiera saber el costo del botox para patas de gallo y entrecejo por favor"
+                </div>
+              </div>
+
+              <!-- Respuesta de Valentina -->
+              <div class="flex flex-col items-end space-y-1">
+                <span class="text-[10px] font-mono text-iris pr-1">Valentina AI</span>
+                <div class="p-3 rounded-2xl bg-violet-950/40 border border-violet-500/30 text-xs text-slate-100 max-w-[85%] rounded-tr-sm leading-relaxed shadow-inner" id="sim-agent-reply">
+                  ¡Hola Sofía! Con gusto. Para tercio superior utilizamos toxina botulínica Allergan certificada. El paquete ronda entre $3,800 y $4,500 MXN. ¿Te gustaría agendar cita diagnóstica este viernes en Polanco o Roma Norte?
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel de Métricas de la Ficha Técnica (5 Columnas) -->
+            <div class="lg:col-span-5 space-y-4">
+              <div class="p-4 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-muted">Lead Score del Prospecto:</span>
+                  <span id="sim-metric-score" class="font-mono text-emerald font-bold">95 / 100</span>
+                </div>
+                <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div id="sim-bar-score" class="h-full bg-emerald transition-all duration-500" style="width: 95%"></div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs pt-1">
+                  <span class="text-muted">Resolución Autónoma:</span>
+                  <span id="sim-metric-res" class="font-mono text-cyan font-bold">91.4%</span>
+                </div>
+                <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div id="sim-bar-res" class="h-full bg-cyan transition-all duration-500" style="width: 91%"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-2 text-xs font-mono">
+                  <div class="p-2.5 rounded-lg bg-black/40 border border-white/10">
+                    <span class="text-[10px] text-muted block">Latencia:</span>
+                    <span id="sim-metric-lat" class="font-bold text-white">1.08 seg</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-black/40 border border-white/10">
+                    <span class="text-[10px] text-muted block">Costo / Chat:</span>
+                    <span id="sim-metric-cost" class="font-bold text-emerald">$0.024 MXN</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Matriz de 3 Badges de Garantía -->
+              <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-mono">
+                <div class="p-2 rounded-lg bg-white/[0.02] border border-white/10">
+                  <i data-lucide="shield" class="w-4 h-4 text-emerald mx-auto mb-1"></i>
+                  <span>Zero Hallucination</span>
+                </div>
+                <div class="p-2 rounded-lg bg-white/[0.02] border border-white/10">
+                  <i data-lucide="clock" class="w-4 h-4 text-iris mx-auto mb-1"></i>
+                  <span>24/7/365 Activo</span>
+                </div>
+                <div class="p-2 rounded-lg bg-white/[0.02] border border-white/10">
+                  <i data-lucide="calendar" class="w-4 h-4 text-cyan mx-auto mb-1"></i>
+                  <span>Auto Calendar</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Matriz de 6 Capacidades Clave de la Ficha Técnica -->
+          <div class="pt-6 border-t border-white/10">
+            <h4 class="text-sm font-mono uppercase text-muted mb-4 tracking-wider">Matriz de Capacidades de Producción (Ficha Técnica Valentina OS)</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-white">
+                  <i data-lucide="database" class="w-4 h-4 text-iris"></i>
+                  <span>RAG Vectorial con Embeddings</span>
+                </div>
+                <p class="text-muted leading-relaxed text-[11px]">Búsqueda semántica sobre catálogos médicos, reglamentos escolares y leyes vigentes sin alucinaciones.</p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-white">
+                  <i data-lucide="lock" class="w-4 h-4 text-amber-400"></i>
+                  <span>Guardrails Anti-Jailbreak</span>
+                </div>
+                <p class="text-muted leading-relaxed text-[11px]">Filtros que impiden que el modelo revele información confidencial, invente precios o se desvíe del rol.</p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-white">
+                  <i data-lucide="calendar-check" class="w-4 h-4 text-cyan"></i>
+                  <span>Agendamiento en Calendario</span>
+                </div>
+                <p class="text-muted leading-relaxed text-[11px]">Verificación en tiempo real de slots libres en Google Calendar / Outlook y bloqueo automático de citas.</p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-white">
+                  <i data-lucide="users" class="w-4 h-4 text-emerald"></i>
+                  <span>1-Click Handover a Humano</span>
+                </div>
+                <p class="text-muted leading-relaxed text-[11px]">Si un caso es sensible o requiere atención médica urgente, el agente transfiere el control sin interrumpir la charla.</p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-white">
+                  <i data-lucide="coins" class="w-4 h-4 text-iris"></i>
+                  <span>Telemetría de Costo por Chat</span>
+                </div>
+                <p class="text-muted leading-relaxed text-[11px]">Conteo exacto de tokens de prompt y completion para mantener el costo por conversación debajo de $0.05 MXN.</p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5">
+                <div class="flex items-center gap-2 font-bold text-white">
+                  <i data-lucide="smartphone" class="w-4 h-4 text-cyan"></i>
+                  <span>Sincronización Multicanal</span>
+                </div>
+                <p class="text-muted leading-relaxed text-[11px]">La misma base de conocimiento y agente operando en WhatsApp Cloud API y widget web simultáneamente.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
   <!-- ==================== CASOS REALES EN VIDEO (Showcase por Industria) ==================== -->
   <section id="casos-estudio" class="py-24 relative z-10">
     <div class="max-w-7xl mx-auto px-6 space-y-16">
