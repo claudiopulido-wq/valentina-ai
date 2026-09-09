@@ -84,3 +84,21 @@ export interface DailyTelemetry {
   costMxn: number;
   hoursSaved: number;
 }
+
+export type UserRole = 'superadmin' | 'tenant_admin' | 'advisor' | 'evaluator';
+
+export type UserStatus = 'active' | 'suspended' | 'pending';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  password: string; // Para validación enterprise en portal
+  fullName: string;
+  tenantId: string | null; // null si es superadmin global
+  role: UserRole;
+  status: UserStatus;
+  avatarUrl?: string;
+  createdAt: string;
+  notes?: string;
+}
+
