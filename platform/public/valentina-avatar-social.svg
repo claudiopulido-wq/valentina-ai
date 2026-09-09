@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" width="100%" height="100%">
+  <defs>
+    <!-- Fondo Obsidian con Borde Microtexturizado -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E111A"/>
+      <stop offset="100%" stop-color="#08090E"/>
+    </linearGradient>
+
+    <!-- Gradiente del Isotipo -->
+    <linearGradient id="avatarGrad" x1="120" y1="120" x2="390" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="50%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+
+    <!-- Resplandor Difuso Circular -->
+    <radialGradient id="avatarGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="shadowApp" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#8B5CF6" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Contenedor / Squircle del Icono -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  <rect width="512" height="512" rx="128" stroke="rgba(255, 255, 255, 0.12)" stroke-width="4"/>
+
+  <!-- Halo de Luz de Fondo -->
+  <circle cx="256" cy="256" r="180" fill="url(#avatarGlow)"/>
+
+  <!-- Símbolo Valentina Centrado -->
+  <g filter="url(#shadowApp)">
+    <path d="M140 156L232 360C244 386 268 386 280 360L372 156" 
+          stroke="url(#avatarGrad)" 
+          stroke-width="34" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+
+    <path d="M182 156L240 286C248 304 264 304 272 286L330 156" 
+          stroke="url(#avatarGrad)" 
+          stroke-width="24" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"
+          opacity="0.85"/>
+
+    <circle cx="256" cy="342" r="14" fill="#06B6D4" opacity="0.95"/>
+  </g>
+</svg>

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" fill="none" width="100%" height="100%">
+  <defs>
+    <linearGradient id="valGradH" x1="40" y1="30" x2="160" y2="170" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="50%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <filter id="valGlowH" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#8B5CF6" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Isotipo Escala Reducida -->
+  <g transform="translate(30, 20) scale(0.32)" filter="url(#valGlowH)">
+    <path d="M120 136L228 376C242 406 270 406 284 376L392 136" stroke="url(#valGradH)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M168 136L236 294C244 312 268 312 276 294L344 136" stroke="url(#valGradH)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+    <circle cx="256" cy="356" r="14" fill="#06B6D4" opacity="0.9"/>
+  </g>
+
+  <!-- Tipografía Valentina & Sub-badge -->
+  <g transform="translate(230, 115)">
+    <!-- Texto VALENTINA -->
+    <text x="0" y="0" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="68" font-weight="800" letter-spacing="-1.5" fill="#FFFFFF">
+      VALENTINA
+    </text>
+    
+    <!-- Badge IA STUDIO -->
+    <rect x="420" y="-50" width="135" height="34" rx="8" fill="rgba(139, 92, 246, 0.18)" stroke="rgba(139, 92, 246, 0.4)" stroke-width="1.5"/>
+    <text x="487" y="-28" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="700" letter-spacing="1.5" fill="#C084FC" text-anchor="middle">
+      IA STUDIO
+    </text>
+
+    <!-- Descriptor Tecnológico -->
+    <text x="2" y="36" font-family="'JetBrains Mono', monospace" font-size="15" font-weight="500" letter-spacing="4" fill="#94A3B8">
+      AUTONOMOUS AI INFRASTRUCTURE
+    </text>
+  </g>
+</svg>

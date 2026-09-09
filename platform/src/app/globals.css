@@ -2,84 +2,123 @@
 
 @layer base {
   :root {
-    --bg-obsidian: #07080c;
-    --bg-card: rgba(18, 21, 31, 0.65);
-    --bg-glass-nav: rgba(13, 16, 26, 0.75);
-    --border-titanium: rgba(255, 255, 255, 0.08);
-    --border-titanium-hover: rgba(255, 255, 255, 0.18);
-    --accent-violet: #8b5cf6;
-    --accent-cyan: #06b6d4;
-    --accent-emerald: #10b981;
-    --accent-amber: #f59e0b;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    --google-bg: #f8f9fa;
+    --google-surface: #ffffff;
+    --google-surface-alt: #f1f3f4;
+    --google-surface-hover: #f0f4f9;
+    --google-border: #dadce0;
+    --google-border-subtle: #e0e2ec;
+    --google-primary: #0b57d0;
+    --google-primary-hover: #0842a0;
+    --google-primary-container: #d3e3fd;
+    --google-primary-container-text: #041e49;
+    --google-text-primary: #1f1f1f;
+    --google-text-secondary: #444746;
+    --google-text-muted: #747775;
+    --google-success: #137333;
+    --google-success-bg: #e6f4ea;
+    --google-warning: #b06000;
+    --google-warning-bg: #fef7e0;
+    --google-danger: #c5221f;
+    --google-danger-bg: #fce8e6;
   }
 
   body {
-    background-color: var(--bg-obsidian);
-    color: var(--text-primary);
-    font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--google-bg);
+    color: var(--google-text-primary);
+    font-family: var(--font-sans), 'Google Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden;
-    selection-background-color: rgba(139, 92, 246, 0.3);
   }
 }
 
-/* Apple Liquid Glass Effects */
-.apple-glass {
-  background: rgba(18, 22, 36, 0.65);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Google Surface Cards */
+.google-card {
+  background-color: #ffffff;
+  border: 1px solid var(--google-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.08), 0 1px 3px 1px rgba(60, 64, 67, 0.04);
+  transition: all 0.2s ease-in-out;
 }
 
-.apple-glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%), rgba(15, 18, 28, 0.7);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.google-card:hover {
+  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.12), 0 4px 8px 3px rgba(60, 64, 67, 0.08);
 }
 
-.apple-glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transform: translateY(-2px);
+.google-card-flat {
+  background-color: #ffffff;
+  border: 1px solid var(--google-border);
+  border-radius: 12px;
 }
 
-.apple-glass-dock {
-  background: rgba(11, 14, 23, 0.82);
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2);
+/* Google Pill Button & Navigation Item */
+.google-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--google-text-secondary);
+  transition: all 0.15s ease-in-out;
 }
 
-.apple-pill-btn {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+.google-nav-item:hover {
+  background-color: var(--google-surface-alt);
+  color: var(--google-text-primary);
 }
 
-.apple-pill-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.22);
+.google-nav-item.active {
+  background-color: var(--google-primary-container);
+  color: var(--google-primary-container-text);
+  font-weight: 600;
 }
 
-/* Custom Sleek Scrollbar */
+/* Google Action Button */
+.google-btn-primary {
+  background-color: var(--google-primary);
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.google-btn-primary:hover {
+  background-color: var(--google-primary-hover);
+  box-shadow: 0 2px 6px rgba(11, 87, 208, 0.3);
+}
+
+.google-btn-secondary {
+  background-color: #ffffff;
+  color: var(--google-primary);
+  border: 1px solid var(--google-border);
+  border-radius: 9999px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.google-btn-secondary:hover {
+  background-color: var(--google-surface-alt);
+  border-color: #c4c7c5;
+}
+
+/* Google Clean Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+  background: #f1f3f4;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: #dadce0;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: #bdc1c6;
 }

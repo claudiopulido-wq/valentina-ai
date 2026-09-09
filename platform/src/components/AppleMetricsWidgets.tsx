@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Tenant, DailyTelemetry } from '../types/platform';
-import { Coins, Zap, Clock, TrendingUp, MessageSquare, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { Coins, Zap, Clock, TrendingUp } from 'lucide-react';
 
 interface Props {
   tenant: Tenant;
@@ -15,70 +15,72 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
 
   return (
     <section className="w-full space-y-4">
-      {/* Top Banner: Tenant Welcome & VisionOS Glass Bar */}
-      <div className="apple-glass-card rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Top Banner: Tenant Welcome */}
+      <div className="bg-white border border-[#dadce0] rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="text-3xl p-2.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] shadow-inner">
+          <div className="text-3xl p-2.5 rounded-xl bg-[#f8f9fa] border border-[#dadce0]">
             {tenant.logo}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-white">{tenant.name}</h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                {tenant.plan} Plan
+              <h1 className="text-xl font-bold tracking-tight text-[#1f1f1f]">{tenant.name}</h1>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
+                Plan {tenant.plan}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">{tenant.industry} • Multi-Tenant ID: <span className="font-mono text-slate-300">{tenant.slug}</span></p>
+            <p className="text-xs text-[#5f6368] mt-0.5">
+              {tenant.industry} • ID de Organización: <span className="font-mono text-[#1f1f1f]">{tenant.slug}</span>
+            </p>
           </div>
         </div>
 
         {/* Quick Summary Pill */}
-        <div className="flex items-center gap-3 bg-black/40 border border-white/[0.08] rounded-xl px-4 py-2">
+        <div className="flex items-center gap-4 bg-[#f8f9fa] border border-[#dadce0] rounded-xl px-4 py-2 self-stretch md:self-auto justify-between md:justify-start">
           <div>
-            <p className="text-[10px] uppercase font-mono text-slate-400">Tokens Totales</p>
-            <p className="text-sm font-extrabold font-mono text-violet-300">
+            <p className="text-[10px] uppercase font-semibold text-[#5f6368]">Tokens Totales</p>
+            <p className="text-sm font-bold font-mono text-[#0b57d0]">
               {tenant.totalTokensUsed.toLocaleString('es-MX')}
             </p>
           </div>
-          <div className="w-px h-8 bg-white/10"></div>
+          <div className="w-px h-8 bg-[#dadce0]"></div>
           <div>
-            <p className="text-[10px] uppercase font-mono text-slate-400">Inversión IA</p>
-            <p className="text-sm font-extrabold font-mono text-white">
+            <p className="text-[10px] uppercase font-semibold text-[#5f6368]">Inversión IA</p>
+            <p className="text-sm font-bold font-mono text-[#1f1f1f]">
               ${tenant.totalSpentMxn.toFixed(2)} MXN
             </p>
           </div>
         </div>
       </div>
 
-      {/* Grid of Apple-style Metric Cards */}
+      {/* Grid of Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Token Cost & Budget */}
-        <div className="apple-glass-card rounded-2xl p-5 relative overflow-hidden group">
-          <div className="flex items-center justify-between text-slate-400 mb-3">
+        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition">
+          <div className="flex items-center justify-between text-[#5f6368] mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider">Inversión en Tokens</span>
-            <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400">
+            <div className="p-2 rounded-xl bg-[#e8f0fe] text-[#0b57d0]">
               <Coins className="w-4 h-4" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <div className="text-2xl font-extrabold tracking-tight font-mono text-white">
-              ${tenant.totalSpentMxn.toFixed(2)} <span className="text-xs text-slate-400 font-normal">MXN</span>
+            <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
+              ${tenant.totalSpentMxn.toFixed(2)} <span className="text-xs text-[#5f6368] font-normal">MXN</span>
             </div>
-            <p className="text-[11px] text-slate-400">
-              Presupuesto mensual: <span className="text-slate-200 font-mono">${tenant.monthlyBudgetMxn.toLocaleString()} MXN</span>
+            <p className="text-xs text-[#5f6368]">
+              Presupuesto mensual: <span className="font-semibold text-[#1f1f1f] font-mono">${tenant.monthlyBudgetMxn.toLocaleString()} MXN</span>
             </p>
           </div>
 
-          {/* Apple Progress Bar */}
+          {/* Progress Bar */}
           <div className="mt-4 space-y-1.5">
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-[11px] font-mono text-[#5f6368]">
               <span>Uso: {budgetPercentage}%</span>
               <span>Límite seguro</span>
             </div>
-            <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-[#f1f3f4] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full transition-all duration-1000"
+                className="h-full bg-[#0b57d0] rounded-full transition-all duration-700"
                 style={{ width: `${budgetPercentage}%` }}
               ></div>
             </div>
@@ -86,114 +88,118 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
         </div>
 
         {/* Card 2: Estimated Human Savings */}
-        <div className="apple-glass-card rounded-2xl p-5 relative overflow-hidden group">
-          <div className="flex items-center justify-between text-slate-400 mb-3">
+        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition">
+          <div className="flex items-center justify-between text-[#5f6368] mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider">Ahorro en Nómina</span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="p-2 rounded-xl bg-[#e6f4ea] text-[#137333]">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <div className="text-2xl font-extrabold tracking-tight font-mono text-emerald-400">
-              ${estimatedSavingsMxn.toLocaleString('es-MX')} <span className="text-xs text-slate-400 font-normal">MXN</span>
+            <div className="text-2xl font-bold tracking-tight font-mono text-[#137333]">
+              ${estimatedSavingsMxn.toLocaleString('es-MX')} <span className="text-xs text-[#5f6368] font-normal">MXN</span>
             </div>
-            <p className="text-[11px] text-slate-400 flex items-center gap-1">
-              <span className="text-emerald-400 font-bold font-mono">71.5x</span> multiplicador de eficiencia ROI
+            <p className="text-xs text-[#5f6368] flex items-center gap-1">
+              <span className="text-[#137333] font-bold font-mono">71.5x</span> retorno estimado de inversión
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-300">
-            <span>Horas hombre ahorradas:</span>
-            <span className="font-mono font-bold text-white">~148 hrs</span>
+          <div className="mt-4 pt-3 border-t border-[#f1f3f4] flex items-center justify-between text-xs text-[#5f6368]">
+            <span>Horas recepcionista:</span>
+            <span className="font-mono font-bold text-[#1f1f1f]">~148 hrs</span>
           </div>
         </div>
 
         {/* Card 3: AI Handling Resolution Rate */}
-        <div className="apple-glass-card rounded-2xl p-5 relative overflow-hidden group">
-          <div className="flex items-center justify-between text-slate-400 mb-3">
+        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition">
+          <div className="flex items-center justify-between text-[#5f6368] mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider">Resolución 100% IA</span>
-            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+            <div className="p-2 rounded-xl bg-[#e8f0fe] text-[#0b57d0]">
               <Zap className="w-4 h-4" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <div className="text-2xl font-extrabold tracking-tight font-mono text-white">
+            <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
               96.4%
             </div>
-            <p className="text-[11px] text-slate-400">
-              Sin intervención de recepcionistas
+            <p className="text-xs text-[#5f6368]">
+              Sin intervención humana
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-300">
-            <span>Escalados a humano:</span>
-            <span className="font-mono font-bold text-amber-400">3.6% (Casos críticos)</span>
+          <div className="mt-4 pt-3 border-t border-[#f1f3f4] flex items-center justify-between text-xs text-[#5f6368]">
+            <span>Escalados a humanos:</span>
+            <span className="font-mono font-bold text-[#b06000]">3.6% (Casos complejos)</span>
           </div>
         </div>
 
         {/* Card 4: Response Latency */}
-        <div className="apple-glass-card rounded-2xl p-5 relative overflow-hidden group">
-          <div className="flex items-center justify-between text-slate-400 mb-3">
+        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition">
+          <div className="flex items-center justify-between text-[#5f6368] mb-3">
             <span className="text-xs font-semibold uppercase tracking-wider">Velocidad Respuesta</span>
-            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+            <div className="p-2 rounded-xl bg-[#f1f3f4] text-[#5f6368]">
               <Clock className="w-4 h-4" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <div className="text-2xl font-extrabold tracking-tight font-mono text-white">
+            <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
               1.1 seg
             </div>
-            <p className="text-[11px] text-slate-400">
-              WhatsApp &amp; Webhook realtime
+            <p className="text-xs text-[#5f6368]">
+              WhatsApp Cloud API realtime
             </p>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-300">
-            <span>Promedio humano anterior:</span>
-            <span className="font-mono font-bold text-red-400">28 min</span>
+          <div className="mt-4 pt-3 border-t border-[#f1f3f4] flex items-center justify-between text-xs text-[#5f6368]">
+            <span>Promedio recepcionista:</span>
+            <span className="font-mono font-bold text-[#c5221f]">28 min</span>
           </div>
         </div>
       </div>
 
       {/* 7-Day Interactive Telemetry Bar Chart */}
-      <div className="apple-glass-card rounded-2xl p-5">
+      <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h3 className="text-sm font-bold text-white tracking-tight">Volumen de Mensajes y Consumo de Tokens (Últimos 7 días)</h3>
-            <p className="text-xs text-slate-400">Monitoreo granular del tráfico atendido por Valentina</p>
+            <h3 className="text-sm font-bold text-[#1f1f1f] tracking-tight">Volumen de Mensajes y Consumo de Tokens (Últimos 7 días)</h3>
+            <p className="text-xs text-[#5f6368]">Monitoreo granular del tráfico atendido por Valentina</p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-violet-500"></span>
-            <span>Mensajes Atendidos</span>
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400 ml-2"></span>
-            <span>Costo MXN</span>
+          <div className="flex items-center gap-3 text-xs font-medium text-[#5f6368]">
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#0b57d0]"></span>
+              <span>Mensajes</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#137333]"></span>
+              <span>Costo MXN</span>
+            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 pt-4 border-t border-white/[0.06]">
+        <div className="grid grid-cols-7 gap-2 pt-4 border-t border-[#f1f3f4]">
           {telemetry.map((day, idx) => {
             const maxMessages = 1000;
             const barHeightPct = Math.round((day.totalMessages / maxMessages) * 100);
 
             return (
               <div key={idx} className="flex flex-col items-center gap-2 group">
-                <div className="text-[10px] font-mono text-slate-400 group-hover:text-white transition">
+                <div className="text-xs font-mono font-semibold text-[#5f6368] group-hover:text-[#0b57d0] transition">
                   {day.totalMessages}
                 </div>
 
-                <div className="w-full h-28 bg-white/[0.02] rounded-xl flex items-end justify-center p-1 relative">
+                <div className="w-full h-28 bg-[#f8f9fa] border border-[#e0e2ec] rounded-xl flex items-end justify-center p-1 relative">
                   <div
-                    className="w-full max-w-[28px] bg-gradient-to-t from-violet-600/60 to-cyan-400/80 rounded-lg transition-all duration-500 group-hover:from-violet-500 group-hover:to-cyan-300 group-hover:scale-105"
+                    className="w-full max-w-[28px] bg-[#0b57d0] rounded-lg transition-all duration-300 group-hover:bg-[#0842a0]"
                     style={{ height: `${barHeightPct}%` }}
                   ></div>
                 </div>
 
                 <div className="text-center">
-                  <p className="text-[11px] font-medium text-slate-300">{day.date}</p>
-                  <p className="text-[9px] font-mono text-cyan-400">${day.costMxn.toFixed(1)} MXN</p>
+                  <p className="text-xs font-medium text-[#1f1f1f]">{day.date}</p>
+                  <p className="text-[10px] font-mono text-[#137333] font-semibold">${day.costMxn.toFixed(1)} MXN</p>
                 </div>
               </div>
             );

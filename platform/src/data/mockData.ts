@@ -410,8 +410,8 @@ export const MOCK_TELEMETRY: DailyTelemetry[] = [
 export const MOCK_USERS: AuthUser[] = [
   {
     id: 'user-superadmin',
-    email: 'claudio@valentina-ai.mx',
-    password: 'Valentina2026!',
+    email: 'contacto@valentina-ai.mx',
+    password: 'Santiago2021,',
     fullName: 'Claudio Pulido',
     tenantId: null, // Acceso global a todos los clientes
     role: 'superadmin',

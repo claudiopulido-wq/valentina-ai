@@ -11,14 +11,14 @@ interface Props {
 
 export const ChannelHardwareCard: React.FC<Props> = ({ channels, tenantName }) => {
   return (
-    <section className="w-full space-y-3">
-      <div className="flex items-center justify-between">
+    <section className="w-full space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 className="text-sm font-bold text-white tracking-tight">Puertos y Canales Conectados (Hardware Style)</h3>
-          <p className="text-xs text-slate-400">Infraestructura omnicanal dedicada para {tenantName}</p>
+          <h3 className="text-base font-semibold text-[#1f1f1f] tracking-tight">Canales & Hardware Conectados</h3>
+          <p className="text-xs text-[#5f6368]">Infraestructura omnicanal dedicada para {tenantName}</p>
         </div>
-        <button className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-xs text-slate-300 transition">
-          <RefreshCw className="w-3 h-3 text-cyan-400" />
+        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#f1f3f4] border border-[#dadce0] text-xs font-medium text-[#1f1f1f] transition cursor-pointer self-start sm:self-auto shadow-sm">
+          <RefreshCw className="w-3.5 h-3.5 text-[#0b57d0]" />
           <span>Sincronizar Meta APIs</span>
         </button>
       </div>
@@ -30,89 +30,89 @@ export const ChannelHardwareCard: React.FC<Props> = ({ channels, tenantName }) =
           return (
             <div
               key={ch.id}
-              className="apple-glass-card rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between space-y-4"
+              className="bg-white border border-[#dadce0] rounded-2xl p-5 relative flex flex-col justify-between space-y-4 shadow-sm hover:shadow transition"
             >
               {/* Top Row: Icon & Status */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`p-3 rounded-2xl border ${
+                    className={`p-3 rounded-xl border ${
                       isWhatsApp
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'
+                        ? 'bg-[#e6f4ea] border-[#ceead6] text-[#137333]'
+                        : 'bg-[#e8f0fe] border-[#d3e3fd] text-[#0b57d0]'
                     }`}
                   >
                     {isWhatsApp ? <Smartphone className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white">{ch.name}</h4>
-                    <p className="text-[11px] font-mono text-slate-400">{ch.identifier}</p>
+                    <h4 className="text-sm font-semibold text-[#1f1f1f]">{ch.name}</h4>
+                    <p className="text-xs font-mono text-[#5f6368]">{ch.identifier}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e6f4ea] text-[#137333] text-[11px] font-medium border border-[#ceead6]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#137333] animate-pulse"></span>
                   <span>ONLINE</span>
                 </div>
               </div>
 
               {/* Hardware Specs Grid */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06] text-[11px]">
-                <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04]">
-                  <span className="text-[10px] text-slate-400">Latencia Webhook</span>
-                  <p className="font-mono font-bold text-white">118 ms</p>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#f1f3f4] text-xs">
+                <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e2ec]">
+                  <span className="text-[11px] text-[#5f6368]">Latencia Webhook</span>
+                  <p className="font-mono font-bold text-[#1f1f1f] text-sm">118 ms</p>
                 </div>
-                <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04]">
-                  <span className="text-[10px] text-slate-400">Mensajes Hoy</span>
-                  <p className="font-mono font-bold text-violet-300">{ch.dailyMessagesCount}</p>
+                <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e2ec]">
+                  <span className="text-[11px] text-[#5f6368]">Mensajes Hoy</span>
+                  <p className="font-mono font-bold text-[#0b57d0] text-sm">{ch.dailyMessagesCount}</p>
                 </div>
               </div>
 
               {/* Security & Health pill */}
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 border-t border-white/[0.04]">
-                <span className="flex items-center gap-1">
-                  <Shield className="w-3 h-3 text-emerald-400" />
+              <div className="flex items-center justify-between text-xs text-[#5f6368] pt-2 border-t border-[#f1f3f4]">
+                <span className="flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-[#137333]" />
                   <span>Cifrado SHA-256 Meta</span>
                 </span>
-                <span className="font-mono">{ch.lastPing}</span>
+                <span className="font-mono text-[11px]">{ch.lastPing}</span>
               </div>
             </div>
           );
         })}
 
         {/* Google Workspace & Storage Connector */}
-        <div className="apple-glass-card rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between space-y-4">
+        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 relative flex flex-col justify-between space-y-4 shadow-sm hover:shadow transition">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+              <div className="p-3 rounded-xl bg-[#fef7e0] border border-[#feefc3] text-[#b06000]">
                 <Key className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-white">Google Workspace Vault</h4>
-                <p className="text-[11px] text-slate-400 font-mono">service-account@valentina</p>
+                <h4 className="text-sm font-semibold text-[#1f1f1f]">Google Workspace Vault</h4>
+                <p className="text-xs text-[#5f6368] font-mono">service-account@valentina</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono">
-              <CheckCircle2 className="w-3 h-3" />
+            <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e6f4ea] text-[#137333] text-[11px] font-medium border border-[#ceead6]">
+              <CheckCircle2 className="w-3.5 h-3.5" />
               <span>LINKED</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06] text-[11px]">
-            <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04]">
-              <span className="text-[10px] text-slate-400">Expedientes Drive</span>
-              <p className="font-mono font-bold text-white">1,522 PDFs</p>
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#f1f3f4] text-xs">
+            <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e2ec]">
+              <span className="text-[11px] text-[#5f6368]">Expedientes Drive</span>
+              <p className="font-mono font-bold text-[#1f1f1f] text-sm">1,522 PDFs</p>
             </div>
-            <div className="p-2 rounded-xl bg-black/40 border border-white/[0.04]">
-              <span className="text-[10px] text-slate-400">Sync Google Sheets</span>
-              <p className="font-mono font-bold text-emerald-400">Automático</p>
+            <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e2ec]">
+              <span className="text-[11px] text-[#5f6368]">Sync Google Sheets</span>
+              <p className="font-mono font-bold text-[#137333] text-sm">Automático</p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 border-t border-white/[0.04]">
+          <div className="flex items-center justify-between text-xs text-[#5f6368] pt-2 border-t border-[#f1f3f4]">
             <span>Costo de integración:</span>
-            <span className="font-mono font-bold text-emerald-400">$0.00 / mes</span>
+            <span className="font-mono font-bold text-[#137333]">$0.00 / mes</span>
           </div>
         </div>
       </div>

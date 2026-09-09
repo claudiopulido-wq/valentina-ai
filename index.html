@@ -103,7 +103,18 @@
       <a href="#" class="flex items-center gap-3 group">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-iris to-cyan p-[1px] shadow-lg shadow-iris/20 group-hover:shadow-iris/40 transition-all duration-300">
           <div class="w-full h-full bg-obsidian-card rounded-[11px] flex items-center justify-center p-1.5">
-            <img src="assets/branding/valentina-symbol.svg" alt="Valentina Logo" class="w-full h-full object-contain">
+            <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow">
+              <defs>
+                <linearGradient id="navValGrad" x1="120" y1="130" x2="390" y2="390" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#8B5CF6"/>
+                  <stop offset="50%" stop-color="#A855F7"/>
+                  <stop offset="100%" stop-color="#06B6D4"/>
+                </linearGradient>
+              </defs>
+              <path d="M120 136L228 376C242 406 270 406 284 376L392 136" stroke="url(#navValGrad)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M168 136L236 294C244 312 268 312 276 294L344 136" stroke="url(#navValGrad)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" opacity="0.88"/>
+              <circle cx="256" cy="356" r="16" fill="#06B6D4"/>
+            </svg>
           </div>
         </div>
         <div class="flex flex-col">
@@ -1717,6 +1728,14 @@
     <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
       
       <div class="flex items-center gap-3">
+        <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-iris to-cyan p-[1px] shrink-0">
+          <div class="w-full h-full bg-black rounded-[7px] flex items-center justify-center p-0.5">
+            <svg viewBox="0 0 512 512" fill="none" class="w-full h-full">
+              <path d="M120 136L228 376C242 406 270 406 284 376L392 136" stroke="#8B5CF6" stroke-width="40" stroke-linecap="round"/>
+              <circle cx="256" cy="356" r="18" fill="#06B6D4"/>
+            </svg>
+          </div>
+        </div>
         <span class="font-bold text-white text-sm tracking-tight">VALENTINA IA</span>
         <span>— División de Desarrollo Tecnológico &amp; Automatización</span>
       </div>
