@@ -255,6 +255,9 @@
               <button class="hero-feed-btn" data-video="assets/videos/valentina_legal_firm.mp4" data-title="Firma Legal Corporativa: Triage Confidencial &amp; Expedientes Jurídicos (Hailuo 02)">
                 ⚖️ 5. Firma Legal (Hailuo 02)
               </button>
+              <button class="hero-feed-btn" data-video="assets/videos/valentina_automotive_service.mp4" data-title="Centro Automotriz: Cotización de Refacciones &amp; Diagnóstico de Taller (Hailuo 02)">
+                🚗 6. Centro Automotriz (Hailuo 02)
+              </button>
             </div>
             <span class="text-muted text-[11px] hidden lg:inline">Haz clic para alternar demo</span>
           </div>
@@ -918,6 +921,45 @@
             </div>
           </div>
 
+          <!-- VIDEO 6: CENTRO AUTOMOTRIZ & REFACCIONES (HAILUO 02) -->
+          <div class="glass-card rounded-2xl border border-iris/20 overflow-hidden space-y-4 p-5 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono text-iris font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="wrench" class="w-4 h-4"></i> Sector Automotriz &amp; Talleres
+                </span>
+                <span class="text-[11px] font-mono text-muted">768p • 16:9 • 649 KB</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Centro Automotriz: Cotizador &amp; Agendamiento</h3>
+              <p class="text-xs text-muted leading-relaxed">
+                Taller de diagnóstico automotriz y servicio especializado: toma fotorrealista con MiniMax Hailuo 02 mostrando cotización de refacciones y confirmación de ingreso al taller en tableta digital.
+              </p>
+            </div>
+
+            <!-- Video Player 6 -->
+            <div class="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl">
+              <video 
+                controls 
+                loop 
+                muted 
+                playsinline 
+                preload="metadata"
+                class="w-full h-full object-cover"
+                poster="assets/branding/favicon.svg"
+              >
+                <source src="assets/videos/valentina_automotive_service.mp4" type="video/mp4">
+                Tu navegador no soporta la reproducción de video MP4.
+              </video>
+            </div>
+
+            <div class="pt-2 flex items-center justify-between text-xs font-mono text-muted border-t border-white/10">
+              <span>Modelo: MiniMax Hailuo 02</span>
+              <a href="assets/videos/valentina_automotive_service.mp4" target="_blank" class="text-iris hover:underline flex items-center gap-1 font-bold">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir en Pestaña Nueva
+              </a>
+            </div>
+          </div>
+
           <!-- VIDEO 3: AUTOMATIZACIÓN CONOCER CERO PAPEL -->
           <div class="glass-card rounded-2xl border border-emerald/20 overflow-hidden space-y-4 p-5 flex flex-col justify-between lg:col-span-2">
             <div class="space-y-2">
@@ -1107,11 +1149,11 @@
           <!-- Video Canvas Integrado del Proyecto -->
           <div class="project-video-container rounded-xl overflow-hidden border border-white/15 relative aspect-video bg-black/80 group">
             <video autoplay loop muted playsinline class="w-full h-full object-cover">
-              <source src="https://assets.mixkit.co/videos/42823/42823-720.mp4" type="video/mp4">
+              <source src="assets/videos/valentina_automotive_service.mp4" type="video/mp4">
             </video>
             <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
               <span class="text-[11px] font-mono px-2.5 py-1 rounded bg-black/70 backdrop-blur-md text-white border border-white/10">
-                Cotización de Balatas y Frenos en Segundos
+                Cotización de Refacciones &amp; Cita de Taller
               </span>
               <span class="text-[11px] font-mono text-iris bg-iris/10 px-2 py-0.5 rounded border border-iris/30">
                 100% Manos Libres
@@ -1602,6 +1644,6 @@
   </footer>
 
   <!-- Scripts con Cache-Buster para Forzar Recarga Inmediata -->
-  <script src="js/main.js?v=2.5"></script>
+  <script src="js/main.js?v=2.6"></script>
 </body>
 </html>
