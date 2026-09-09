@@ -252,16 +252,16 @@ document.addEventListener('DOMContentLoaded', () => {
       response: "En el sistema de certificación CONOCER SEP eliminamos 90 hojas físicas por expediente para más de 1,522 candidatos activos, sumando 136,980 documentos digitalizados con firma biométrica móvil. ¿Tu empresa también gestiona trámites o expedientes en papel?"
     },
     {
-      keywords: ['botox', 'clinica', 'medico', 'estetica', 'salud', 'cita', 'agenda'],
-      response: "Para Doctor Botox desarrollamos un agente conversacional omnicanal que califica pacientes, responde dudas médicas frecuentes, cotiza procedimientos y agenda directamente en calendario sin intervención manual 24/7."
+      keywords: ['clinica', 'medico', 'estetica', 'salud', 'cita', 'agenda', 'paciente', 'botox'],
+      response: "Para clínicas médicas y de alta especialidad desarrollamos un asistente inteligente que califica pacientes, responde dudas frecuentes, cotiza tratamientos y agenda citas directamente en el calendario médico las 24 horas del día."
     },
     {
-      keywords: ['abogado', 'legal', 'juridico', 'demanda', 'juzgado', 'confidencial'],
-      response: "Para Vanguardia Jurídica implementamos un asistente con guardrails de seguridad que clasifica casos, realiza un triage confidencial y redacta un briefing ordenado para el abogado antes de la primera consulta."
+      keywords: ['abogado', 'legal', 'juridico', 'demanda', 'juzgado', 'confidencial', 'contrato'],
+      response: "Para firmas y despachos jurídicos implementamos un asistente con confidencialidad absoluta que clasifica los casos, recopila la información clave del cliente y prepara un resumen ordenado para el abogado antes de la consulta."
     },
     {
       keywords: ['uges', 'universidad', 'escuela', 'alumnos', 'educacion'],
-      response: "Valentina está respaldada por la infraestructura técnica de la Universidad UGES y GES Académico, con más de 3,000 egresados titulados y plataformas de validación oficial de certificados."
+      response: "Valentina está respaldada por una sólida infraestructura institucional y académica, con más de 3,000 egresados titulados y plataformas oficiales de certificación."
     },
     {
       keywords: ['precio', 'costo', 'cotizar', 'cuanto', 'tarifa'],
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="w-1.5 h-1.5 rounded-full bg-iris animate-bounce"></span>
         <span class="w-1.5 h-1.5 rounded-full bg-cyan animate-bounce" style="animation-delay: 0.2s"></span>
         <span class="w-1.5 h-1.5 rounded-full bg-emerald animate-bounce" style="animation-delay: 0.4s"></span>
-        <span>Valentina analizando contexto...</span>
+        <span>Valentina analizando mensaje...</span>
       `;
       chatMessages.appendChild(typingIndicator);
       chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         typingIndicator.remove();
         const lower = userText.toLowerCase();
-        let reply = "Entendido. En Valentina estructuramos la automatización directamente en código nativo (Node.js/Python) y RAG con memoria semántica para que tus datos nunca salgan de tu control. ¿Te gustaría agendar una llamada de 15 minutos para analizar la viabilidad técnica?";
+        let reply = "Entendido. En Valentina creamos asistentes de inteligencia artificial a la medida de tu empresa para atender clientes por WhatsApp y automatizar tus procesos sin errores humanos. ¿Te gustaría agendar una llamada breve de 15 minutos para ver cómo aplicarlo a tu negocio?";
 
         for (const item of knowledgeBase) {
           if (item.keywords.some(k => lower.includes(k))) {
@@ -407,44 +407,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const nodeData = {
     entry: {
-      title: '1. Canales Omnicanal de Entrada',
-      desc: 'Conexión directa y certificada con WhatsApp Cloud API oficial de Meta y widget webchat reactivo. Gestiona concurrencia masiva con confirmación criptográfica de entrega sin intermediarios no-code.',
-      s1: 'HTTPS Webhooks / TLS 1.3',
-      s2: '< 120ms',
-      s3: 'HMAC-SHA256 Secret',
-      s4: '+10,000 req/min'
+      title: '1. Canales de Atención Directa',
+      desc: 'Conexión oficial con WhatsApp y chat en tu sitio web. Recibe y atiende a cientos de clientes al mismo tiempo sin saturarse y responde de inmediato las 24 horas del día.',
+      s1: 'Canal Oficial: WhatsApp Business & Web',
+      s2: 'Tiempo de Respuesta: < 2 segundos',
+      s3: 'Disponibilidad: 24/7/365',
+      s4: 'Capacidad: Ilimitada sin esperas'
     },
     gateway: {
-      title: '2. Gateway Criptográfico & HMAC',
-      desc: 'Capa perimetral de ciberseguridad. Valida la autenticidad matemática de cada paquete antes de permitir el ingreso a los modelos de lenguaje, neutralizando inyecciones de prompt y ataques de spoofing.',
-      s1: 'Validación X-Hub-Signature-256',
-      s2: '< 8ms (Edge Computing)',
-      s3: 'Token Sanitizer Activo',
-      s4: 'Cero Fugas de Credenciales'
+      title: '2. Filtro de Seguridad y Privacidad',
+      desc: 'Protección de nivel bancario. Filtra mensajes no deseados, bloquea fraudes y garantiza que tus accesos y contraseñas nunca queden expuestos.',
+      s1: 'Seguridad: Grado Bancario',
+      s2: 'Filtro: Antifraude y Spam Activo',
+      s3: 'Protección: Automática 24/7',
+      s4: 'Riesgo de fugas: Cero'
     },
     brain: {
-      title: '3. Núcleo Valentina AI (RAG Semántico)',
-      desc: 'Cerebro de inferencia autónomo. Embebe el mensaje entrante y busca vectores en bases de conocimiento corporativas (catálogos, leyes, tarifas). Responde con precisión clínica, jurídica o académica sin alucinaciones.',
-      s1: 'Embeddings Cosine Similarity',
-      s2: '0.8s - 1.2s',
-      s3: 'Temperature 0.2 (Determinística)',
-      s4: 'Precisión > 99.4%'
+      title: '3. Inteligencia de tu Empresa',
+      desc: 'El cerebro de Valentina aprende tus listas de precios, políticas, catálogos y preguntas frecuentes. Responde con lenguaje natural, cálido y certero, sin inventar datos.',
+      s1: 'Conocimiento: Catálogos y Políticas',
+      s2: 'Precisión de respuesta: > 99%',
+      s3: 'Tono: Humano y Empático',
+      s4: 'Cotización: Automática en segundos'
     },
     rls: {
-      title: '4. Aislamiento Multi-Tenant (PostgreSQL RLS)',
-      desc: 'Cada empresa cliente cuenta con aislamiento estricto mediante Row Level Security. Ningún agente o usuario puede acceder o mezclar historiales, tokens o expedientes de otro tenant bajo ninguna circunstancia.',
-      s1: 'PostgreSQL Row Level Security',
-      s2: '< 15ms Query RLS',
-      s3: 'AES-256 en Reposo',
-      s4: '100% Hermético'
+      title: '4. Bóveda Privada de Información',
+      desc: 'Toda la información de tu negocio, expedientes y clientes está guardada bajo una bóveda digital exclusiva. Tus datos jamás se mezclan ni se comparten con terceros.',
+      s1: 'Privacidad: 100% Exclusiva para ti',
+      s2: 'Propiedad de datos: Tu Empresa',
+      s3: 'Confidencialidad: Total Garantizada',
+      s4: 'Cifrado: Blindaje Completo'
     },
     execution: {
-      title: '5. Ejecución en Tiempo Real & Handover',
-      desc: 'Llamadas a funciones reales (Function Calling): Bloqueo de citas en Google Calendar, emisión de webhooks hacia CRMs y activación del protocolo de transferencia instantánea a operadores humanos cuando se detecta urgencia.',
-      s1: 'REST APIs & Webhooks Outbound',
-      s2: '< 250ms Sync',
-      s3: 'Protocolo Handover Humano',
-      s4: 'SLA 99.98%'
+      title: '5. Acciones Reales y Conexión con tu Equipo',
+      desc: 'Valentina no solo responde dudas: agenda citas en tu calendario de Google, registra prospectos en tu sistema y transfiere la conversación a una persona de tu equipo si el cliente lo solicita.',
+      s1: 'Agendamiento: Google Calendar en Vivo',
+      s2: 'Sistemas: Conexión con tu CRM o Base de Datos',
+      s3: 'Pase a Asesor Humano: En 1 clic',
+      s4: 'Operación: 100% Manos Libres'
     }
   };
 
@@ -552,4 +552,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // ==================== 5. PROTECCIÓN ESTRICTA DE VIDEOS ====================
+  // Deshabilitar descargas, menús contextuales y accesos directos
+  const protectVideos = () => {
+    document.querySelectorAll('video').forEach(video => {
+      video.setAttribute('controlsList', 'nodownload nofullscreen noremoteplayback');
+      video.setAttribute('disablePictureInPicture', 'true');
+      video.addEventListener('contextmenu', e => e.preventDefault());
+    });
+  };
+  protectVideos();
+  // Re-aplicar periódicamente si hay elementos dinámicos
+  setTimeout(protectVideos, 1000);
 });
