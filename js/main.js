@@ -481,9 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const tenantSimData = {
     botox: {
-      name: 'Agente Valentina (Clínica Botox)',
+      name: 'Agente Valentina (Clínica Médica Especializada)',
       user: '"Hola buenas tardes! Quisiera saber el costo del botox para patas de gallo y entrecejo por favor"',
-      reply: '¡Hola Sofía! Con gusto. Para tercio superior utilizamos toxina botulínica Allergan certificada. El paquete ronda entre $3,800 y $4,500 MXN. ¿Te gustaría agendar cita diagnóstica este viernes en Polanco o Roma Norte?',
+      reply: '¡Hola Sofía! Con gusto. Para tercio superior utilizamos toxina botulínica certificada. El paquete ronda entre $3,800 y $4,500 MXN. ¿Te gustaría agendar cita diagnóstica este viernes en Polanco o Roma Norte?',
       score: '95 / 100',
       scorePct: '95%',
       res: '91.4%',
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cost: '$0.024 MXN'
     },
     uges: {
-      name: 'Agente Valentina (Universidad UGES)',
+      name: 'Agente Valentina (Institución Universitaria)',
       user: '"Buenas tardes, me interesa la Licenciatura en Derecho Ejecutivo. ¿Tienen validez RVOE y modalidad sabatina?"',
       reply: '¡Hola! Sí, nuestra Licenciatura en Derecho cuenta con RVOE Federal oficial de la SEP. Contamos con modalidad sabatina presencial o 100% online con titulación directa. ¿Te gustaría que te envíe el plan curricular al correo?',
       score: '98 / 100',
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cost: '$0.019 MXN'
     },
     legal: {
-      name: 'Agente Valentina (Vanguardia Jurídica)',
+      name: 'Agente Valentina (Firma Legal Corporativa)',
       user: '"Requiero asesoría urgente sobre una rescisión laboral injustificada de un puesto gerencial"',
       reply: 'Estimado cliente, comprendo la urgencia. En materia laboral protegemos la confidencialidad absoluta de su caso. Para calcular su liquidación conforme al artículo 48 de la LFT, ¿cuántos años de antigüedad y salario promedio mantenía?',
       score: '92 / 100',
@@ -514,9 +514,9 @@ document.addEventListener('DOMContentLoaded', () => {
       cost: '$0.028 MXN'
     },
     busa: {
-      name: 'Agente Valentina (Talleres Busa)',
+      name: 'Agente Valentina (Centro de Servicios Automotrices)',
       user: '"Oye amigo, tienes balatas delanteras para un Mazda 3 modelo 2022 y cuánto sale el cambio?"',
-      reply: '¡Qué tal! Sí tenemos en existencia balatas de cerámica marca Brembo para Mazda 3 2022 ($1,450 MXN el par) más $450 de mano de obra con rectificado de discos. ¿Te aparto espacio en el taller para hoy a las 4:00 PM?',
+      reply: '¡Qué tal! Sí tenemos en existencia balatas de cerámica para Mazda 3 2022 ($1,450 MXN el par) más $450 de mano de obra con rectificado de discos. ¿Te aparto espacio en el taller para hoy a las 4:00 PM?',
       score: '96 / 100',
       scorePct: '96%',
       res: '93.2%',
