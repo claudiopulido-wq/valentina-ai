@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { CreativeCanvas } from 'design-agent';
+const CreativeCanvas = () => (
+  <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-4 bg-black/40">
+    <div className="w-14 h-14 rounded-2xl bg-violet-500/15 border border-violet-500/30 text-violet-400 flex items-center justify-center text-2xl">
+      🎨
+    </div>
+    <h3 className="text-base font-bold text-white">Lienzo de Diseño</h3>
+    <p className="text-xs text-slate-400 max-w-sm">
+      Utiliza Image Studio, Video Studio o Cinema Studio para la generación multimedia de alta calidad.
+    </p>
+  </div>
+);
 
 import { getUserBalance } from '../muapi';
 
