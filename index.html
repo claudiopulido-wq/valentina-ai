@@ -332,6 +332,11 @@
             <span class="hidden sm:inline">2. Ficha Técnica &amp; Simulador</span>
             <span class="sm:hidden">2. Ficha Técnica</span>
           </button>
+          <button id="tab-btn-videos" class="infographic-tab-btn">
+            <i data-lucide="video" class="w-4 h-4 text-emerald"></i>
+            <span class="hidden sm:inline">3. Videos IA (Wan 2.1)</span>
+            <span class="sm:hidden">3. Videos IA</span>
+          </button>
         </div>
       </div>
 
@@ -727,6 +732,111 @@
                 </div>
                 <p class="text-muted leading-relaxed text-[11px]">La misma base de conocimiento y agente operando en WhatsApp Cloud API y widget web simultáneamente.</p>
               </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ==================== TAB 3: VIDEOS CINEMATOGRÁFICOS GENERADOS POR IA (WAN 2.1) ==================== -->
+      <div id="infographic-tab-videos" class="hidden space-y-8 animate-fade-in-up">
+        
+        <!-- Header Barra Informativa de Videos -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-obsidian-card/90 border border-emerald/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-xl">
+          <div class="flex items-center gap-3">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald"></span>
+            </span>
+            <div>
+              <p class="text-xs font-mono font-bold text-white uppercase tracking-wider">Generación Neuronal con Wan 2.1 Open Studio</p>
+              <p class="text-xs text-muted">Animaciones y cinemáticas generadas en supercómputo GPU en la nube a 720p 60fps</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-emerald/10 border border-emerald/30 text-emerald text-xs font-mono font-bold">
+            Wan 2.1 Engine Activo
+          </span>
+        </div>
+
+        <!-- Grid de los 2 Videos Generados -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <!-- VIDEO 1: NÚCLEO CUÁNTICO -->
+          <div class="glass-card rounded-2xl border border-white/10 overflow-hidden space-y-4 p-5 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono text-cyan font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="server" class="w-4 h-4"></i> Racks &amp; Infraestructura
+                </span>
+                <span class="text-[11px] font-mono text-muted">720p • 16:9 • 3.4 MB</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Núcleo Cuántico &amp; Servidores Valentina IA</h3>
+              <p class="text-xs text-muted leading-relaxed">
+                Traveling cinematográfico dentro del centro de datos: flujo de datos de fibra óptica en tonos cian y magenta alimentando la arquitectura neuronal de Valentina.
+              </p>
+            </div>
+
+            <!-- Video Player 1 -->
+            <div class="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl">
+              <video 
+                controls 
+                loop 
+                muted 
+                playsinline 
+                preload="metadata"
+                class="w-full h-full object-cover"
+                poster="assets/branding/favicon.svg"
+              >
+                <source src="assets/videos/valentina_neural_core.mp4" type="video/mp4">
+                Tu navegador no soporta la reproducción de video MP4.
+              </video>
+            </div>
+
+            <div class="pt-2 flex items-center justify-between text-xs font-mono text-muted border-t border-white/10">
+              <span>Modelo: Wan 2.1 T2V</span>
+              <a href="assets/videos/valentina_neural_core.mp4" target="_blank" class="text-cyan hover:underline flex items-center gap-1">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir en Pestaña Nueva
+              </a>
+            </div>
+          </div>
+
+          <!-- VIDEO 2: ASISTENTE SMARTPHONE -->
+          <div class="glass-card rounded-2xl border border-white/10 overflow-hidden space-y-4 p-5 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-mono text-iris font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <i data-lucide="smartphone" class="w-4 h-4"></i> Experiencia de Usuario
+                </span>
+                <span class="text-[11px] font-mono text-muted">720p • 16:9 • 696 KB</span>
+              </div>
+              <h3 class="text-lg font-bold text-white">Interfaz Móvil &amp; Audio Reactivo Valentina</h3>
+              <p class="text-xs text-muted leading-relaxed">
+                Smartphone de titanio y cristal en estudio oscuro: pantalla OLED interactiva con visualizador de ondas de audio, burbujas de diálogo y verificación en tiempo real.
+              </p>
+            </div>
+
+            <!-- Video Player 2 -->
+            <div class="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl">
+              <video 
+                controls 
+                loop 
+                muted 
+                playsinline 
+                preload="metadata"
+                class="w-full h-full object-cover"
+                poster="assets/branding/favicon.svg"
+              >
+                <source src="assets/videos/valentina_smartphone_interface.mp4" type="video/mp4">
+                Tu navegador no soporta la reproducción de video MP4.
+              </video>
+            </div>
+
+            <div class="pt-2 flex items-center justify-between text-xs font-mono text-muted border-t border-white/10">
+              <span>Modelo: Wan 2.1 T2V</span>
+              <a href="assets/videos/valentina_smartphone_interface.mp4" target="_blank" class="text-iris hover:underline flex items-center gap-1">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Abrir en Pestaña Nueva
+              </a>
             </div>
           </div>
 
@@ -1375,7 +1485,7 @@
     </div>
   </footer>
 
-  <!-- Scripts -->
-  <script src="js/main.js"></script>
+  <!-- Scripts con Cache-Buster para Forzar Recarga Inmediata -->
+  <script src="js/main.js?v=2.2"></script>
 </body>
 </html>

@@ -65,10 +65,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (heroVideo) {
         heroVideo.style.opacity = '0.3';
         setTimeout(() => {
-          heroVideo.src = videoSrc;
-          heroVideo.play().catch(() => {});
+          try {
+            heroVideo.pause();
+            heroVideo.src = videoSrc;
+            heroVideo.load();
+            heroVideo.play().catch(() => {});
+          } catch (err) {
+            console.warn('Video switch error:', err);
+          }
           heroVideo.style.opacity = '0.9';
-        }, 300);
+        }, 150);
       }
     });
   });
@@ -372,26 +378,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // Alternar entre Pestañas de Infografía
   const tabBtnArch = document.getElementById('tab-btn-arch');
   const tabBtnSpec = document.getElementById('tab-btn-spec');
+  const tabBtnVideos = document.getElementById('tab-btn-videos');
   const tabArch = document.getElementById('infographic-tab-arch');
   const tabSpec = document.getElementById('infographic-tab-spec');
+  const tabVideos = document.getElementById('infographic-tab-videos');
 
-  if (tabBtnArch && tabBtnSpec && tabArch && tabSpec) {
-    tabBtnArch.addEventListener('click', () => {
-      tabBtnArch.classList.add('active');
-      tabBtnSpec.classList.remove('active');
-      tabArch.classList.remove('hidden');
-      tabSpec.classList.add('hidden');
-      if (window.lucide) window.lucide.createIcons();
-    });
+  const setTab = (activeBtn, activePanel) => {
+    [tabBtnArch, tabBtnSpec, tabBtnVideos].forEach(btn => btn?.classList.remove('active'));
+    [tabArch, tabSpec, tabVideos].forEach(panel => panel?.classList.add('hidden'));
 
-    tabBtnSpec.addEventListener('click', () => {
-      tabBtnSpec.classList.add('active');
-      tabBtnArch.classList.remove('active');
-      tabSpec.classList.remove('hidden');
-      tabArch.classList.add('hidden');
-      if (window.lucide) window.lucide.createIcons();
-    });
-  }
+    activeBtn?.classList.add('active');
+    activePanel?.classList.remove('hidden');
+    if (window.lucide) window.lucide.createIcons();
+  };
+
+  tabBtnArch?.addEventListener('click', () => setTab(tabBtnArch, tabArch));
+  tabBtnSpec?.addEventListener('click', () => setTab(tabBtnSpec, tabSpec));
+  tabBtnVideos?.addEventListener('click', () => setTab(tabBtnVideos, tabVideos));
 
   // Nodos Interactivos de Arquitectura (Tab 1)
   const archNodes = document.querySelectorAll('.infographic-node');
