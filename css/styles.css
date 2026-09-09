@@ -31,11 +31,39 @@ html {
   color: var(--color-slate);
   font-family: var(--font-main);
   scroll-behavior: smooth;
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: hidden !important;
   min-height: 100vh;
+  max-width: 100vw !important;
+  width: 100% !important;
+}
+
+/* Blindaje Responsivo contra Desbordamiento Lateral */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.infographic-node,
+.glass-card,
+.project-card,
+.calculator-card,
+.chat-modal {
+  max-width: 100% !important;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Background Ambient Glows */
