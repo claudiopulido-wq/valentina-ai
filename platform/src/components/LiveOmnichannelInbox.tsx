@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Conversation, ChatMessage, ChannelType } from '../types/platform';
+import React, { useState, useEffect } from 'react';
+import { Conversation, ChatMessage, ChannelType, AuthUser } from '../types/platform';
+import { getUserLevelConfig } from '../lib/permissions';
 import {
   MessageSquare,
   Send,
@@ -12,14 +13,24 @@ import {
   AlertTriangle,
   Sparkles,
   Zap,
+  ShieldAlert,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface Props {
   conversations: Conversation[];
   tenantName: string;
+  currentUser?: AuthUser | null;
 }
 
-export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialConversations, tenantName }) => {
+export const LiveOmnichannelInbox: React.FC<Props> = ({
+  conversations: initialConversations,
+  tenantName,
+  currentUser,
+}) => {
+  const isDirector = currentUser?.level === 'director';
+  const canViewFinances = currentUser?.role === 'superadmin' || isDirector;
+  const operatorName = currentUser?.fullName || 'Operador Humano';
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [selectedConvId, setSelectedConvId] = useState<string>(
     initialConversations[0]?.id || ''
@@ -28,6 +39,17 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
   const [statusFilter, setStatusFilter] = useState<'all' | 'ai_handling' | 'human_escalated'>('all');
   const [replyText, setReplyText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileTab, setMobileTab] = useState<'chats' | 'chat' | 'dossier'>('chats');
+
+  // Actualizar conversaciones si la prop cambia (ej. al recibir datos reales de Supabase)
+  useEffect(() => {
+    setConversations(initialConversations);
+    if (initialConversations.length > 0) {
+      setSelectedConvId((prev) =>
+        initialConversations.some((c) => c.id === prev) ? prev : initialConversations[0].id
+      );
+    }
+  }, [initialConversations]);
 
   // Selected conversation
   const selectedConv = conversations.find((c) => c.id === selectedConvId) || conversations[0];
@@ -60,29 +82,36 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
     );
   };
 
+  const [isSending, setIsSending] = useState(false);
+
   // Send Operator Message
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !selectedConv) return;
+    if (!replyText.trim() || !selectedConv || isSending) return;
+
+    const messageText = replyText.trim();
+    const tempMsgId = `msg-${Date.now()}`;
 
     const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id: tempMsgId,
       conversationId: selectedConv.id,
       sender: 'human_operator',
-      senderName: 'Operador Humano',
-      content: replyText,
+      senderName: operatorName,
+      content: messageText,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       tokensUsed: { prompt: 0, completion: 0, total: 0 },
       costMxn: 0,
-      status: 'sent',
+      status: 'sending',
     };
 
+    // Añadir de inmediato a la vista y pasar el control a operador humano
     setConversations((prev) =>
       prev.map((c) => {
         if (c.id === selectedConv.id) {
           return {
             ...c,
-            lastMessage: replyText,
+            status: 'human_escalated',
+            lastMessage: messageText,
             lastMessageTime: newMsg.timestamp,
             messages: [...c.messages, newMsg],
           };
@@ -92,7 +121,45 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
     );
 
     setReplyText('');
+    setIsSending(true);
+
+    try {
+      const response = await fetch('/api/channels/whatsapp/send-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          conversationId: selectedConv.id,
+          recipient: selectedConv.contact.phoneOrEmail,
+          message: messageText,
+          senderName: operatorName,
+          channel: selectedConv.channel,
+        }),
+      });
+
+      if (response.ok) {
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.id === selectedConv.id) {
+              return {
+                ...c,
+                messages: c.messages.map((m) =>
+                  m.id === tempMsgId ? { ...m, status: 'sent' as const } : m
+                ),
+              };
+            }
+            return c;
+          })
+        );
+      }
+    } catch (err) {
+      console.warn('[LiveOmnichannelInbox] Fallo en despacho:', err);
+    } finally {
+      setIsSending(false);
+    }
   };
+
 
   return (
     <div className="w-full space-y-4">
@@ -142,10 +209,43 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
         </div>
       </div>
 
-      {/* 3-Column Google Workspace Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[700px]">
+      {/* Selector de Vistas para Pantallas Móviles (< lg:) */}
+      <div className="flex lg:hidden items-center bg-white border border-[#dadce0] p-1 rounded-2xl gap-1 text-xs font-semibold shadow-xs">
+        <button
+          onClick={() => setMobileTab('chats')}
+          className={`flex-1 py-2 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'chats' ? 'bg-[#e8f0fe] text-[#0b57d0]' : 'text-[#5f6368] hover:bg-[#f8f9fa]'
+          }`}
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>Chats ({filteredConversations.length})</span>
+        </button>
+        <button
+          onClick={() => setMobileTab('chat')}
+          className={`flex-1 py-2 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'chat' ? 'bg-[#e8f0fe] text-[#0b57d0]' : 'text-[#5f6368] hover:bg-[#f8f9fa]'
+          }`}
+        >
+          <Bot className="w-3.5 h-3.5" />
+          <span>Chat Activo</span>
+        </button>
+        <button
+          onClick={() => setMobileTab('dossier')}
+          className={`flex-1 py-2 rounded-xl text-center transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            mobileTab === 'dossier' ? 'bg-[#e8f0fe] text-[#0b57d0]' : 'text-[#5f6368] hover:bg-[#f8f9fa]'
+          }`}
+        >
+          <User className="w-3.5 h-3.5" />
+          <span>Expediente</span>
+        </button>
+      </div>
+
+      {/* 3-Column Google Workspace Layout (Responsive: Tabs en móvil, 3 columnas en desktop) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[720px]">
         {/* COLUMN 1: Conversation List (4 cols) */}
-        <div className="lg:col-span-4 bg-white border border-[#dadce0] rounded-2xl flex flex-col overflow-hidden shadow-sm">
+        <div className={`lg:col-span-4 bg-white border border-[#dadce0] rounded-2xl flex-col overflow-hidden shadow-sm h-[600px] lg:h-full ${
+          mobileTab === 'chats' ? 'flex' : 'hidden lg:flex'
+        }`}>
           {/* Search bar inside list */}
           <div className="p-3 border-b border-[#dadce0] space-y-2 bg-[#f8f9fa]">
             <div className="relative">
@@ -198,10 +298,12 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
               filteredConversations.map((conv) => {
                 const isSelected = conv.id === selectedConv?.id;
 
-                return (
-                  <button
+                return <button
                     key={conv.id}
-                    onClick={() => setSelectedConvId(conv.id)}
+                    onClick={() => {
+                      setSelectedConvId(conv.id);
+                      setMobileTab('chat');
+                    }}
                     className={`w-full text-left p-3 rounded-xl transition-all flex flex-col gap-1 cursor-pointer ${
                       isSelected
                         ? 'bg-[#d3e3fd] border border-[#a8c7fa]'
@@ -218,90 +320,109 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
                         {/* Channel Badge */}
                         {conv.channel === 'whatsapp' ? (
                           <span className="px-1.5 py-0.2 rounded bg-[#e6f4ea] text-[#137333] text-[10px] font-semibold border border-[#ceead6]">
-                            WA
+                            WhatsApp
                           </span>
                         ) : (
                           <span className="px-1.5 py-0.2 rounded bg-[#e8f0fe] text-[#0b57d0] text-[10px] font-semibold border border-[#d3e3fd]">
-                            WEB
+                            Web
                           </span>
                         )}
                       </div>
 
-                      <span className="text-[11px] font-mono text-[#747775]">{conv.lastMessageTime}</span>
+                      <span className="text-[10px] text-[#747775] font-mono">{conv.lastMessageTime}</span>
                     </div>
 
-                    {/* Last message snippet */}
-                    <p className="text-xs text-[#444746] line-clamp-1 leading-snug">
+                    {/* Middle: snippet */}
+                    <p className="text-xs text-[#5f6368] line-clamp-2 leading-relaxed">
                       {conv.lastMessage}
                     </p>
 
-                    {/* Bottom row: Status & Cost badge */}
-                    <div className="flex items-center justify-between text-[11px] pt-1">
-                      {conv.status === 'ai_handling' ? (
-                        <span className="flex items-center gap-1 text-[#0b57d0] font-medium">
-                          <Bot className="w-3.5 h-3.5 text-[#0b57d0]" />
-                          <span>Valentina Activa</span>
+                    {/* Bottom row: sentiment/status tag + cost/messages */}
+                    <div className="flex items-center justify-between pt-1">
+                      {conv.status === 'human_escalated' ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#fef7e0] text-[#b06000]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#b06000] animate-pulse"></span>
+                          Requiere Humano
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[#b06000] font-medium">
-                          <AlertTriangle className="w-3.5 h-3.5 text-[#b06000]" />
-                          <span>Escalado a Humano</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#e6f4ea] text-[#137333]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#137333]"></span>
+                          Atendido por IA
                         </span>
                       )}
 
                       <span className="font-mono text-[10px] text-[#747775]">
-                        ${conv.totalCostMxn.toFixed(3)} MXN
+                        {conv.messages.length} msgs
                       </span>
                     </div>
-                  </button>
-                );
+                  </button>;
               })
             )}
           </div>
         </div>
 
         {/* COLUMN 2: Active Chat Transcript (5 cols) */}
-        <div className="lg:col-span-5 bg-white border border-[#dadce0] rounded-2xl flex flex-col overflow-hidden shadow-sm">
+        <div className={`lg:col-span-5 bg-white border border-[#dadce0] rounded-2xl flex-col justify-between overflow-hidden shadow-sm h-[600px] lg:h-full ${
+          mobileTab === 'chat' ? 'flex' : 'hidden lg:flex'
+        }`}>
           {selectedConv ? (
             <>
               {/* Chat Header */}
-              <div className="p-3.5 border-b border-[#dadce0] flex items-center justify-between bg-[#f8f9fa]">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#0b57d0] text-white flex items-center justify-center text-sm font-bold shadow-sm">
+              <div className="p-3 sm:p-3.5 border-b border-[#dadce0] flex items-center justify-between bg-[#f8f9fa] gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                  {/* Botón Volver a Chats en móvil */}
+                  <button
+                    onClick={() => setMobileTab('chats')}
+                    className="lg:hidden p-1.5 -ml-1 text-[#0b57d0] hover:bg-[#e8f0fe] rounded-lg transition cursor-pointer shrink-0"
+                    title="Volver a lista de chats"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0b57d0] text-white flex items-center justify-center text-sm font-bold shadow-sm shrink-0">
                     {selectedConv.contact.name.charAt(0)}
                   </div>
-                  <div>
+                  <div className="overflow-hidden">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-[#1f1f1f]">{selectedConv.contact.name}</h3>
-                      <span className="text-xs font-mono text-[#5f6368]">{selectedConv.contact.phoneOrEmail}</span>
+                      <h3 className="text-sm font-semibold text-[#1f1f1f] truncate">{selectedConv.contact.name}</h3>
+                      <span className="hidden sm:inline text-xs font-mono text-[#5f6368]">{selectedConv.contact.phoneOrEmail}</span>
                     </div>
-                    <p className="text-xs text-[#747775]">
+                    <p className="text-[11px] text-[#747775] truncate">
                       Canal: <span className="uppercase text-[#1f1f1f] font-semibold">{selectedConv.channel}</span> • Origen: {selectedConv.contact.city || 'México'}
                     </p>
                   </div>
                 </div>
 
-                {/* Takeover Action Button */}
-                <button
-                  onClick={() => handleToggleTakeover(selectedConv.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm cursor-pointer ${
-                    selectedConv.status === 'human_escalated'
-                      ? 'bg-[#fef7e0] text-[#b06000] border border-[#feefc3] hover:bg-[#feefc3]'
-                      : 'bg-[#0b57d0] text-white hover:bg-[#0842a0]'
-                  }`}
-                >
-                  {selectedConv.status === 'human_escalated' ? (
-                    <>
-                      <Bot className="w-3.5 h-3.5" />
-                      <span>Reactivar IA</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-3.5 h-3.5" />
-                      <span>Tomar Control</span>
-                    </>
-                  )}
-                </button>
+                {/* Takeover Action Button & Expediente button on mobile */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setMobileTab('dossier')}
+                    className="lg:hidden px-2.5 py-1 text-[11px] font-semibold text-[#0b57d0] bg-[#e8f0fe] rounded-full border border-[#d3e3fd] transition cursor-pointer"
+                  >
+                    Expediente
+                  </button>
+
+                  <button
+                    onClick={() => handleToggleTakeover(selectedConv.id)}
+                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm cursor-pointer ${
+                      selectedConv.status === 'human_escalated'
+                        ? 'bg-[#fef7e0] text-[#b06000] border border-[#feefc3] hover:bg-[#feefc3]'
+                        : 'bg-[#0b57d0] text-white hover:bg-[#0842a0]'
+                    }`}
+                  >
+                    {selectedConv.status === 'human_escalated' ? (
+                      <>
+                        <Bot className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Reactivar IA</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Tomar Control</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Chat Messages Feed */}
@@ -348,8 +469,8 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
                       >
                         <p className="whitespace-pre-line">{msg.content}</p>
 
-                        {/* Token and Cost metadata for AI messages */}
-                        {isAi && msg.tokensUsed.total > 0 && (
+                        {/* Token and Cost metadata for AI messages - Solo visible para roles con permiso financiero */}
+                        {isAi && msg.tokensUsed.total > 0 && canViewFinances && (
                           <div className="mt-2 pt-1.5 border-t border-[#d3e3fd] flex items-center justify-between text-[10px] font-mono text-[#0b57d0]">
                             <span>Tokens: {msg.tokensUsed.total}</span>
                             <span className="text-[#137333] font-semibold">${msg.costMxn.toFixed(4)} MXN</span>
@@ -360,6 +481,19 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
                   );
                 })}
               </div>
+
+              {/* Banner informativo de modo supervisión para directores */}
+              {isDirector && (
+                <div className="px-3.5 py-2 bg-[#f3e8fd] border-t border-[#d8b4fe] text-xs text-[#7a22ce] flex items-center justify-between">
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <span>👑 Modo Supervisión Ejecutiva</span>
+                    <span className="font-normal text-[11px] text-[#9333ea]">(Supervisión de calidad de servicio)</span>
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-white text-[#7a22ce] border border-[#d8b4fe] font-mono">
+                    Lectura & Auditoría
+                  </span>
+                </div>
+              )}
 
               {/* Message Input & Dispatch */}
               <form onSubmit={handleSendMessage} className="p-3 border-t border-[#dadce0] bg-[#f8f9fa] flex items-center gap-2">
@@ -377,11 +511,13 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
 
                 <button
                   type="submit"
-                  disabled={!replyText.trim()}
-                  className="p-2.5 rounded-xl bg-[#0b57d0] hover:bg-[#0842a0] text-white disabled:opacity-40 transition cursor-pointer shadow-sm"
+                  disabled={!replyText.trim() || isSending}
+                  className="p-2.5 rounded-xl bg-[#0b57d0] hover:bg-[#0842a0] text-white disabled:opacity-40 transition cursor-pointer shadow-sm flex items-center justify-center"
+                  title="Enviar mensaje vía WhatsApp Cloud API"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className={`w-4 h-4 ${isSending ? 'animate-pulse' : ''}`} />
                 </button>
+
               </form>
             </>
           ) : (
@@ -390,9 +526,23 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
         </div>
 
         {/* COLUMN 3: Lead Dossier & Telemetry Breakdown (3 cols) */}
-        <div className="lg:col-span-3 bg-white border border-[#dadce0] rounded-2xl p-4 flex flex-col justify-between overflow-y-auto space-y-4 shadow-sm">
+        <div className={`lg:col-span-3 bg-white border border-[#dadce0] rounded-2xl p-4 flex-col justify-between overflow-y-auto space-y-4 shadow-sm h-[600px] lg:h-full ${
+          mobileTab === 'dossier' ? 'flex' : 'hidden lg:flex'
+        }`}>
           {selectedConv ? (
             <>
+              {/* Botón Volver al Chat en móvil */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#dadce0] lg:hidden">
+                <button
+                  onClick={() => setMobileTab('chat')}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#0b57d0] hover:bg-[#e8f0fe] px-2.5 py-1 rounded-lg transition cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Volver al chat</span>
+                </button>
+                <span className="text-[10px] font-mono text-[#5f6368]">ID #{selectedConv.id}</span>
+              </div>
+
               <div className="space-y-4">
                 {/* Contact Dossier Header */}
                 <div>
@@ -448,17 +598,24 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({ conversations: initialCo
 
                 {/* Telemetry Breakdown for this conversation */}
                 <div className="space-y-2 pt-2 border-t border-[#dadce0]">
-                  <span className="text-[11px] font-semibold uppercase text-[#5f6368]">Telemetría de la Sesión</span>
+                  <span className="text-[11px] font-semibold uppercase text-[#5f6368]">Métricas del Chat</span>
                   
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#dadce0]">
-                      <span className="text-[10px] text-[#5f6368]">Tokens Totales</span>
-                      <p className="font-mono font-bold text-[#1f1f1f]">{selectedConv.totalTokens}</p>
+                      <span className="text-[10px] text-[#5f6368]">Mensajes</span>
+                      <p className="font-mono font-bold text-[#1f1f1f]">{selectedConv.messages.length} msgs</p>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#dadce0]">
-                      <span className="text-[10px] text-[#5f6368]">Costo de la Charla</span>
-                      <p className="font-mono font-bold text-[#137333]">${selectedConv.totalCostMxn.toFixed(4)} MXN</p>
-                    </div>
+                    {canViewFinances ? (
+                      <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#dadce0]">
+                        <span className="text-[10px] text-[#5f6368]">Costo de la Charla</span>
+                        <p className="font-mono font-bold text-[#137333]">${selectedConv.totalCostMxn.toFixed(4)} MXN</p>
+                      </div>
+                    ) : (
+                      <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#dadce0]">
+                        <span className="text-[10px] text-[#5f6368]">Canal</span>
+                        <p className="font-mono font-bold text-[#0b57d0] uppercase">{selectedConv.channel}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

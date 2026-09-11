@@ -24,16 +24,28 @@ interface AuthModalProps {
   users: AuthUser[];
   tenants: Tenant[];
   onLoginSuccess: (user: AuthUser, tenant: Tenant | null) => void;
+  onUpdateUserPassword?: (userId: string, newPassword: string) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ users, tenants, onLoginSuccess }) => {
-  const [view, setView] = useState<'login' | 'forgot_password'>('login');
+export const AuthModal: React.FC<AuthModalProps> = ({
+  users,
+  tenants,
+  onLoginSuccess,
+  onUpdateUserPassword,
+}) => {
+  const [view, setView] = useState<'login' | 'forgot_password' | 'force_password_change'>('login');
   
   // Login fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+
+  // Forzar cambio de contraseña
+  const [pendingAuthUser, setPendingAuthUser] = useState<{ user: AuthUser; tenant: Tenant | null } | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   
   // Security & Captcha state
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
@@ -116,7 +128,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ users, tenants, onLoginSuc
       }
     }
 
-    // 1. Intentar autenticación real con Supabase
+    // 1. Autenticación oficial y segura con Supabase Auth
     if (isSupabaseConfigured) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -133,81 +145,103 @@ export const AuthModal: React.FC<AuthModalProps> = ({ users, tenants, onLoginSuc
             status: 'active',
             createdAt: new Date().toISOString().split('T')[0],
             tenantId: (data.user.user_metadata?.tenant_id as string) || tenants[0]?.id || '',
-            password: password,
           };
 
           const matchedTenant = matchedUser.tenantId
             ? tenants.find((t) => t.id === matchedUser.tenantId) || null
             : tenants[0] || null;
 
+          if (matchedUser.mustChangePassword) {
+            setPendingAuthUser({ user: matchedUser, tenant: matchedTenant });
+            setView('force_password_change');
+            setLoading(false);
+            return;
+          }
+
           setLoading(false);
           onLoginSuccess(matchedUser, matchedTenant);
           return;
         }
 
-        // Si el usuario está registrado en Supabase Auth o en el directorio semilla
-        if (error && (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed'))) {
-          const seedUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
-          const isSeedPassMatch = seedUser && (
-            seedUser.password === password ||
-            (cleanEmail === 'contacto@valentina-ai.mx' && (password === 'Santiago2021,' || password === 'Santiago2021'))
-          );
+        if (error) {
+          const nextAttempts = failedAttempts + 1;
+          setFailedAttempts(nextAttempts);
 
-          if (seedUser && isSeedPassMatch) {
-            setStatusNote('Validando credenciales en Supabase...');
-            const resolvedTenant = seedUser.tenantId
-              ? tenants.find((t) => t.id === seedUser.tenantId) || null
-              : null;
-
-            setLoading(false);
-            onLoginSuccess(seedUser, resolvedTenant);
-            return;
+          if (nextAttempts >= 5) {
+            setLockoutTime(Date.now() + 60000); // 1 minuto de bloqueo
+            setErrorMsg('Has alcanzado el límite de 5 intentos fallidos. Acceso bloqueado temporalmente por 60 segundos.');
+          } else {
+            setErrorMsg(`Credenciales no válidas. Te quedan ${5 - nextAttempts} intentos antes del bloqueo.`);
           }
+          setIsCaptchaVerified(false);
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.warn('Supabase auth fallback:', err);
+      } catch (err: any) {
+        console.error('Error durante autenticación Supabase:', err);
+        setErrorMsg('Error de comunicación con el servicio de autenticación. Intenta nuevamente.');
+        setLoading(false);
+        return;
       }
-    }
-
-    // 2. Validación de directorio local
-    const foundUser = users.find(
-      (u) => u.email.toLowerCase().trim() === cleanEmail
-    );
-
-    const isMatch = foundUser && (
-      foundUser.password === password || 
-      (cleanEmail === 'contacto@valentina-ai.mx' && (password === 'Santiago2021,' || password === 'Santiago2021'))
-    );
-
-    if (!foundUser || !isMatch) {
-      const nextAttempts = failedAttempts + 1;
-      setFailedAttempts(nextAttempts);
-
-      if (nextAttempts >= 5) {
-        setLockoutTime(Date.now() + 60000); // 1 minuto de bloqueo
-        setErrorMsg('Has alcanzado el límite de 5 intentos fallidos. Bloqueado temporalmente por 60 segundos.');
-      } else {
-        setErrorMsg(`Credenciales incorrectas. Te quedan ${5 - nextAttempts} intentos antes del bloqueo.`);
-      }
-      setIsCaptchaVerified(false); // Requiere re-verificar tras un fallo
-      setLoading(false);
-      return;
-    }
-
-    if (foundUser.status === 'suspended') {
-      setErrorMsg(
-        'El acceso de tu empresa se encuentra temporalmente pausado por administración. Contacta a soporte.'
+    } else {
+      // Si Supabase no estuviera configurado en entorno local sin red
+      const foundUser = users.find(
+        (u) => u.email.toLowerCase().trim() === cleanEmail
       );
+
+      if (!foundUser) {
+        setErrorMsg('Usuario no registrado en el directorio.');
+        setLoading(false);
+        return;
+      }
+
+      const userTenant = foundUser.tenantId
+        ? tenants.find((t) => t.id === foundUser.tenantId) || null
+        : null;
+
       setLoading(false);
+      onLoginSuccess(foundUser, userTenant);
+      return;
+    }
+  };
+
+  // 3. Flujo de actualización forzada de contraseña (Primer Login)
+  const handleForcePasswordChangeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    if (!pendingAuthUser) return;
+
+    if (newPassword.length < 8) {
+      setErrorMsg('Por políticas de ciberseguridad, la nueva contraseña debe contener al menos 8 caracteres.');
       return;
     }
 
-    const userTenant = foundUser.tenantId
-      ? tenants.find((t) => t.id === foundUser.tenantId) || null
-      : null;
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('Las contraseñas no coinciden. Por favor asegúrate de escribir la misma contraseña en ambos campos.');
+      return;
+    }
+
+    if (pendingAuthUser.user.password && newPassword === pendingAuthUser.user.password) {
+      setErrorMsg('La nueva contraseña debe ser distinta a la contraseña provisional asignada previamente.');
+      return;
+    }
+
+    const updatedUser: AuthUser = {
+      ...pendingAuthUser.user,
+      mustChangePassword: false,
+    };
+
+    if (onUpdateUserPassword) {
+      onUpdateUserPassword(updatedUser.id, newPassword);
+    }
+
+    if (isSupabaseConfigured) {
+      supabase.auth.updateUser({ password: newPassword }).catch((err) => console.warn('Supabase update pass error:', err));
+    }
 
     setLoading(false);
-    onLoginSuccess(foundUser, userTenant);
+    onLoginSuccess(updatedUser, pendingAuthUser.tenant);
   };
 
   // 4. Proceso de restablecimiento de contraseña
@@ -234,9 +268,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ users, tenants, onLoginSuc
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#f0f4f9]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-[#f0f4f9] overflow-y-auto">
       {/* Google Clean White Card */}
-      <div className="relative w-full max-w-md bg-white border border-[#dadce0] rounded-2xl p-8 shadow-sm">
+      <div className="relative w-full max-w-md bg-white border border-[#dadce0] rounded-2xl p-5 sm:p-8 shadow-sm my-auto">
         {/* Logo & Header */}
         <div className="flex flex-col items-center text-center pb-5 border-b border-[#f1f3f4]">
           <div className="mb-2">
@@ -244,12 +278,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ users, tenants, onLoginSuc
           </div>
 
           <h1 className="text-xl font-semibold text-[#1f1f1f] tracking-tight">
-            {view === 'login' ? 'Iniciar sesión' : 'Recuperar contraseña'}
+            {view === 'login'
+              ? 'Iniciar sesión'
+              : view === 'forgot_password'
+              ? 'Recuperar contraseña'
+              : 'Actualización Obligatoria de Seguridad'}
           </h1>
           <p className="text-xs text-[#5f6368] mt-1">
             {view === 'login'
               ? 'Consola Empresarial de Valentina AI'
-              : 'Ingresa tu correo para recibir un enlace temporal'}
+              : view === 'forgot_password'
+              ? 'Ingresa tu correo para recibir un enlace temporal'
+              : `Hola, ${pendingAuthUser?.user.fullName || 'Usuario'}. Por seguridad debes definir tu contraseña personal.`}
           </p>
 
           {/* Badge de conexión a Supabase Real */}
@@ -406,7 +446,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ users, tenants, onLoginSuc
               )}
             </button>
           </form>
-        ) : (
+        ) : view === 'forgot_password' ? (
           /* VISTA 2: FORMULARIO DE RESTABLECIMIENTO DE CONTRASEÑA */
           <div className="pt-4 space-y-4">
             {resetSuccess ? (
@@ -488,6 +528,105 @@ export const AuthModal: React.FC<AuthModalProps> = ({ users, tenants, onLoginSuc
                 </button>
               </form>
             )}
+          </div>
+        ) : (
+          /* VISTA 3: ACTUALIZACIÓN OBLIGATORIA DE CONTRASEÑA (PRIMER LOGIN / POST-RESET) */
+          <div className="pt-4 space-y-4">
+            <div className="p-3.5 rounded-xl bg-[#fef7e0] border border-[#feefc3] text-[#b06000] text-xs flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <strong className="block font-semibold">Primer Acceso: Contraseña Provisional Detectada</strong>
+                <p className="text-[11px] text-[#843800] leading-relaxed">
+                  Por políticas de ciberseguridad, debes reemplazar la clave temporal de tu ficha de provisión por una contraseña personal definitiva de uso confidencial.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleForcePasswordChangeSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#444746] mb-1.5 uppercase tracking-wide">
+                  Nueva Contraseña Personal
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#747775]" />
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 8 caracteres seguros"
+                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-[#dadce0] rounded-lg text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] focus:ring-2 focus:ring-[#d3e3fd]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#747775] hover:text-[#1f1f1f] cursor-pointer"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#444746] mb-1.5 uppercase tracking-wide">
+                  Confirmar Nueva Contraseña
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#747775]" />
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Escribe la misma contraseña"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#dadce0] rounded-lg text-sm text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:border-[#0b57d0] focus:ring-2 focus:ring-[#d3e3fd]"
+                  />
+                </div>
+              </div>
+
+              {/* Indicadores de fortaleza de contraseña */}
+              <div className="p-3 rounded-xl bg-[#f8f9fa] border border-[#dadce0] space-y-1.5 text-[11px]">
+                <span className="font-semibold text-[#5f6368] block">Criterios de seguridad requeridos:</span>
+                <div className="flex items-center gap-2">
+                  <span className={newPassword.length >= 8 ? 'text-[#137333] font-bold' : 'text-[#747775]'}>
+                    {newPassword.length >= 8 ? '✓' : '○'} Mínimo 8 caracteres
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={newPassword && newPassword === confirmPassword ? 'text-[#137333] font-bold' : 'text-[#747775]'}>
+                    {newPassword && newPassword === confirmPassword ? '✓' : '○'} Ambas contraseñas coinciden
+                  </span>
+                </div>
+              </div>
+
+              {errorMsg && (
+                <div className="p-3.5 rounded-lg bg-[#fce8e6] border border-[#f5c2c7] flex items-start gap-2.5 text-xs text-[#c5221f]">
+                  <AlertTriangle className="w-4 h-4 text-[#c5221f] shrink-0 mt-0.5" />
+                  <p className="leading-relaxed font-medium">{errorMsg}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-2.5 px-4 rounded-lg font-semibold text-sm bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer transition"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Guardar Contraseña &amp; Acceder a la Consola</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setView('login');
+                  setPendingAuthUser(null);
+                  setErrorMsg(null);
+                }}
+                className="w-full py-2 text-xs font-semibold text-[#5f6368] hover:text-[#1f1f1f] flex items-center justify-center gap-1 cursor-pointer transition"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Regresar al inicio de sesión</span>
+              </button>
+            </form>
           </div>
         )}
 

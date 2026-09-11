@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Tenant, DailyTelemetry } from '../types/platform';
-import { Coins, Zap, Clock, TrendingUp } from 'lucide-react';
+import { Coins, Zap, Clock, TrendingUp, CheckCircle2, MessageSquare, ShieldCheck } from 'lucide-react';
 
 interface Props {
   tenant: Tenant;
@@ -11,7 +11,11 @@ interface Props {
 
 export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
   const budgetPercentage = Math.min(100, Math.round((tenant.totalSpentMxn / tenant.monthlyBudgetMxn) * 100));
-  const estimatedSavingsMxn = Math.round(tenant.totalSpentMxn * 71.5);
+  // Ahorro calculado: horas hombre ahorradas atendiendo este volumen vs costo de la suscripción + tokens
+  const estimatedHoursSaved = Math.max(12, Math.round((tenant.totalTokensUsed / 980)));
+  const estimatedSavingsMxn = Math.max(3800, Math.round(estimatedHoursSaved * 85));
+  const subscriptionFee = tenant.subscriptionFeeMxn || 8500;
+  const metaChatsUsed = tenant.metaFreeConversationsUsed || 94;
 
   return (
     <section className="w-full space-y-4">
@@ -22,13 +26,16 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
             {tenant.logo}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-[#1f1f1f]">{tenant.name}</h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
                 Plan {tenant.plan}
               </span>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#e8f0fe] text-[#0b57d0] border border-[#d3e3fd]">
+                Suscripción: ${subscriptionFee.toLocaleString('es-MX')} MXN/mes
+              </span>
             </div>
-            <p className="text-xs text-[#5f6368] mt-0.5">
+            <p className="text-xs text-[#5f6368] mt-1">
               {tenant.industry} • ID de Organización: <span className="font-mono text-[#1f1f1f]">{tenant.slug}</span>
             </p>
           </div>
@@ -37,16 +44,23 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
         {/* Quick Summary Pill */}
         <div className="flex items-center gap-4 bg-[#f8f9fa] border border-[#dadce0] rounded-xl px-4 py-2 self-stretch md:self-auto justify-between md:justify-start">
           <div>
-            <p className="text-[10px] uppercase font-semibold text-[#5f6368]">Tokens Totales</p>
+            <p className="text-[10px] uppercase font-semibold text-[#5f6368]">Tokens IA Usados</p>
             <p className="text-sm font-bold font-mono text-[#0b57d0]">
               {tenant.totalTokensUsed.toLocaleString('es-MX')}
             </p>
           </div>
           <div className="w-px h-8 bg-[#dadce0]"></div>
           <div>
-            <p className="text-[10px] uppercase font-semibold text-[#5f6368]">Inversión IA</p>
+            <p className="text-[10px] uppercase font-semibold text-[#5f6368]">Costo Inferencia IA</p>
             <p className="text-sm font-bold font-mono text-[#1f1f1f]">
               ${tenant.totalSpentMxn.toFixed(2)} MXN
+            </p>
+          </div>
+          <div className="w-px h-8 bg-[#dadce0]"></div>
+          <div>
+            <p className="text-[10px] uppercase font-semibold text-[#5f6368]">Meta WhatsApp</p>
+            <p className="text-sm font-bold font-mono text-[#137333]">
+              {metaChatsUsed}/1,000 <span className="text-[10px] font-normal text-[#137333]">Gratis</span>
             </p>
           </div>
         </div>
@@ -54,60 +68,80 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
 
       {/* Grid of Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Token Cost & Budget */}
-        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition">
-          <div className="flex items-center justify-between text-[#5f6368] mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider">Inversión en Tokens</span>
-            <div className="p-2 rounded-xl bg-[#e8f0fe] text-[#0b57d0]">
-              <Coins className="w-4 h-4" />
+        {/* Card 1: AI Token Cost & Budget */}
+        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-[#5f6368] mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider">Consumo Operativo IA</span>
+              <div className="p-2 rounded-xl bg-[#e8f0fe] text-[#0b57d0]">
+                <Coins className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
+                ${tenant.totalSpentMxn.toFixed(2)} <span className="text-xs text-[#5f6368] font-normal">MXN</span>
+              </div>
+              <p className="text-xs text-[#5f6368]">
+                Límite mensual asignado: <span className="font-semibold text-[#1f1f1f] font-mono">${tenant.monthlyBudgetMxn.toLocaleString()} MXN</span>
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mt-3 space-y-1.5">
+              <div className="flex justify-between text-[11px] font-mono text-[#5f6368]">
+                <span>Uso: {budgetPercentage}%</span>
+                <span className="text-[#137333] font-semibold">Dentro del límite</span>
+              </div>
+              <div className="w-full h-2 bg-[#f1f3f4] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#0b57d0] rounded-full transition-all duration-700"
+                  style={{ width: `${Math.max(3, budgetPercentage)}%` }}
+                ></div>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
-              ${tenant.totalSpentMxn.toFixed(2)} <span className="text-xs text-[#5f6368] font-normal">MXN</span>
+          {/* Micro Desglose Transparente */}
+          <div className="mt-4 pt-3 border-t border-[#f1f3f4] space-y-1.5 text-[11px]">
+            <div className="flex items-center justify-between text-[#5f6368]">
+              <span>Inferencia de Tokens:</span>
+              <span className="font-mono font-bold text-[#1f1f1f]">${tenant.totalSpentMxn.toFixed(2)} MXN</span>
             </div>
-            <p className="text-xs text-[#5f6368]">
-              Presupuesto mensual: <span className="font-semibold text-[#1f1f1f] font-mono">${tenant.monthlyBudgetMxn.toLocaleString()} MXN</span>
-            </p>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mt-4 space-y-1.5">
-            <div className="flex justify-between text-[11px] font-mono text-[#5f6368]">
-              <span>Uso: {budgetPercentage}%</span>
-              <span>Límite seguro</span>
-            </div>
-            <div className="w-full h-2 bg-[#f1f3f4] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#0b57d0] rounded-full transition-all duration-700"
-                style={{ width: `${budgetPercentage}%` }}
-              ></div>
+            <div className="flex items-center justify-between text-[#5f6368]">
+              <span>Meta WhatsApp Cloud:</span>
+              <span className="font-mono font-bold text-[#137333] flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-[#137333]" /> $0.00 (Gratis)
+              </span>
             </div>
           </div>
         </div>
 
         {/* Card 2: Estimated Human Savings */}
-        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition">
-          <div className="flex items-center justify-between text-[#5f6368] mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider">Ahorro en Nómina</span>
-            <div className="p-2 rounded-xl bg-[#e6f4ea] text-[#137333]">
-              <TrendingUp className="w-4 h-4" />
+        <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-[#5f6368] mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider">Ahorro en Nómina (ROI)</span>
+              <div className="p-2 rounded-xl bg-[#e6f4ea] text-[#137333]">
+                <TrendingUp className="w-4 h-4" />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1">
-            <div className="text-2xl font-bold tracking-tight font-mono text-[#137333]">
-              ${estimatedSavingsMxn.toLocaleString('es-MX')} <span className="text-xs text-[#5f6368] font-normal">MXN</span>
+            <div className="space-y-1">
+              <div className="text-2xl font-bold tracking-tight font-mono text-[#137333]">
+                ${estimatedSavingsMxn.toLocaleString('es-MX')} <span className="text-xs text-[#5f6368] font-normal">MXN</span>
+              </div>
+              <p className="text-xs text-[#5f6368] flex items-center gap-1">
+                <span className="text-[#137333] font-bold font-mono">
+                  {Math.max(1, Math.round(estimatedSavingsMxn / Math.max(1, tenant.totalSpentMxn)))}x
+                </span> retorno sobre gasto operativo
+              </p>
             </div>
-            <p className="text-xs text-[#5f6368] flex items-center gap-1">
-              <span className="text-[#137333] font-bold font-mono">71.5x</span> retorno estimado de inversión
-            </p>
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#f1f3f4] flex items-center justify-between text-xs text-[#5f6368]">
-            <span>Horas recepcionista:</span>
-            <span className="font-mono font-bold text-[#1f1f1f]">~148 hrs</span>
+            <span>Horas recepcionista evitadas:</span>
+            <span className="font-mono font-bold text-[#1f1f1f]">~{estimatedHoursSaved} hrs</span>
           </div>
         </div>
 

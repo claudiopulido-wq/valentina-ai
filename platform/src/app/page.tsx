@@ -1,14 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MOCK_TENANTS, MOCK_CONVERSATIONS, MOCK_TELEMETRY, MOCK_USERS } from '../data/mockData';
-import { Tenant, AuthUser } from '../types/platform';
+import { Tenant, AuthUser, Conversation, DailyTelemetry } from '../types/platform';
+import {
+  fetchUgesLiveConversations,
+  fetchUgesLiveKnowledgeBase,
+  fetchUgesLiveTelemetry,
+  fetchUgesStatsSummary,
+  UgesKnowledgeDoc,
+} from '../lib/ugesDataService';
+import {
+  ClientTab,
+  getAllowedTabsForUser,
+  getDefaultTabForUser,
+  getUserLevelConfig,
+} from '../lib/permissions';
 import { GoogleSidebar } from '../components/GoogleSidebar';
 import { AppleMetricsWidgets } from '../components/AppleMetricsWidgets';
 import { LiveOmnichannelInbox } from '../components/LiveOmnichannelInbox';
 import { ChannelHardwareCard } from '../components/ChannelHardwareCard';
 import { SuperAdminView } from '../components/SuperAdminView';
 import { AuthModal } from '../components/AuthModal';
+import { KnowledgeBaseManager } from '../components/KnowledgeBaseManager';
 import {
   MessageSquare,
   BarChart3,
@@ -26,6 +40,11 @@ import {
   ArrowLeft,
   X,
   ExternalLink,
+  RefreshCw,
+  Database,
+  Sparkles,
+  Filter,
+  Menu,
 } from 'lucide-react';
 
 export default function PlatformHome() {
@@ -36,10 +55,102 @@ export default function PlatformHome() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(MOCK_USERS[0]); // Inicia con SuperAdmin para desarrollo
   const [currentTenant, setCurrentTenant] = useState<Tenant>(MOCK_TENANTS[0]); // UGES
   const [activeView, setActiveView] = useState<'client' | 'admin'>('admin');
-  const [clientTab, setClientTab] = useState<'inbox' | 'analytics' | 'channels' | 'knowledge'>('inbox');
+  const [clientTab, setClientTab] = useState<ClientTab>('inbox');
   const [topSearch, setTopSearch] = useState('');
   const [showTenantSwitcherModal, setShowTenantSwitcherModal] = useState(false);
   const [tenantSearchQuery, setTenantSearchQuery] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Estados de datos reales en vivo desde Supabase (Universidad UGES - Modo Read-Only)
+  const [ugesConversations, setUgesConversations] = useState<Conversation[] | null>(null);
+  const [ugesKnowledgeDocs, setUgesKnowledgeDocs] = useState<UgesKnowledgeDoc[] | null>(null);
+  const [ugesTelemetry, setUgesTelemetry] = useState<DailyTelemetry[] | null>(null);
+  const [isSyncingUges, setIsSyncingUges] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [kbCategoryFilter, setKbCategoryFilter] = useState<string>('all');
+  const [kbSearch, setKbSearch] = useState<string>('');
+
+  // Carga asíncrona de datos de la base de datos real de UGES (Solo Lectura)
+  const loadUgesRealData = useCallback(async () => {
+    setIsSyncingUges(true);
+    try {
+      const [liveConvs, liveKb, liveTelem, liveSummary] = await Promise.all([
+        fetchUgesLiveConversations(),
+        fetchUgesLiveKnowledgeBase(),
+        fetchUgesLiveTelemetry(),
+        fetchUgesStatsSummary(),
+      ]);
+
+      if (liveConvs.length > 0) {
+        setUgesConversations(liveConvs);
+      }
+      if (liveKb.length > 0) {
+        setUgesKnowledgeDocs(liveKb);
+      }
+      if (liveTelem.length > 0) {
+        setUgesTelemetry(liveTelem);
+      }
+
+      // Actualizar inquilino UGES con los datos computados de la base de datos
+      setTenants((prev) =>
+        prev.map((t) => {
+          if (t.id === 'tenant-uges') {
+            return {
+              ...t,
+              totalSpentMxn: liveSummary.totalSpentMxn,
+              totalTokensUsed: liveSummary.totalTokensUsed,
+              metaFreeConversationsUsed: liveSummary.metaFreeConversationsUsed,
+              metaExcessCostMxn: liveSummary.metaExcessCostMxn,
+              channels: t.channels.map((ch) =>
+                ch.type === 'whatsapp'
+                  ? {
+                      ...ch,
+                      lastPing: `En vivo · ${liveSummary.lastActivityTime}`,
+                      dailyMessagesCount: liveSummary.totalMessages,
+                    }
+                  : ch
+              ),
+            };
+          }
+          return t;
+        })
+      );
+
+      setCurrentTenant((prev) => {
+        if (prev.id === 'tenant-uges') {
+          return {
+            ...prev,
+            totalSpentMxn: liveSummary.totalSpentMxn,
+            totalTokensUsed: liveSummary.totalTokensUsed,
+            metaFreeConversationsUsed: liveSummary.metaFreeConversationsUsed,
+            metaExcessCostMxn: liveSummary.metaExcessCostMxn,
+            channels: prev.channels.map((ch) =>
+              ch.type === 'whatsapp'
+                ? {
+                    ...ch,
+                    lastPing: `En vivo · ${liveSummary.lastActivityTime}`,
+                    dailyMessagesCount: liveSummary.totalMessages,
+                  }
+                : ch
+            ),
+          };
+        }
+        return prev;
+      });
+
+      setLastSyncTime(
+        new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+      );
+    } catch (err) {
+      console.error('[UGES Real Data Sync] Error:', err);
+    } finally {
+      setIsSyncingUges(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUgesRealData();
+  }, [loadUgesRealData]);
 
   const handleLoginSuccess = (user: AuthUser, tenant: Tenant | null) => {
     setCurrentUser(user);
@@ -51,12 +162,8 @@ export default function PlatformHome() {
     } else if (tenant) {
       setCurrentTenant(tenant);
       setActiveView('client');
-      setClientTab('inbox');
+      setClientTab(getDefaultTabForUser(user));
     }
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
   };
 
   const handleCreateTenantAndUser = (newTenant: Tenant, newUser: AuthUser) => {
@@ -78,7 +185,53 @@ export default function PlatformHome() {
     );
   };
 
-  // Si no hay sesión iniciada, mostrar el portal de login estilo Google
+  const handleUpdateUserPassword = (userId: string, newPassword: string) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          return {
+            ...u,
+            password: newPassword,
+            mustChangePassword: false,
+          };
+        }
+        return u;
+      })
+    );
+  };
+
+  const handleResetUserPassword = (userId: string, newPassword: string) => {
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === userId) {
+          return {
+            ...u,
+            password: newPassword,
+            mustChangePassword: true,
+          };
+        }
+        return u;
+      })
+    );
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setMobileMenuOpen(false);
+  };
+
+  // Permisos estrictos por nivel organizacional (calculados siempre para mantener orden de hooks)
+  const allowedTabs = currentUser ? getAllowedTabsForUser(currentUser) : [];
+  const userLevelConfig = getUserLevelConfig(currentUser);
+
+  // Redirigir de inmediato si la pestaña activa no está autorizada para este usuario
+  useEffect(() => {
+    if (currentUser && !allowedTabs.includes(clientTab)) {
+      setClientTab(getDefaultTabForUser(currentUser));
+    }
+  }, [currentUser, allowedTabs, clientTab]);
+
+  // Si no hay sesión iniciada, mostrar el portal de login estilo Google (después de todos los hooks)
   if (!currentUser) {
     return (
       <main className="min-h-screen relative flex items-center justify-center bg-[#f0f4f9] p-4">
@@ -86,6 +239,7 @@ export default function PlatformHome() {
           users={users}
           tenants={tenants}
           onLoginSuccess={handleLoginSuccess}
+          onUpdateUserPassword={handleUpdateUserPassword}
         />
       </main>
     );
@@ -97,7 +251,31 @@ export default function PlatformHome() {
     ? tenants
     : tenants.filter((t) => t.id === currentUser.tenantId);
 
-  const currentConversations = MOCK_CONVERSATIONS[currentTenant.id] || [];
+  const currentConversations =
+    currentTenant.id === 'tenant-uges' && ugesConversations && ugesConversations.length > 0
+      ? ugesConversations
+      : MOCK_CONVERSATIONS[currentTenant.id] || [];
+
+  const currentTelemetry =
+    currentTenant.id === 'tenant-uges' && ugesTelemetry && ugesTelemetry.length > 0
+      ? ugesTelemetry
+      : MOCK_TELEMETRY;
+
+  // Filtrar documentos de base de conocimiento para UGES
+  const filteredKnowledgeDocs = (ugesKnowledgeDocs || []).filter((doc) => {
+    const matchesCategory =
+      kbCategoryFilter === 'all' ||
+      doc.categoria.toLowerCase() === kbCategoryFilter.toLowerCase();
+    const matchesSearch =
+      !kbSearch ||
+      doc.titulo.toLowerCase().includes(kbSearch.toLowerCase()) ||
+      doc.contenido.toLowerCase().includes(kbSearch.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const uniqueKbCategories = Array.from(
+    new Set((ugesKnowledgeDocs || []).map((d) => d.categoria).filter(Boolean))
+  );
 
   // Filtrar empresas para el modal de cambio interno (para soportar 100+ empresas)
   const modalFilteredTenants = visibleTenants.filter((t) => {
@@ -108,7 +286,7 @@ export default function PlatformHome() {
 
   return (
     <div className="min-h-screen flex bg-[#f8f9fa] text-[#1f1f1f]">
-      {/* Menú Lateral Izquierdo Estilo Google (Limpio, sin dropdown saturado) */}
+      {/* Menú Lateral Izquierdo Estilo Google (Soporta drawer móvil y static desktop) */}
       <GoogleSidebar
         tenants={visibleTenants}
         currentTenant={currentTenant}
@@ -120,23 +298,34 @@ export default function PlatformHome() {
         currentUser={currentUser}
         onLogout={handleLogout}
         unreadCount={currentConversations.length}
+        mobileOpen={mobileMenuOpen}
+        onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
       {/* Área de Contenido Principal al Frente */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header Bar Estilo Google Play Console / Google Cloud */}
-        <header className="h-16 px-6 bg-white border-b border-[#dadce0] flex items-center justify-between sticky top-0 z-20">
-          {/* Breadcrumb / Selector de Empresa Interno */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="font-semibold text-[#5f6368]">Consola</span>
-            <ChevronRight className="w-3.5 h-3.5 text-[#747775]" />
+        <header className="h-16 px-4 sm:px-6 bg-white border-b border-[#dadce0] flex items-center justify-between sticky top-0 z-20">
+          {/* Lado Izquierdo: Botón Hamburger Móvil + Breadcrumb */}
+          <div className="flex items-center gap-2 text-xs overflow-hidden">
+            {/* Botón Hamburger visible solo en móviles (< lg:) */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 -ml-1 rounded-lg text-[#5f6368] hover:bg-[#f1f3f4] hover:text-[#1f1f1f] transition cursor-pointer shrink-0"
+              title="Abrir menú de navegación"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <span className="hidden sm:inline font-semibold text-[#5f6368]">Consola</span>
+            <ChevronRight className="hidden sm:inline w-3.5 h-3.5 text-[#747775]" />
             {activeView === 'admin' ? (
-              <span className="font-semibold text-[#1f1f1f]">SuperAdmin HQ</span>
+              <span className="font-semibold text-[#1f1f1f] truncate">SuperAdmin HQ</span>
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-[#1f1f1f] flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+                <span className="font-semibold text-[#1f1f1f] flex items-center gap-1.5 truncate">
                   <span>{currentTenant.logo}</span>
-                  <span>{currentTenant.name}</span>
+                  <span className="truncate max-w-[110px] sm:max-w-none">{currentTenant.name}</span>
                 </span>
 
                 {/* Si es SuperAdmin, botón interno para cambiar de empresa (soporta 100+) */}
@@ -146,22 +335,24 @@ export default function PlatformHome() {
                       setTenantSearchQuery('');
                       setShowTenantSwitcherModal(true);
                     }}
-                    className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#f1f3f4] hover:bg-[#e0e2ec] text-[#0b57d0] border border-[#dadce0] transition cursor-pointer flex items-center gap-1"
+                    className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-[#f1f3f4] hover:bg-[#e0e2ec] text-[#0b57d0] border border-[#dadce0] transition cursor-pointer flex items-center gap-1 shrink-0"
                   >
-                    <span>Cambiar empresa</span>
-                    <span className="text-[9px]">▼</span>
+                    <span>Cambiar</span>
+                    <span className="text-[8px]">▼</span>
                   </button>
                 )}
               </div>
             )}
 
-            <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#e8f0fe] text-[#0b57d0]">
-              {activeView === 'admin' ? 'Control Maestro' : currentTenant.industry}
+            <span
+              className={`ml-1 sm:ml-2 px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${userLevelConfig.badgeStyle} truncate max-w-[110px] sm:max-w-none shrink-0`}
+            >
+              {activeView === 'admin' ? '⚡ Control Maestro' : userLevelConfig.badgeLabel}
             </span>
           </div>
 
-          {/* Quick Search Bar */}
-          <div className="hidden md:flex items-center w-80 lg:w-96 relative">
+          {/* Quick Search Bar (Oculta en móviles para evitar colapso) */}
+          <div className="hidden md:flex items-center w-64 lg:w-96 relative">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#747775]" />
             <input
               type="text"
@@ -173,10 +364,10 @@ export default function PlatformHome() {
           </div>
 
           {/* Right Actions, User & Prominent Logout Button */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* View switcher buttons for SuperAdmin */}
             {isSuperAdmin && (
-              <div className="flex items-center bg-[#f1f3f4] rounded-full p-0.5 text-xs font-semibold">
+              <div className="hidden sm:flex items-center bg-[#f1f3f4] rounded-full p-0.5 text-xs font-semibold">
                 <button
                   onClick={() => setActiveView('client')}
                   className={`px-3 py-1 rounded-full transition cursor-pointer ${
@@ -185,7 +376,7 @@ export default function PlatformHome() {
                       : 'text-[#5f6368] hover:text-[#1f1f1f]'
                   }`}
                 >
-                  Portal Cliente
+                  Cliente
                 </button>
                 <button
                   onClick={() => setActiveView('admin')}
@@ -195,7 +386,7 @@ export default function PlatformHome() {
                       : 'text-[#5f6368] hover:text-[#1f1f1f]'
                   }`}
                 >
-                  SuperAdmin HQ
+                  Admin
                 </button>
               </div>
             )}
@@ -210,7 +401,7 @@ export default function PlatformHome() {
             </button>
 
             {/* User Avatar */}
-            <div className="flex items-center gap-2 pl-2 border-l border-[#dadce0]">
+            <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-[#dadce0]">
               <div className="w-8 h-8 rounded-full bg-[#0b57d0] text-white font-bold text-xs flex items-center justify-center">
                 {currentUser.fullName.charAt(0)}
               </div>
@@ -220,20 +411,20 @@ export default function PlatformHome() {
               </div>
             </div>
 
-            {/* BOTÓN DE CERRAR SESIÓN VISIBLE Y PROMINENTE */}
+            {/* BOTÓN DE CERRAR SESIÓN VISIBLE Y PROMINENTE (Icono en móvil, texto en desktop) */}
             <button
               onClick={handleLogout}
               title="Cerrar sesión del sistema"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-[#c5221f] bg-[#fce8e6] hover:bg-[#fad2cf] border border-[#f5c2c7] transition cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-[#c5221f] bg-[#fce8e6] hover:bg-[#fad2cf] border border-[#f5c2c7] transition cursor-pointer shadow-sm"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Cerrar sesión</span>
+              <LogOut className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">Cerrar sesión</span>
             </button>
           </div>
         </header>
 
-        {/* Contenedor Principal de la Página */}
-        <main className="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto space-y-6">
+        {/* Contenedor Principal de la Página - Padding Responsive */}
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-4 sm:space-y-6">
           {activeView === 'admin' && isSuperAdmin ? (
             /* ================= SUPERADMIN HQ VIEW ================= */
             <SuperAdminView
@@ -248,6 +439,7 @@ export default function PlatformHome() {
               }}
               onCreateTenantAndUser={handleCreateTenantAndUser}
               onToggleUserStatus={handleToggleUserStatus}
+              onResetUserPassword={handleResetUserPassword}
             />
           ) : (
             /* ================= CLIENT PORTAL VIEW ================= */
@@ -283,76 +475,148 @@ export default function PlatformHome() {
                 </div>
               )}
 
-              {/* Secondary Navigation Pills (Google Style) */}
-              <div className="flex items-center justify-between border-b border-[#dadce0] pb-3">
-                <div className="flex items-center gap-1 bg-white border border-[#dadce0] rounded-full p-1 shadow-sm">
-                  <button
-                    onClick={() => setClientTab('inbox')}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      clientTab === 'inbox'
-                        ? 'bg-[#e8f0fe] text-[#0b57d0]'
-                        : 'text-[#5f6368] hover:text-[#1f1f1f]'
-                    }`}
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Bandeja en Vivo ({currentConversations.length})</span>
-                  </button>
+              {/* Secondary Navigation Pills (Google Style) - Solo muestra pestañas autorizadas */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#dadce0] pb-3">
+                {allowedTabs.length <= 1 ? (
+                  /* Vista Limpia y Directa para Vendedor / Evaluador (Solo 1 módulo autorizado) */
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#e8f0fe] text-[#0b57d0] flex items-center justify-center shadow-xs">
+                      {clientTab === 'inbox' && <MessageSquare className="w-4 h-4" />}
+                      {clientTab === 'knowledge' && <BookOpen className="w-4 h-4" />}
+                      {clientTab === 'analytics' && <BarChart3 className="w-4 h-4" />}
+                      {clientTab === 'channels' && <Cpu className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-[#1f1f1f] flex items-center gap-2">
+                        <span>
+                          {clientTab === 'inbox' && 'Bandeja Omnicanal en Vivo'}
+                          {clientTab === 'knowledge' && 'Base de Conocimiento & Documentos'}
+                          {clientTab === 'analytics' && 'Tablero Ejecutivo de Métricas'}
+                          {clientTab === 'channels' && 'Canales & Hardware'}
+                        </span>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#e8f0fe] text-[#0b57d0] border border-[#d3e3fd]">
+                          Módulo Único Asignado
+                        </span>
+                      </h2>
+                      <p className="text-[11px] text-[#5f6368]">
+                        {userLevelConfig.description}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* Selector de Pestañas Multi-Rol (Solo muestra pestañas autorizadas) */
+                  <div className="flex flex-wrap items-center gap-1 bg-white border border-[#dadce0] rounded-full p-1 shadow-sm">
+                    {allowedTabs.includes('inbox') && (
+                      <button
+                        onClick={() => setClientTab('inbox')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                          clientTab === 'inbox'
+                            ? 'bg-[#e8f0fe] text-[#0b57d0]'
+                            : 'text-[#5f6368] hover:text-[#1f1f1f]'
+                        }`}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Bandeja en Vivo ({currentConversations.length})</span>
+                      </button>
+                    )}
 
-                  <button
-                    onClick={() => setClientTab('channels')}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      clientTab === 'channels'
-                        ? 'bg-[#e8f0fe] text-[#0b57d0]'
-                        : 'text-[#5f6368] hover:text-[#1f1f1f]'
-                    }`}
-                  >
-                    <Cpu className="w-3.5 h-3.5" />
-                    <span>Canales & Hardware ({currentTenant.channels.length})</span>
-                  </button>
+                    {allowedTabs.includes('channels') && (
+                      <button
+                        onClick={() => setClientTab('channels')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                          clientTab === 'channels'
+                            ? 'bg-[#e8f0fe] text-[#0b57d0]'
+                            : 'text-[#5f6368] hover:text-[#1f1f1f]'
+                        }`}
+                      >
+                        <Cpu className="w-3.5 h-3.5" />
+                        <span>Canales & Hardware ({currentTenant.channels.length})</span>
+                      </button>
+                    )}
 
-                  <button
-                    onClick={() => setClientTab('knowledge')}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      clientTab === 'knowledge'
-                        ? 'bg-[#e8f0fe] text-[#0b57d0]'
-                        : 'text-[#5f6368] hover:text-[#1f1f1f]'
-                    }`}
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>Base de Conocimiento</span>
-                  </button>
+                    {allowedTabs.includes('knowledge') && (
+                      <button
+                        onClick={() => setClientTab('knowledge')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                          clientTab === 'knowledge'
+                            ? 'bg-[#e8f0fe] text-[#0b57d0]'
+                            : 'text-[#5f6368] hover:text-[#1f1f1f]'
+                        }`}
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>
+                          Base de Conocimiento{' '}
+                          {currentTenant.id === 'tenant-uges' && ugesKnowledgeDocs
+                            ? `(${ugesKnowledgeDocs.length})`
+                            : ''}
+                        </span>
+                      </button>
+                    )}
 
-                  <button
-                    onClick={() => setClientTab('analytics')}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
-                      clientTab === 'analytics'
-                        ? 'bg-[#e8f0fe] text-[#0b57d0]'
-                        : 'text-[#5f6368] hover:text-[#1f1f1f]'
-                    }`}
-                  >
-                    <BarChart3 className="w-3.5 h-3.5" />
-                    <span>Telemetría & Métricas</span>
-                  </button>
-                </div>
+                    {allowedTabs.includes('analytics') && (
+                      <button
+                        onClick={() => setClientTab('analytics')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                          clientTab === 'analytics'
+                            ? 'bg-[#e8f0fe] text-[#0b57d0]'
+                            : 'text-[#5f6368] hover:text-[#1f1f1f]'
+                        }`}
+                      >
+                        <BarChart3 className="w-3.5 h-3.5" />
+                        <span>Telemetría & Métricas</span>
+                      </button>
+                    )}
+                  </div>
+                )}
 
-                {/* Quick Status */}
-                <div className="hidden sm:flex items-center gap-2 text-xs text-[#5f6368] font-medium">
-                  <span className="w-2 h-2 rounded-full bg-[#137333]"></span>
-                  <span>Organización: <strong className="text-[#1f1f1f]">{currentTenant.name}</strong></span>
+                {/* Quick Status e Indicador de Base de Datos en Vivo */}
+                <div className="flex items-center gap-2.5 text-xs text-[#5f6368]">
+                  {currentTenant.id === 'tenant-uges' ? (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-[#e6f4ea] text-[#137333] border border-[#ceead6] font-medium shadow-xs">
+                        <Database className="w-3.5 h-3.5 text-[#137333]" />
+                        <span>Supabase Read-Only (302 msgs · 47 leads)</span>
+                        {lastSyncTime && (
+                          <span className="text-[#34a853] font-mono text-[10px]">
+                            [{lastSyncTime}]
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => loadUgesRealData()}
+                        disabled={isSyncingUges}
+                        title="Actualizar datos desde la base de datos de la Universidad (Solo Lectura)"
+                        className="p-1.5 rounded-full hover:bg-white text-[#0b57d0] border border-[#dadce0] transition cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          className={`w-3.5 h-3.5 ${isSyncingUges ? 'animate-spin text-[#0b57d0]' : ''}`}
+                        />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-[#137333]"></span>
+                      <span>
+                        Organización: <strong className="text-[#1f1f1f]">{currentTenant.name}</strong>
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* TAB CONTENT */}
-              {clientTab === 'inbox' && (
+              {/* TAB CONTENT - Protegido estrictamente por allowedTabs */}
+              {clientTab === 'inbox' && allowedTabs.includes('inbox') && (
                 <div className="space-y-6">
                   <LiveOmnichannelInbox
+                    key={`inbox-${currentTenant.id}-${currentConversations.length}`}
                     conversations={currentConversations}
                     tenantName={currentTenant.name}
+                    currentUser={currentUser}
                   />
                 </div>
               )}
 
-              {clientTab === 'channels' && (
+              {clientTab === 'channels' && allowedTabs.includes('channels') && (
                 <div className="space-y-6">
                   <ChannelHardwareCard
                     channels={currentTenant.channels}
@@ -361,66 +625,16 @@ export default function PlatformHome() {
                 </div>
               )}
 
-              {clientTab === 'knowledge' && (
-                <div className="space-y-6">
-                  <div className="bg-white border border-[#dadce0] rounded-2xl p-6 space-y-6 shadow-sm">
-                    <div>
-                      <h3 className="text-base font-semibold text-[#1f1f1f] tracking-tight">
-                        Base de Conocimiento & Guardrails de {currentTenant.name}
-                      </h3>
-                      <p className="text-xs text-[#5f6368] mt-0.5">
-                        Manuales, listas de precios, folletos y catálogos en PDF para que Valentina responda con RAG sin alucinar.
-                      </p>
-                    </div>
-
-                    {/* Upload Dropzone Styled in Clean Google Drive Style */}
-                    <div className="border-2 border-dashed border-[#dadce0] hover:border-[#0b57d0] bg-[#f8f9fa] hover:bg-[#f0f4f9] rounded-2xl p-8 flex flex-col items-center justify-center text-center transition cursor-pointer">
-                      <div className="p-3 rounded-full bg-[#e8f0fe] text-[#0b57d0] mb-3">
-                        <UploadCloud className="w-7 h-7" />
-                      </div>
-                      <h4 className="text-sm font-semibold text-[#1f1f1f]">Arrastra tus archivos PDF o haz clic para subir</h4>
-                      <p className="text-xs text-[#5f6368] mt-1 max-w-sm">
-                        Soporta planes de estudio, manuales operativos, precios o fichas de inscripción.
-                      </p>
-                    </div>
-
-                    {/* Indexed Documents List */}
-                    <div className="space-y-3">
-                      <h4 className="text-xs font-semibold text-[#5f6368] uppercase tracking-wider">
-                        Documentos Indexados en pgvector
-                      </h4>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <div className="p-3.5 rounded-xl bg-[#f8f9fa] border border-[#dadce0] flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <FileText className="w-5 h-5 text-[#0b57d0]" />
-                            <div>
-                              <p className="text-xs font-semibold text-[#1f1f1f]">Catalogo-Precios-2026.pdf</p>
-                              <p className="text-[10px] text-[#5f6368]">148 fragmentos vectoriales</p>
-                            </div>
-                          </div>
-                          <CheckCircle2 className="w-4 h-4 text-[#137333]" />
-                        </div>
-
-                        <div className="p-3.5 rounded-xl bg-[#f8f9fa] border border-[#dadce0] flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <FileText className="w-5 h-5 text-[#0b57d0]" />
-                            <div>
-                              <p className="text-xs font-semibold text-[#1f1f1f]">Politicas-Admision-Citas.pdf</p>
-                              <p className="text-[10px] text-[#5f6368]">62 fragmentos vectoriales</p>
-                            </div>
-                          </div>
-                          <CheckCircle2 className="w-4 h-4 text-[#137333]" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {clientTab === 'knowledge' && allowedTabs.includes('knowledge') && (
+                <KnowledgeBaseManager
+                  tenant={currentTenant}
+                  currentUser={currentUser}
+                />
               )}
 
-              {clientTab === 'analytics' && (
+              {clientTab === 'analytics' && allowedTabs.includes('analytics') && (
                 <div className="space-y-6">
-                  <AppleMetricsWidgets tenant={currentTenant} telemetry={MOCK_TELEMETRY} />
+                  <AppleMetricsWidgets tenant={currentTenant} telemetry={currentTelemetry} />
                 </div>
               )}
             </div>
