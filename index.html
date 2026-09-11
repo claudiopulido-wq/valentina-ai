@@ -590,7 +590,7 @@
               </div>
 
               <div class="pt-2">
-                <a href="https://wa.me/524423523965?text=Hola,%20me%20gustaría%20solicitar%20un%20diagnóstico%20de%20automatización%20para%20mi%20empresa" target="_blank" class="w-full py-3 rounded-xl bg-iris/20 hover:bg-iris/30 border border-iris/40 text-center text-xs font-bold text-white flex items-center justify-center gap-2 transition shadow-lg shadow-iris/20">
+                <a href="https://wa.me/524422692336?text=Hola,%20me%20gustaría%20solicitar%20un%20diagnóstico%20de%20automatización%20para%20mi%20empresa" target="_blank" class="w-full py-3 rounded-xl bg-iris/20 hover:bg-iris/30 border border-iris/40 text-center text-xs font-bold text-white flex items-center justify-center gap-2 transition shadow-lg shadow-iris/20">
                   <i data-lucide="message-circle" class="w-4 h-4 text-emerald"></i>
                   <span>Solicitar Diagnóstico para mi Empresa</span>
                 </a>
@@ -1456,7 +1456,7 @@
     <div id="chat-window" class="chat-modal hidden mb-4 w-[92vw] sm:w-[420px] h-[560px] rounded-2xl border border-white/15 bg-obsidian-card/95 backdrop-blur-xl shadow-2xl flex-col overflow-hidden transition-all duration-300">
       
       <!-- Chat Header -->
-      <div class="px-5 py-4 bg-black/60 border-b border-white/10 flex items-center justify-between">
+      <div class="px-5 py-3.5 bg-black/60 border-b border-white/10 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <div class="relative">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-iris to-cyan p-[1px]">
@@ -1474,9 +1474,21 @@
           </div>
         </div>
 
-        <button id="btn-close-chat" class="text-muted hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <a 
+            href="https://wa.me/524422692336?text=Hola%20Valentina,%20te%20escribo%20desde%20la%20página%20web" 
+            target="_blank" 
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald/15 hover:bg-emerald/25 border border-emerald/40 text-emerald text-[11px] font-mono font-semibold transition"
+            title="Abrir chat en WhatsApp Oficial (442 269 2336)"
+          >
+            <i data-lucide="phone" class="w-3 h-3"></i>
+            <span>442 269 2336</span>
+          </a>
+
+          <button id="btn-close-chat" class="text-muted hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Chat Body / Mensajes -->
@@ -1490,6 +1502,18 @@
             Hola, soy Valentina. He coordinado la digitalización de más de 136,000 documentos oficiales y automatizado sistemas para clínicas, universidades y bufetes jurídicos. 
             <br><br>
             ¿Qué proceso repetitivo o cuello de botella te gustaría automatizar en tu empresa hoy?
+            
+            <div class="mt-3 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="text-[11px] text-muted">¿Prefieres WhatsApp directo?</span>
+              <a 
+                href="https://wa.me/524422692336?text=Hola%20Valentina,%20quiero%20conocer%20sus%20soluciones%20de%20automatización" 
+                target="_blank" 
+                class="text-xs font-semibold text-emerald hover:underline flex items-center gap-1 font-mono"
+              >
+                <span>WhatsApp: +52 442 269 2336</span>
+                <i data-lucide="external-link" class="w-3 h-3"></i>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -1510,12 +1534,24 @@
 
     </div>
 
-    <!-- Botón Flotante para Abrir Chat -->
-    <button id="chat-toggle-btn" class="group relative flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-iris to-cyan text-white font-semibold text-sm shadow-2xl shadow-iris/40 hover:scale-105 transition-all duration-300">
-      <span class="w-2.5 h-2.5 rounded-full bg-emerald animate-pulse"></span>
-      <span>Hablar con Valentina</span>
-      <i data-lucide="message-square" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i>
-    </button>
+    <!-- Botones Flotantes (WhatsApp Directo + Apertura de Chat) -->
+    <div class="flex items-center gap-2">
+      <a 
+        href="https://wa.me/524422692336?text=Hola%20Valentina,%20te%20contacto%20desde%20la%20landing%20page" 
+        target="_blank" 
+        class="flex items-center gap-2 px-3.5 py-3.5 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold text-xs shadow-2xl shadow-emerald/40 hover:scale-105 transition-all duration-300"
+        title="Chatear al WhatsApp Oficial (+52 442 269 2336)"
+      >
+        <i data-lucide="message-circle" class="w-4 h-4"></i>
+        <span class="hidden sm:inline font-mono font-bold">442 269 2336</span>
+      </a>
+
+      <button id="chat-toggle-btn" class="group relative flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-iris to-cyan text-white font-semibold text-sm shadow-2xl shadow-iris/40 hover:scale-105 transition-all duration-300">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald animate-pulse"></span>
+        <span>Hablar con Valentina</span>
+        <i data-lucide="message-square" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i>
+      </button>
+    </div>
 
   </div>
 
@@ -1741,9 +1777,9 @@
       </div>
 
       <div class="flex flex-col md:flex-row items-center gap-4 text-center md:text-right font-mono">
-        <a href="https://wa.me/524423523965" target="_blank" class="text-emerald hover:text-white transition-colors flex items-center gap-1.5 justify-center font-semibold">
+        <a href="https://wa.me/524422692336" target="_blank" class="text-emerald hover:text-white transition-colors flex items-center gap-1.5 justify-center font-semibold" title="WhatsApp Oficial Valentina AI">
           <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald"></i>
-          <span>+52 442 352 3965</span>
+          <span>+52 442 269 2336</span>
         </a>
         <span class="hidden md:inline text-white/20">|</span>
         <a href="https://www.gesacademico.edu.mx" target="_blank" class="hover:text-white transition-colors">Universidad UGES</a>

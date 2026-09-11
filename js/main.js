@@ -264,8 +264,12 @@ document.addEventListener('DOMContentLoaded', () => {
       response: "Valentina está respaldada por una sólida infraestructura institucional y académica, con más de 3,000 egresados titulados y plataformas oficiales de certificación."
     },
     {
-      keywords: ['precio', 'costo', 'cotizar', 'cuanto', 'tarifa'],
-      response: "Diseñamos soluciones a medida según el volumen de transacciones y sistemas a integrar. Para darte una propuesta exacta, ¿cuántos colaboradores atienden soporte o qué proceso te gustaría automatizar primero?"
+      keywords: ['whatsapp', 'telefono', 'numero', 'contacto', 'celular', 'llamar', 'mensaje', 'escribir'],
+      response: "¡Claro! Puedes escribirnos o llamarnos directamente a nuestro WhatsApp Oficial de Valentina AI al <strong>+52 442 269 2336</strong> o dar clic aquí: <a href='https://wa.me/524422692336?text=Hola%20Valentina,%20te%20contacto%20desde%20la%20página%20web' target='_blank' class='text-emerald font-bold hover:underline inline-flex items-center gap-1'>Abrir WhatsApp (+52 442 269 2336) ↗</a>. ¿De qué giro es tu empresa?"
+    },
+    {
+      keywords: ['precio', 'costo', 'cotizar', 'cuanto', 'tarifa', 'planes'],
+      response: "Nuestras soluciones arrancan desde $8,500 MXN de setup único y $2,800 MXN/mes con el Plan Growth (o $2,350/mes anual) e incluyen portal de monitoreo en vivo y garantía de 30 días. También puedes cotizar al momento por WhatsApp al <a href='https://wa.me/524422692336' target='_blank' class='text-emerald font-bold hover:underline'>+52 442 269 2336</a>. ¿Cuántos asesores atienden actualmente en tu equipo?"
     }
   ];
 
