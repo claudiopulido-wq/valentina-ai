@@ -122,3 +122,84 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #bdc1c6;
 }
+
+/* ==========================================================================
+   ESTILOS DE IMPRESIÓN OFICIAL (PDF & MEMBRETES EJECUTIVOS)
+   Aísla la hoja .printable-sheet y oculta por completo el panel de administración,
+   sidebar, cabeceras del sistema y controles de pantalla para evitar fugas visuales.
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  /* Ocultar el fondo completo del dashboard, sidebar, headers de la consola */
+  html, body {
+    background: #ffffff !important;
+    color: #1f1f1f !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Ocultar todo lo que no sea la hoja imprimible */
+  body > * {
+    display: none !important;
+  }
+
+  /* Si hay un modal con hoja imprimible, mostrar solo ese contenedor */
+  body:has(.printable-sheet) {
+    display: block !important;
+  }
+
+  body:has(.printable-sheet) [role="dialog"],
+  body:has(.printable-sheet) .fixed,
+  body:has(.printable-sheet) .overflow-y-auto {
+    position: static !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: block !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    inset: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ocultar controles, botones de acción y cabecera del modal */
+  button, 
+  nav, 
+  header, 
+  aside,
+  .print-hide,
+  .modal-actions,
+  [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  /* La hoja membretada oficial ocupa el 100% sin bordes ni sombras de UI */
+  .printable-sheet {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .printable-sheet * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

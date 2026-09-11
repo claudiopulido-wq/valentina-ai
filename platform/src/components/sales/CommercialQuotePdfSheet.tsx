@@ -14,7 +14,11 @@ import {
   Clock,
   UserCheck,
   CheckSquare,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  FolderSync,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
 interface Props {
@@ -151,6 +155,52 @@ export const CommercialQuotePdfSheet: React.FC<Props> = ({ quote }) => {
               <span className="text-[#1f1f1f] font-medium text-[11px] leading-tight">{feat}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 4.1 Otros Servicios y Módulos que Puedes Contratar (Add-ons On-Demand) */}
+      <div className="p-3.5 rounded-xl bg-[#faf5ff] border border-[#e9d5ff] space-y-2 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-[#6D28D9] uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+            <Sparkles className="w-4 h-4 text-[#8B5CF6]" /> Otros Servicios que Puedes Contratar (Módulos On-Demand)
+          </span>
+          <span className="px-2 py-0.5 rounded-full bg-[#f3e8ff] text-[#6D28D9] text-[10px] font-bold border border-[#d8b4fe]">
+            Activación con 1 Clic
+          </span>
+        </div>
+        <p className="text-[#4b5563] text-[11px] leading-relaxed">
+          Complementos de alto impacto disponibles para integración inmediata a tu ecosistema operativo:
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          <div className="p-2.5 rounded-lg bg-white border border-[#e9d5ff] flex items-start gap-2.5">
+            <div className="p-1.5 rounded-md bg-[#ede9fe] text-[#6D28D9] shrink-0 mt-0.5">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-[#1f1f1f] text-[11px]">Envío Automatizado de Documentos PDF</div>
+              <div className="text-[#5f6368] text-[10px] leading-tight mt-0.5">
+                Generación y despacho programático de fichas de pago, estados de cuenta, pólizas, credenciales y constancias en PDF oficial por WhatsApp y correo.
+              </div>
+              <span className="inline-block mt-1 text-[9.5px] font-semibold text-[#059669]">
+                ✓ Disponible para activar
+              </span>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-lg bg-white border border-[#e9d5ff] flex items-start gap-2.5">
+            <div className="p-1.5 rounded-md bg-[#ede9fe] text-[#6D28D9] shrink-0 mt-0.5">
+              <FolderSync className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-[#1f1f1f] text-[11px]">Organización y Respaldo en Google Drive</div>
+              <div className="text-[#5f6368] text-[10px] leading-tight mt-0.5">
+                Clasificación automática de documentos recibidos (identificaciones, comprobantes, contratos), creación de carpetas por cliente/alumno y respaldo cloud seguro.
+              </div>
+              <span className="inline-block mt-1 text-[9.5px] font-semibold text-[#059669]">
+                ✓ Sincronización Google Workspace
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

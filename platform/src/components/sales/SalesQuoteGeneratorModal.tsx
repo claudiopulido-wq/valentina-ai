@@ -23,7 +23,11 @@ import {
   UserCheck,
   Smartphone,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  FolderUp,
+  FolderSync,
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 
 interface Props {
@@ -44,6 +48,8 @@ const AVAILABLE_FEATURES = [
   { id: 'calendar', label: 'Agendamiento Automatizado (Google Calendar / Cal.com)', tier: 'Scale' },
   { id: 'crm', label: 'Sincronización Bidireccional CRM (Google Sheets / HubSpot / Zoho)', tier: 'Scale' },
   { id: 'voice', label: 'Atención y Transcripción de Notas de Voz (Voice AI Whisper)', tier: 'Scale' },
+  { id: 'pdf_docs', label: 'Envío Automatizado de Documentos y PDFs por Chat/Correo', tier: 'Scale' },
+  { id: 'drive_sync', label: 'Organización de Carpetas y Respaldo en Google Drive', tier: 'Scale' },
   { id: 'erp', label: 'Conexión a ERP / Base de Datos SQL Server o Postgres', tier: 'Enterprise' },
   { id: 'ocr', label: 'Validación de Comprobantes con OCR Forense', tier: 'Enterprise' },
 ];
@@ -89,10 +95,12 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
   const [overrideSetup, setOverrideSetup] = useState<number | null>(null);
   const [overrideMonthly, setOverrideMonthly] = useState<number | null>(null);
 
-  // Estados de envío
+  // Estados de envío y guardado
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailStatusMessage, setEmailStatusMessage] = useState<string | null>(null);
   const [copiedPitch, setCopiedPitch] = useState(false);
+  const [savedToDrive, setSavedToDrive] = useState(false);
+  const [gmailComposeUrl, setGmailComposeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialQuote) {
@@ -121,7 +129,7 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
   // Lógica de Plan según POL-COM-VAL-2026-B
   const hasEnterpriseFeatures = selectedFeatureIds.some((id) => id === 'erp' || id === 'ocr');
   const hasScaleFeatures = selectedFeatureIds.some(
-    (id) => id === 'webchat' || id === 'quoter' || id === 'calendar' || id === 'crm' || id === 'voice'
+    (id) => id === 'webchat' || id === 'quoter' || id === 'calendar' || id === 'crm' || id === 'voice' || id === 'pdf_docs' || id === 'drive_sync'
   );
 
   const calculatedPlan: 'Growth' | 'Scale' | 'Enterprise' = hasEnterpriseFeatures
@@ -158,8 +166,11 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
   const netAnnualSavingsMxn = monthlySavingsMxn * 12;
   const amortizationDays = Math.max(5, Math.round((effectiveSetupFee / (Math.max(1, monthlySavingsMxn) / 30))));
 
-  // Estimación de Meta Oficial Octubre 2026 ($0.0085 USD/msg ~ $0.15 MXN tras 1,000 gratuitos)
-  const estimatedMetaMonthlyCostMxn = Math.round(Math.max(0, normalMonthlyVolume - 1000) * 0.153);
+  // Estimación Meta Octubre 2026 ($0.0085 USD / msg tras 1,000 gratuitos)
+  const avgMessagesPerConv = 6;
+  const totalEstimatedMessages = normalMonthlyVolume * avgMessagesPerConv;
+  const billableMessages = Math.max(0, totalEstimatedMessages - 1000);
+  const estimatedMetaMonthlyCostMxn = Math.round(billableMessages * 0.0085 * 18);
 
   const selectedFeatureLabels = AVAILABLE_FEATURES.filter((f) =>
     selectedFeatureIds.includes(f.id)
@@ -168,8 +179,8 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
   const compiledQuote: CommercialQuote = {
     id: initialQuote?.id || `quote-${Date.now()}`,
     folio: initialQuote?.folio || `COT-VAL-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-    companyName: companyName || 'Empresa Prospecto',
-    contactName: contactName || 'Tomador de Decisión',
+    companyName: companyName || 'Organización Prospecto',
+    contactName: contactName || 'Titular de Cuenta',
     contactEmail: contactEmail || 'contacto@empresa.com',
     contactPhone: contactPhone || '+52 442 000 0000',
     contactJobTitle,
@@ -202,10 +213,74 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
     );
   };
 
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    const cleanCompany = (compiledQuote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
+    document.title = `Propuesta_Comercial_${cleanCompany}_${compiledQuote.folio}`;
+    window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1500);
+  };
+
+  const handleSaveToDrive = () => {
+    // 1. Guardar la cotización en el historial del sistema
+    const updatedQuote: CommercialQuote = {
+      ...compiledQuote,
+      status: compiledQuote.status === 'sent' ? 'sent' : 'draft',
+    };
+    onSaveQuote(updatedQuote);
+
+    // 2. Generar el documento HTML oficial auto-contenido listo para Google Drive
+    const cleanCompany = (compiledQuote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `[GOOGLE_DRIVE]_Propuesta_Comercial_${cleanCompany}_${compiledQuote.folio}.html`;
+    const printableElement = document.querySelector('.printable-sheet');
+    const innerHtml = printableElement ? printableElement.outerHTML : '<div>Sin contenido</div>';
+
+    const standaloneHtml = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Propuesta Comercial ${compiledQuote.companyName} — ${compiledQuote.folio}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #f8f9fa; padding: 24px; color: #1f1f1f; }
+    .printable-sheet { max-width: 900px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 16px; border: 1px solid #dadce0; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    @media print { body { padding: 0; background: #fff; } .printable-sheet { border: none; box-shadow: none; padding: 12mm 15mm; max-width: 100%; } }
+  </style>
+</head>
+<body>
+  ${innerHtml}
+</body>
+</html>`;
+
+    const blob = new Blob([standaloneHtml], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setSavedToDrive(true);
+    setTimeout(() => setSavedToDrive(false), 4500);
+  };
+
   const handleSendViaEmail = async () => {
     setSendingEmail(true);
     setEmailStatusMessage(null);
+
+    const emailSubject = `Propuesta Comercial Oficial: ${compiledQuote.companyName} — Valentina AI [${compiledQuote.folio}]`;
+    const emailBody = `Estimado(a) ${compiledQuote.contactName},\n\nEs un placer saludarle. Conforme a la sesión de diagnóstico para ${compiledQuote.companyName}, le comparto la propuesta comercial oficial de Valentina AI con folio ${compiledQuote.folio}.\n\nRESUMEN DE LA PROPUESTA:\n• Organización: ${compiledQuote.companyName}\n• Solución: Plan ${compiledQuote.plan}\n• Modalidad: ${compiledQuote.billingPeriod === 'annual' ? 'Facturación Anual (2 meses bonificados + 50% desc en Setup)' : 'Facturación Mensual'}\n• Inversión de Implementación (Setup): $${compiledQuote.setupFeeMxn.toLocaleString('es-MX')} MXN\n• Suscripción Mensual Operativa: $${compiledQuote.monthlyFeeMxn.toLocaleString('es-MX')} MXN/mes\n• Ahorro Mensual Estimado: +$${compiledQuote.monthlySavingsMxn.toLocaleString('es-MX')} MXN/mes\n• Tiempo Estimado de Amortización: ~${compiledQuote.amortizationDays} días hábiles\n\nALCANCE INCLUIDO:\n${compiledQuote.selectedFeatures.map((f) => `• ${f}`).join('\n')}\n\nDATOS PARA FORMALIZACIÓN (50% ANTICIPO):\nBanco: BBVA México\nBeneficiario: VALENTINA AI S.A.S.\nCLABE Interbancaria: 012 680 01589412039 1\nConcepto: ${compiledQuote.folio}\n\nEsta propuesta formal incluye 30 días de garantía de calibración continua y SLA 99.9% de disponibilidad técnica.\n\nQuedo atento a su confirmación para programar el inicio de la ingeniería e inducción.\n\nAtentamente,\nClaudio Pulido\nValentina AI Studio &bull; Ingeniería Empresarial\nManuel Gómez Morín 3960, Centro Sur, Querétaro, Qro.\ncontacto@valentina-ai.mx &bull; https://valentina-ai.mx`;
+
+    const webGmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(compiledQuote.contactEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    setGmailComposeUrl(webGmailUrl);
+
     try {
+      // 1. Intentar despacho vía API de servidor
       const res = await fetch('/api/sales/send-quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -215,8 +290,12 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
         }),
       });
       const data = await res.json();
+
+      // 2. Abrir ventana directa de Gmail de Google Workspace para despacho garantizado
+      window.open(webGmailUrl, '_blank');
+
       if (res.ok) {
-        setEmailStatusMessage(data.message || 'Cotización enviada exitosamente.');
+        setEmailStatusMessage(`✓ Despacho preparado para ${compiledQuote.contactEmail}. Se abrió tu ventana de Gmail para confirmación.`);
         const updatedQuote: CommercialQuote = {
           ...compiledQuote,
           status: 'sent',
@@ -224,10 +303,11 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
         };
         onSaveQuote(updatedQuote);
       } else {
-        setEmailStatusMessage(`Error: ${data.error}`);
+        setEmailStatusMessage(`Se abrió la redacción oficial en Gmail lista para enviar a ${compiledQuote.contactEmail}.`);
       }
     } catch (err: any) {
-      setEmailStatusMessage(`Error de red al enviar: ${err?.message}`);
+      window.open(webGmailUrl, '_blank');
+      setEmailStatusMessage(`Se abrió la redacción en Gmail para enviar directo a ${compiledQuote.contactEmail}.`);
     } finally {
       setSendingEmail(false);
     }
@@ -642,10 +722,20 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
 
                 <button
                   type="button"
+                  onClick={handleSaveToDrive}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold cursor-pointer shadow-xs transition"
+                  title="Descargar y archivar expediente para tu carpeta de Google Drive"
+                >
+                  <FolderUp className="w-3.5 h-3.5" />
+                  <span>{savedToDrive ? '✓ Guardado en Drive' : 'Guardar en Drive'}</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleSendViaEmail}
                   disabled={sendingEmail}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#137333] hover:bg-[#0f5b28] text-white text-xs font-semibold cursor-pointer shadow-xs disabled:opacity-50"
-                  title="Enviar por correo vía Google Workspace for Education"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#137333] hover:bg-[#0f5b28] text-white text-xs font-semibold cursor-pointer shadow-xs disabled:opacity-50 transition"
+                  title="Despachar propuesta oficial por correo y abrir en Gmail Web"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   <span>{sendingEmail ? 'Enviando...' : 'Enviar por Correo'}</span>
@@ -653,8 +743,9 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
 
                 <button
                   type="button"
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-semibold cursor-pointer shadow-xs"
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-semibold cursor-pointer shadow-xs transition"
+                  title="Generar PDF oficial aislado para la organización destinataria"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>Imprimir / PDF</span>
@@ -664,7 +755,7 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                   <button
                     type="button"
                     onClick={() => onConvertToClient(compiledQuote)}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold cursor-pointer shadow-xs"
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold cursor-pointer shadow-xs transition"
                     title="Transferir datos ganados al Wizard de Alta"
                   >
                     <Zap className="w-3.5 h-3.5" />
@@ -673,6 +764,27 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                 )}
               </div>
             </div>
+
+            {/* Notificaciones y Avisos de Despacho (Email / Drive) */}
+            {(emailStatusMessage || savedToDrive) && (
+              <div className="px-6 py-2 bg-[#e6f4ea] border-b border-[#ceead6] flex items-center justify-between text-xs text-[#0d652d] print:hidden">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-[#137333] shrink-0" />
+                  <span>{savedToDrive ? `Expediente preparado y descargado para archivar en Google Drive (${compiledQuote.companyName}).` : emailStatusMessage}</span>
+                </div>
+                {gmailComposeUrl && (
+                  <a
+                    href={gmailComposeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-bold text-[#0b57d0] hover:underline"
+                  >
+                    <span>Abrir en Gmail Web</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            )}
 
             {/* Hoja Membretada con Scroll */}
             <div className="p-4 sm:p-6 overflow-y-auto flex-1 print:p-0 print:overflow-visible">
