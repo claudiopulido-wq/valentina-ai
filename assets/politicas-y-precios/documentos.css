@@ -1,0 +1,469 @@
+:root {
+  --val-obsidian: #08090E;
+  --val-surface: #0E111A;
+  --val-surface-card: rgba(14, 17, 26, 0.75);
+  --val-border: rgba(255, 255, 255, 0.10);
+  --val-border-strong: rgba(139, 92, 246, 0.35);
+  --val-iris: #8B5CF6;
+  --val-iris-light: #A855F7;
+  --val-cyan: #06B6D4;
+  --val-emerald: #10B981;
+  --val-rose: #F43F5E;
+  --val-text-white: #F8FAFC;
+  --val-text-slate: #CBD5E1;
+  --val-text-muted: #94A3B8;
+  --val-text-dim: #64748B;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #05060A;
+  color: var(--val-text-slate);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Barra superior de navegación / herramientas del visor */
+.doc-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(8, 9, 14, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--val-border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.doc-toolbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doc-toolbar-brand img {
+  height: 26px;
+  width: auto;
+}
+
+.doc-toolbar-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.doc-toolbar-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--val-iris);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  text-transform: uppercase;
+}
+
+.doc-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.doc-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--val-text-slate);
+  border: 1px solid var(--val-border);
+}
+
+.doc-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+}
+
+.doc-btn-primary {
+  background: linear-gradient(135deg, var(--val-iris), #6D28D9);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+}
+
+.doc-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* Contenedor tipo Hoja de Papel Membretada */
+.paper-wrapper {
+  max-width: 860px;
+  margin: 36px auto 60px auto;
+  padding: 0 16px;
+}
+
+.paper-sheet {
+  background: #FFFFFF;
+  color: #1E293B;
+  border-radius: 4px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 56px 64px;
+  position: relative;
+  overflow: hidden;
+  min-height: 1120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Acento cromático superior fino de la hoja membretada */
+.paper-sheet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--val-iris) 0%, #6366F1 50%, var(--val-cyan) 100%);
+}
+
+/* Marca de agua institucional sutil en el centro */
+.paper-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header de la Hoja Membretada */
+.letterhead-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1.5px solid #E2E8F0;
+  padding-bottom: 22px;
+  margin-bottom: 28px;
+}
+
+.letterhead-logo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.letterhead-logo-block img {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
+.letterhead-tagline {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+.letterhead-meta {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #64748B;
+  line-height: 1.5;
+}
+
+.letterhead-meta strong {
+  color: #0F172A;
+}
+
+.letterhead-folio {
+  display: inline-block;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+/* Cuerpo del Documento */
+.letterhead-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.doc-title-section {
+  margin-bottom: 8px;
+}
+
+.doc-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: #7C3AED;
+  background: #F5F3FF;
+  border: 1px solid #DDD6FE;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.doc-h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.doc-subtitle {
+  font-size: 13px;
+  color: #475569;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.doc-h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  border-left: 3px solid #7C3AED;
+  padding-left: 10px;
+  margin: 16px 0 8px 0;
+  letter-spacing: -0.01em;
+}
+
+.doc-p {
+  font-size: 12.5px;
+  color: #334155;
+  line-height: 1.65;
+  text-align: justify;
+}
+
+/* Cuadros Ejecutivos & Callouts */
+.callout-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 8px 0;
+}
+
+.callout-highlight {
+  background: #FAF5FF;
+  border: 1px solid #E9D5FF;
+  border-left: 4px solid #8B5CF6;
+}
+
+.callout-alert {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-left: 4px solid #F59E0B;
+}
+
+.callout-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tablas Ejecutivas de Alta Precisión */
+.exec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  margin: 10px 0 16px 0;
+}
+
+.exec-table th {
+  background: #0F172A;
+  color: #FFFFFF;
+  text-align: left;
+  padding: 9px 12px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  letter-spacing: 0.02em;
+}
+
+.exec-table th:first-child {
+  border-top-left-radius: 6px;
+}
+
+.exec-table th:last-child {
+  border-top-right-radius: 6px;
+}
+
+.exec-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #E2E8F0;
+  color: #334155;
+  vertical-align: top;
+}
+
+.exec-table tr:nth-child(even) td {
+  background: #F8FAFC;
+}
+
+.exec-table tr:last-child td {
+  border-bottom: 2px solid #CBD5E1;
+}
+
+.highlight-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #6D28D9;
+}
+
+.highlight-emerald {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #059669;
+}
+
+/* Bloques de Firmas */
+.signatures-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 36px;
+  padding-top: 16px;
+}
+
+.signature-box {
+  text-align: center;
+}
+
+.signature-line {
+  border-top: 1.5px solid #94A3B8;
+  margin-bottom: 8px;
+  padding-top: 8px;
+}
+
+.signature-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.signature-title {
+  font-size: 10.5px;
+  color: #64748B;
+  font-family: var(--font-mono);
+}
+
+/* Footer Oficial de la Hoja Membretada */
+.letterhead-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1.5px solid #E2E8F0;
+  padding-top: 14px;
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #64748B;
+}
+
+.letterhead-footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.letterhead-footer-right {
+  text-align: right;
+}
+
+/* Estilos de Impresión Fiel y PDF */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    padding: 0 !important;
+  }
+
+  .doc-toolbar {
+    display: none !important;
+  }
+
+  .paper-wrapper {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .paper-sheet {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 24mm 20mm !important;
+    min-height: auto !important;
+    page-break-after: always;
+  }
+
+  .paper-sheet::before {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .exec-table th {
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .callout-box, .callout-highlight, .callout-alert {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

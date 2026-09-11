@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valentina AI — Anexo Técnico: Prerrequisitos & Matriz de Responsabilidades</title>
+  <link rel="icon" type="image/svg+xml" href="../branding/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="documentos.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <header class="doc-toolbar">
+    <div class="doc-toolbar-brand">
+      <img src="../branding/valentina-symbol.svg" alt="Valentina">
+      <span class="doc-toolbar-title">Anexo Técnico: Prerrequisitos del Cliente &amp; Matriz RACI</span>
+      <span class="doc-toolbar-badge">Onboarding Ágil</span>
+    </div>
+    <div class="doc-toolbar-actions">
+      <a href="index.html" class="doc-btn doc-btn-secondary">
+        <i data-lucide="folder" style="width: 14px; height: 14px;"></i> Hub Documental
+      </a>
+      <a href="convenio-comercial-servicios.html" class="doc-btn doc-btn-secondary">
+        <i data-lucide="file-check" style="width: 14px; height: 14px;"></i> Convenio
+      </a>
+      <button onclick="window.print()" class="doc-btn doc-btn-primary">
+        <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Imprimir / Guardar PDF
+      </button>
+    </div>
+  </header>
+
+  <div class="paper-wrapper">
+    <main class="paper-sheet">
+      <img src="../branding/valentina-symbol.svg" alt="" class="paper-watermark">
+
+      <header class="letterhead-header">
+        <div class="letterhead-logo-block">
+          <img src="../branding/valentina-logo-horizontal-light.svg" alt="Valentina AI">
+          <div class="letterhead-tagline">Estudio de Ingeniería de IA &bull; Anexo de Implementación</div>
+        </div>
+        <div class="letterhead-meta">
+          <div class="letterhead-folio">ANX-RACI-2026-VAL</div>
+          <div><strong>ANEXO TÉCNICO:</strong> A-01 (Prerrequisitos)</div>
+          <div><strong>OBJETIVO:</strong> Cero Fricción en Despliegue</div>
+          <div><strong>TIEMPO OBJETIVO:</strong> 10 a 21 Días Hábiles</div>
+        </div>
+      </header>
+
+      <section class="letterhead-body">
+        <div class="doc-title-section">
+          <span class="doc-badge-pill">
+            <i data-lucide="check-square" style="width: 12px; height: 12px;"></i> Guía de Puesta en Marcha
+          </span>
+          <h1 class="doc-h1">Prerrequisitos del Cliente &amp; Matriz de Responsabilidades (RACI)</h1>
+          <p class="doc-subtitle">Para cumplir estrictamente con los plazos de entrega comprometidos, este documento define los insumos técnicos que debe aportar la organización contratante.</p>
+        </div>
+
+        <h2 class="doc-h2">1. Checklist de Insumos Requeridos al Cliente</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 8px 0;">
+          <div class="callout-box" style="margin: 0;">
+            <div class="callout-title" style="color: #6D28D9;">
+              <i data-lucide="smartphone" style="width: 15px; height: 15px;"></i> 1. Línea Telefónica para WhatsApp
+            </div>
+            <p style="font-size: 11px; color: #475569; line-height: 1.5;">
+              Número exclusivo para el asistente. Si el número estuvo en WhatsApp normal o Business en un teléfono móvil, debe eliminarse de la app antes de conectarse a la API oficial de Meta para recibir el código de verificación por SMS o llamada.
+            </p>
+          </div>
+
+          <div class="callout-box" style="margin: 0;">
+            <div class="callout-title" style="color: #047857;">
+              <i data-lucide="credit-card" style="width: 15px; height: 15px;"></i> 2. Meta Business Suite &amp; Tarjeta
+            </div>
+            <p style="font-size: 11px; color: #475569; line-height: 1.5;">
+              Acceso de Administrador a la cuenta de Meta Business de la empresa y tarjeta bancaria vinculada en el módulo de pagos de Meta para la liquidación directa de los consumos de telecomunicaciones ($0.0085 USD/mensaje).
+            </p>
+          </div>
+
+          <div class="callout-box" style="margin: 0;">
+            <div class="callout-title" style="color: #0284C7;">
+              <i data-lucide="file-text" style="width: 15px; height: 15px;"></i> 3. Información Comercial y Catálogo
+            </div>
+            <p style="font-size: 11px; color: #475569; line-height: 1.5;">
+              Documentación oficial de la empresa (PDFs, listas de precios, políticas de garantía, ubicaciones y respuestas a las 20 preguntas más frecuentes de los clientes).
+            </p>
+          </div>
+
+          <div class="callout-box" style="margin: 0;">
+            <div class="callout-title" style="color: #D97706;">
+              <i data-lucide="key" style="width: 15px; height: 15px;"></i> 4. Credenciales de Integración (Si aplica)
+            </div>
+            <p style="font-size: 11px; color: #475569; line-height: 1.5;">
+              En Plan Scale o Enterprise: API Key o webhook de HubSpot, Google Calendar, Cal.com o credenciales de solo lectura para bases de datos ERP.
+            </p>
+          </div>
+        </div>
+
+        <h2 class="doc-h2">2. Matriz de Responsabilidades (RACI) por Etapa</h2>
+
+        <table class="exec-table">
+          <thead>
+            <tr>
+              <th style="width: 32%;">Etapa del Proyecto</th>
+              <th style="width: 17%; text-align: center;">Valentina AI</th>
+              <th style="width: 17%; text-align: center;">El Cliente</th>
+              <th style="width: 34%;">Entregable / Criterio de Éxito</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Diagnóstico y Arquitectura</strong></td>
+              <td style="text-align: center;"><span class="highlight-val">Responsable</span></td>
+              <td style="text-align: center;"><span style="color: #475569;">Informa / Consulta</span></td>
+              <td style="font-size: 10.5px;">Documento de arquitectura y mapa de intenciones conversacionales.</td>
+            </tr>
+            <tr>
+              <td><strong>2. Provisión de Insumos y Meta</strong></td>
+              <td style="text-align: center;"><span style="color: #475569;">Guía técnica</span></td>
+              <td style="text-align: center;"><span class="highlight-emerald">Responsable</span></td>
+              <td style="font-size: 10.5px;">Número listo y tarjeta vinculada en Meta Business Manager.</td>
+            </tr>
+            <tr>
+              <td><strong>3. Ingeniería, RAG y Guardrails</strong></td>
+              <td style="text-align: center;"><span class="highlight-val">Responsable</span></td>
+              <td style="text-align: center;"><span style="color: #475569;">Supervisa</span></td>
+              <td style="font-size: 10.5px;">Agente programado, indexación documental y pruebas internas.</td>
+            </tr>
+            <tr>
+              <td><strong>4. Pruebas de Calibración en Staging</strong></td>
+              <td style="text-align: center;"><span class="highlight-val">Responsable</span></td>
+              <td style="text-align: center;"><span class="highlight-emerald">Aprueba</span></td>
+              <td style="font-size: 10.5px;">Batería de 30 consultas reales validadas por el equipo comercial.</td>
+            </tr>
+            <tr>
+              <td><strong>5. Despliegue en Vivo &amp; Capacitación</strong></td>
+              <td style="text-align: center;"><span class="highlight-val">Responsable</span></td>
+              <td style="text-align: center;"><span style="color: #475569;">Participa</span></td>
+              <td style="font-size: 10.5px;">Pase a producción, entrega de credenciales y sesión ejecutiva (1 hr).</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout-box callout-highlight">
+          <div class="callout-title">
+            <i data-lucide="clock" style="width: 15px; height: 15px; color: #8B5CF6;"></i>
+            Cómputo de Días de Entrega
+          </div>
+          <p style="font-size: 11px; color: #4B5563; line-height: 1.5;">
+            El cronograma de entrega (10-14 días hábiles para Growth; 15-21 días para Scale) comienza a computarse una vez que el cliente entrega la documentación completa y concluye la vinculación del número en Meta.
+          </p>
+        </div>
+
+        <div class="signatures-grid" style="margin-top: 20px;">
+          <div class="signature-box">
+            <div class="signature-line"></div>
+            <div class="signature-name">LÍDER DE IMPLEMENTACIÓN &amp; ONBOARDING</div>
+            <div class="signature-title">Valentina AI &bull; Operaciones Técnicas</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line"></div>
+            <div class="signature-name">RESPONSABLE OPERATIVO DEL CLIENTE</div>
+            <div class="signature-title">Nombre y Puesto en la Organización</div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="letterhead-footer">
+        <div class="letterhead-footer-left">
+          <div>VALENTINA AI &bull; ANEXO DE PRERREQUISITOS Y MATRIZ RACI &bull; REF: ANX-RACI-2026-VAL</div>
+          <div>Manuel Gómez Morín 3960, Centro Sur, Querétaro, Qro. &bull; contacto@valentina-ai.mx</div>
+        </div>
+        <div class="letterhead-footer-right">
+          <div>Página 01 de 01</div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
