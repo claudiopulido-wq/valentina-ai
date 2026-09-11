@@ -54,7 +54,8 @@ El proyecto está diseñado bajo un modelo monorepo modular desacoplado en tres 
 ### 💻 MÓDULO 2: Plataforma SaaS & SuperAdmin (`platform/`)
 * **Propósito:** Núcleo operativo del software: autenticación multi-tenant, bandeja de entrada omnicanal en tiempo real, gestión de bases de conocimiento (RAG), panel SuperAdmin, wizard de onboarding con expedientes legales y cotizador B2B reactivo.
 * **Stack:** Next.js 16.3 (Turbopack, App Router), React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Supabase JS.
-* **Hosting:** Vercel (`prj_7kCmebng7N1otPjda6agWIPDqQgb` ➔ `portal.valentina-ai.mx`).
+* **Hosting & Dominio Oficial:** Vercel (`prj_7kCmebng7N1otPjda6agWIPDqQgb`) ➔ **`https://portal.valentina-ai.mx`** (DNS CNAME y certificado SSL activos).
+* **Política de Entorno:** Entorno 100% cloud en producción. No se utiliza `localhost` para acceso de usuario ni pruebas.
 
 #### Árbol de Componentes y Lógica (`platform/src/`):
 ```tree
