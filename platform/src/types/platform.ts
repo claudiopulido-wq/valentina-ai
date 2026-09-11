@@ -41,6 +41,7 @@ export interface Tenant {
   phoneNumberId?: string; // Meta WhatsApp Phone Number ID (ej. 1306465949219252)
   wabaId?: string; // Meta WhatsApp Business Account ID (ej. 1111806054618508)
   webhookBaseUrl?: string; // Endpoint base de backend/webhook (ej. Railway)
+  website?: string; // Sitio web corporativo oficial (ej. www.valentina-ai.mx)
   notes?: string;
 }
 

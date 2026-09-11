@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tenant, AuthUser } from '../../types/platform';
-import { Search, FileText, ArrowRight } from 'lucide-react';
+import { Search, FileText, ArrowRight, Pencil } from 'lucide-react';
 
 interface Props {
   tenants: Tenant[];
@@ -13,6 +13,7 @@ interface Props {
   onOpenDossierModal: (tenant: Tenant, user?: AuthUser) => void;
   onSelectTenant: (tenant: Tenant) => void;
   onEnterAsClient: (tenant: Tenant) => void;
+  onEditTenant: (tenant: Tenant) => void;
 }
 
 export const TenantsDirectoryTab: React.FC<Props> = ({
@@ -26,6 +27,7 @@ export const TenantsDirectoryTab: React.FC<Props> = ({
   onOpenDossierModal,
   onSelectTenant,
   onEnterAsClient,
+  onEditTenant,
 }) => {
   const filteredTenants = tenants.filter((t) => {
     if (filterType === 'active' && t.status !== 'active') return false;
@@ -102,7 +104,9 @@ export const TenantsDirectoryTab: React.FC<Props> = ({
                         <span className="text-2xl p-1.5 rounded-xl bg-[#f8f9fa] border border-[#dadce0]">{t.logo}</span>
                         <div>
                           <p className="font-semibold text-[#1f1f1f] text-xs">{t.name}</p>
-                          <p className="text-[11px] text-[#5f6368] font-mono">{t.slug}.gesacademico.edu</p>
+                          <p className="text-[11px] text-[#5f6368] font-mono">
+                            {t.website || `${t.slug}.valentina-ai.mx`}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -135,6 +139,14 @@ export const TenantsDirectoryTab: React.FC<Props> = ({
 
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => onEditTenant(t)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#f1f3f4] text-[#1f1f1f] hover:bg-[#e8eaed] transition flex items-center gap-1 cursor-pointer"
+                          title="Editar información de la empresa"
+                        >
+                          <Pencil className="w-3 h-3 text-[#5f6368]" />
+                          <span>Editar</span>
+                        </button>
                         <button
                           onClick={() => {
                             const associatedUser = users.find((u) => u.tenantId === t.id);

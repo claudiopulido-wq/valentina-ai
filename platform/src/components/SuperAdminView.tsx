@@ -19,6 +19,7 @@ import { TenantsDirectoryTab } from './superadmin/TenantsDirectoryTab';
 import { CredentialsDirectoryTab } from './superadmin/CredentialsDirectoryTab';
 import { CloudInfrastructureTab } from './superadmin/CloudInfrastructureTab';
 import { SalesPipelineTab } from './superadmin/SalesPipelineTab';
+import { EditTenantModal } from './superadmin/EditTenantModal';
 import {
   Database,
   PlusCircle,
@@ -36,6 +37,7 @@ interface Props {
   onSelectTenant: (tenant: Tenant) => void;
   onEnterAsClient: (tenant: Tenant) => void;
   onCreateTenantAndUser?: (newTenant: Tenant, newUser: AuthUser) => void;
+  onUpdateTenant?: (updatedTenant: Tenant) => void;
   onToggleUserStatus?: (userId: string) => void;
   onResetUserPassword?: (userId: string, newPassword: string) => void;
 }
@@ -46,12 +48,14 @@ export const SuperAdminView: React.FC<Props> = ({
   onSelectTenant,
   onEnterAsClient,
   onCreateTenantAndUser,
+  onUpdateTenant,
   onToggleUserStatus,
   onResetUserPassword,
 }) => {
   const [showSqlModal, setShowSqlModal] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
   const [showNewTenantModal, setShowNewTenantModal] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [activeTab, setActiveTab] = useState<'tenants' | 'credentials' | 'infrastructure' | 'sales_pipeline'>('tenants');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -538,6 +542,7 @@ CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
           onOpenDossierModal={(t, u) => setDossierModal({ tenant: t, user: u, initialTab: 'quote' })}
           onSelectTenant={onSelectTenant}
           onEnterAsClient={onEnterAsClient}
+          onEditTenant={(t) => setEditingTenant(t)}
         />
       )}
 
@@ -601,6 +606,21 @@ CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
         onClose={() => setShowNewTenantModal(false)}
         onComplete={handleWizardComplete}
       />
+
+      {/* MODAL EDICIÓN DE EMPRESA / CLIENTE */}
+      {editingTenant && (
+        <EditTenantModal
+          tenant={editingTenant}
+          isOpen={Boolean(editingTenant)}
+          onClose={() => setEditingTenant(null)}
+          onSave={(updated) => {
+            if (onUpdateTenant) {
+              onUpdateTenant(updated);
+            }
+            setEditingTenant(null);
+          }}
+        />
+      )}
 
       {/* MODAL EXPEDIENTE DIGITAL B2B INTEGRAL */}
       {dossierModal && (

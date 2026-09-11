@@ -48,12 +48,51 @@ import {
 } from 'lucide-react';
 
 export default function PlatformHome() {
-  const [tenants, setTenants] = useState<Tenant[]>(MOCK_TENANTS);
+  const [tenants, setTenants] = useState<Tenant[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('valentina_tenants');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.warn('Error reading saved tenants:', e);
+      }
+    }
+    return MOCK_TENANTS;
+  });
+
   const [users, setUsers] = useState<AuthUser[]>(MOCK_USERS);
   
-  // Estado de Autenticación
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(MOCK_USERS[0]); // Inicia con SuperAdmin para desarrollo
-  const [currentTenant, setCurrentTenant] = useState<Tenant>(MOCK_TENANTS[0]); // UGES
+  // Estado de Autenticación: Exige login en dispositivos nuevos / sesiones no iniciadas
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('valentina_auth_user');
+        if (saved) {
+          return JSON.parse(saved);
+        }
+      } catch (e) {
+        console.warn('Error reading saved auth user:', e);
+      }
+    }
+    return null;
+  });
+
+  const [currentTenant, setCurrentTenant] = useState<Tenant>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('valentina_tenants');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+        }
+      } catch (e) {}
+    }
+    return MOCK_TENANTS[0];
+  });
+
   const [activeView, setActiveView] = useState<'client' | 'admin'>('admin');
   const [clientTab, setClientTab] = useState<ClientTab>('inbox');
   const [topSearch, setTopSearch] = useState('');
@@ -154,6 +193,14 @@ export default function PlatformHome() {
 
   const handleLoginSuccess = (user: AuthUser, tenant: Tenant | null) => {
     setCurrentUser(user);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('valentina_auth_user', JSON.stringify(user));
+      } catch (e) {
+        console.warn('Error saving auth user:', e);
+      }
+    }
+
     if (user.role === 'superadmin') {
       setActiveView('admin');
       if (tenants.length > 0) {
@@ -166,8 +213,34 @@ export default function PlatformHome() {
     }
   };
 
+  const handleUpdateTenant = (updatedTenant: Tenant) => {
+    setTenants((prev) => {
+      const next = prev.map((t) => (t.id === updatedTenant.id ? updatedTenant : t));
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('valentina_tenants', JSON.stringify(next));
+        } catch (e) {
+          console.warn('Error saving updated tenants:', e);
+        }
+      }
+      return next;
+    });
+
+    setCurrentTenant((prev) => (prev.id === updatedTenant.id ? updatedTenant : prev));
+  };
+
   const handleCreateTenantAndUser = (newTenant: Tenant, newUser: AuthUser) => {
-    setTenants((prev) => [newTenant, ...prev]);
+    setTenants((prev) => {
+      const next = [newTenant, ...prev];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('valentina_tenants', JSON.stringify(next));
+        } catch (e) {
+          console.warn('Error saving new tenant:', e);
+        }
+      }
+      return next;
+    });
     setUsers((prev) => [newUser, ...prev]);
   };
 
@@ -217,6 +290,13 @@ export default function PlatformHome() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('valentina_auth_user');
+      } catch (e) {
+        console.warn('Error clearing auth session:', e);
+      }
+    }
     setMobileMenuOpen(false);
   };
 
@@ -438,6 +518,7 @@ export default function PlatformHome() {
                 setActiveView('client');
               }}
               onCreateTenantAndUser={handleCreateTenantAndUser}
+              onUpdateTenant={handleUpdateTenant}
               onToggleUserStatus={handleToggleUserStatus}
               onResetUserPassword={handleResetUserPassword}
             />
