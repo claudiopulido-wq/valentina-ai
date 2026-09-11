@@ -10,6 +10,9 @@ interface SendMessagePayload {
   message: string;
   senderName?: string;
   channel?: string;
+  phoneNumberId?: string;
+  wabaId?: string;
+  tenantSlug?: string;
 }
 
 /**
@@ -19,7 +22,16 @@ interface SendMessagePayload {
 export async function POST(request: NextRequest) {
   try {
     const body: SendMessagePayload = await request.json();
-    const { conversationId, recipient, message, senderName, channel = 'whatsapp' } = body;
+    const {
+      conversationId,
+      recipient,
+      message,
+      senderName,
+      channel = 'whatsapp',
+      phoneNumberId,
+      wabaId,
+      tenantSlug,
+    } = body;
 
     if (!recipient || !message?.trim()) {
       return NextResponse.json(
@@ -40,6 +52,9 @@ export async function POST(request: NextRequest) {
           sender_type: 'human_operator',
           sender_name: senderName || 'Operador Humano',
           channel,
+          phone_number_id: phoneNumberId || undefined,
+          waba_id: wabaId || undefined,
+          tenant_slug: tenantSlug || undefined,
         };
 
         const response = await fetch(`${PLATFORM_API_BASE_URL}/api/channels/whatsapp/send`, {

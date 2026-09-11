@@ -38,6 +38,9 @@ export interface Tenant {
   connectedSystems?: string[]; // CRM, Calendario, ERP seleccionados
   secondaryChannels?: string[]; // Canales adicionales (Webchat, Instagram, etc.)
   railwayTenantId?: number; // Identificador numérico mapeado en el backend de Railway RAG
+  phoneNumberId?: string; // Meta WhatsApp Phone Number ID (ej. 1306465949219252)
+  wabaId?: string; // Meta WhatsApp Business Account ID (ej. 1111806054618508)
+  webhookBaseUrl?: string; // Endpoint base de backend/webhook (ej. Railway)
   notes?: string;
 }
 
@@ -51,6 +54,9 @@ export interface Channel {
   lastPing: string;
   batteryLevel?: number; // Visual Apple aesthetic
   dailyMessagesCount: number;
+  phoneNumberId?: string;
+  wabaId?: string;
+  webhookBaseUrl?: string;
 }
 
 export interface Contact {

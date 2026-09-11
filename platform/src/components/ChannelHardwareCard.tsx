@@ -56,6 +56,24 @@ export const ChannelHardwareCard: React.FC<Props> = ({ channels, tenantName }) =
                 </div>
               </div>
 
+              {/* Meta Cloud IDs if configured */}
+              {(ch.phoneNumberId || ch.wabaId) && (
+                <div className="p-2 rounded-xl bg-[#f8f9fa] border border-[#e0e2ec] text-[11px] font-mono space-y-1">
+                  {ch.phoneNumberId && (
+                    <div className="flex items-center justify-between text-[#5f6368]">
+                      <span>Phone Number ID:</span>
+                      <span className="font-semibold text-[#1f1f1f] select-all">{ch.phoneNumberId}</span>
+                    </div>
+                  )}
+                  {ch.wabaId && (
+                    <div className="flex items-center justify-between text-[#5f6368]">
+                      <span>WABA ID:</span>
+                      <span className="font-semibold text-[#1f1f1f] select-all">{ch.wabaId}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Hardware Specs Grid */}
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#f1f3f4] text-xs">
                 <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e2ec]">
