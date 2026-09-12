@@ -269,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       keywords: ['precio', 'costo', 'cotizar', 'cuanto', 'tarifa', 'planes'],
-      response: "Nuestras soluciones arrancan desde $8,500 MXN de setup único y $2,800 MXN/mes con el Plan Growth (o $2,350/mes anual) e incluyen portal de monitoreo en vivo y garantía de 30 días. También puedes cotizar al momento por WhatsApp al <a href='https://wa.me/524422692336' target='_blank' class='text-emerald font-bold hover:underline'>+52 442 269 2336</a>. ¿Cuántos asesores atienden actualmente en tu equipo?"
+      response: "Nuestras soluciones arrancan desde $8,500 MXN de setup único y $2,800 MXN/mes con el Plan Growth (o $2,350/mes anual), e incluyen portal de monitoreo en vivo, integraciones oficiales y garantía de 30 días. ¿Cuántos asesores o conversaciones gestiona actualmente tu equipo?"
     }
   ];
 
