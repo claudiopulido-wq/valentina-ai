@@ -503,20 +503,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   Si tu cuenta está vinculada a Supabase Auth, se ha despachado un enlace seguro a <strong className="text-[#1f1f1f]">{resetEmail}</strong> (revisa también tu carpeta de SPAM).
                 </p>
 
-                {users.some((u) => u.email.toLowerCase().trim() === resetEmail.toLowerCase().trim()) && (
-                  <div className="p-3.5 rounded-xl bg-[#f0f4f9] border border-[#d3e3fd] text-left text-xs text-[#1f1f1f] space-y-2">
-                    <div className="flex items-center gap-1.5 font-semibold text-[#0b57d0]">
-                      <KeyRound className="w-4 h-4 text-[#0b57d0]" />
-                      <span>Cuenta Autorizada en Directorio Maestro</span>
-                    </div>
-                    <p className="text-[#5f6368] text-[11px] leading-relaxed">
-                      Si aún no has vinculado un servidor de correo SMTP o no has personalizado tu clave, puedes ingresar directamente con tu contraseña maestra:
-                    </p>
-                    <div className="inline-block px-2.5 py-1 rounded bg-white border border-[#dadce0] font-mono font-bold text-xs text-[#0b57d0] select-all">
-                      Valentina2026*
-                    </div>
-                  </div>
-                )}
+                <div className="p-3 rounded-xl bg-[#f8f9fa] border border-[#dadce0] text-xs text-[#5f6368] text-center">
+                  ¿No recibes el correo o es tu primer acceso? Contacta al <strong>SuperAdmin</strong> o al soporte corporativo de tu organización para validar tus credenciales de provisión.
+                </div>
 
                 <button
                   type="button"
