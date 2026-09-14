@@ -635,6 +635,20 @@ export const MOCK_USERS: AuthUser[] = [
     notes: 'Propietario & Arquitecto Principal Valentina AI',
   },
   {
+    id: 'user-superadmin-uges',
+    email: 'claudio.pulido@uges.edu.mx',
+    password: 'Valentina2026*',
+    fullName: 'Claudio Pulido (Google Workspace)',
+    tenantId: null, // Acceso global a todos los clientes
+    role: 'superadmin',
+    jobTitle: 'Propietario & Arquitecto Principal',
+    level: 'director',
+    status: 'active',
+    avatarUrl: 'assets/branding/claudio-avatar.jpg',
+    createdAt: '2026-01-01',
+    notes: 'Acceso institucional Google Workspace Claudio Pulido',
+  },
+  {
     id: 'user-valentina-admin',
     email: 'soporte@valentina-ai.mx',
     password: 'Valentina2026*',

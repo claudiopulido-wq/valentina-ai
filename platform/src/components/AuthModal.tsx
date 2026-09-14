@@ -498,11 +498,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="w-10 h-10 rounded-full bg-[#137333] text-white flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <h3 className="text-sm font-bold text-[#1f1f1f]">Enlace temporal enviado</h3>
+                <h3 className="text-sm font-bold text-[#1f1f1f]">Solicitud procesada</h3>
                 <p className="text-xs text-[#5f6368] leading-relaxed">
-                  Hemos enviado un enlace seguro a <strong className="text-[#1f1f1f]">{resetEmail}</strong>. 
-                  Por motivos de seguridad y políticas de privacidad, este enlace tiene una <strong>validez estricta de 2 horas</strong>.
+                  Si tu cuenta está vinculada a Supabase Auth, se ha despachado un enlace seguro a <strong className="text-[#1f1f1f]">{resetEmail}</strong> (revisa también tu carpeta de SPAM).
                 </p>
+
+                {users.some((u) => u.email.toLowerCase().trim() === resetEmail.toLowerCase().trim()) && (
+                  <div className="p-3.5 rounded-xl bg-[#f0f4f9] border border-[#d3e3fd] text-left text-xs text-[#1f1f1f] space-y-2">
+                    <div className="flex items-center gap-1.5 font-semibold text-[#0b57d0]">
+                      <KeyRound className="w-4 h-4 text-[#0b57d0]" />
+                      <span>Cuenta Autorizada en Directorio Maestro</span>
+                    </div>
+                    <p className="text-[#5f6368] text-[11px] leading-relaxed">
+                      Si aún no has vinculado un servidor de correo SMTP o no has personalizado tu clave, puedes ingresar directamente con tu contraseña maestra:
+                    </p>
+                    <div className="inline-block px-2.5 py-1 rounded bg-white border border-[#dadce0] font-mono font-bold text-xs text-[#0b57d0] select-all">
+                      Valentina2026*
+                    </div>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => {
@@ -510,7 +525,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setResetSuccess(false);
                     setErrorMsg(null);
                   }}
-                  className="w-full py-2 px-4 rounded-lg bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-semibold cursor-pointer transition shadow-sm"
+                  className="w-full py-2.5 px-4 rounded-lg bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-semibold cursor-pointer transition shadow-sm"
                 >
                   Volver al inicio de sesión
                 </button>
