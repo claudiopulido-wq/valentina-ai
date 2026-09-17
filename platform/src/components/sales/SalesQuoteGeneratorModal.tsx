@@ -284,15 +284,84 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
     }, 4500);
   };
 
-  // Impresión corregida (Punto 4)
+  // Impresión aislada al 100% (Garantiza cero fugas de la consola SuperAdmin / clientes de fondo)
   const handlePrint = () => {
-    const originalTitle = document.title;
+    const printableElement = document.querySelector('.printable-sheet');
+    if (!printableElement) {
+      window.print();
+      return;
+    }
+
     const cleanCompany = (compiledQuote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
-    document.title = `Propuesta_Comercial_${cleanCompany}_${compiledQuote.folio}`;
-    window.print();
+    const docTitle = `Propuesta_Comercial_${cleanCompany}_${compiledQuote.folio}`;
+
+    // Creamos un iframe aislado temporal para imprimir exclusivamente la hoja membretada
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    iframe.style.zIndex = '-9999';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
+
+    doc.open();
+    doc.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>${docTitle}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page {
+      size: letter portrait;
+      margin: 8mm 10mm;
+    }
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: #ffffff !important;
+      color: #1f1f1f !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .printable-sheet {
+      border: none !important;
+      box-shadow: none !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+    }
+  </style>
+</head>
+<body>
+  ${printableElement.outerHTML}
+</body>
+</html>`);
+    doc.close();
+
     setTimeout(() => {
-      document.title = originalTitle;
-    }, 1500);
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 2500);
+    }, 500);
   };
 
   // Guardado en Google Drive oficial (Punto 1)
