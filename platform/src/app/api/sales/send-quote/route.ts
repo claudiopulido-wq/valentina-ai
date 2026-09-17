@@ -5,7 +5,9 @@ import { CommercialQuote } from '@/types/platform';
 interface SendQuotePayload {
   quote: CommercialQuote;
   emailTo: string;
+  ccEmail?: string;
   personalNote?: string;
+  senderName?: string;
 }
 
 /**
@@ -15,7 +17,7 @@ interface SendQuotePayload {
 export async function POST(req: NextRequest) {
   try {
     const body: SendQuotePayload = await req.json();
-    const { quote, emailTo, personalNote } = body;
+    const { quote, emailTo, ccEmail, personalNote, senderName } = body;
 
     if (!quote || !emailTo) {
       return NextResponse.json(
@@ -32,6 +34,15 @@ export async function POST(req: NextRequest) {
       process.env.GOOGLE_WORKSPACE_APP_PASSWORD || process.env.SMTP_PASSWORD;
 
     const emailSubject = `Propuesta Comercial Oficial: ${quote.companyName} — Valentina AI [${quote.folio}]`;
+
+    // Desglose de Descuentos si existen
+    const hasDiscount = Boolean(
+      quote.discountType &&
+      quote.discountType !== 'none' &&
+      ((quote.discountPercent && quote.discountPercent > 0) ||
+       (quote.setupDiscountMxn && quote.setupDiscountMxn > 0) ||
+       (quote.monthlyDiscountMxn && quote.monthlyDiscountMxn > 0))
+    );
 
     // Plantilla HTML Ejecutiva
     const emailHtml = `
@@ -52,6 +63,7 @@ export async function POST(req: NextRequest) {
     .card-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #5f6368; letter-spacing: 0.5px; margin-bottom: 12px; }
     .metric-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e2ec; font-size: 13px; }
     .metric-row:last-child { border-bottom: none; }
+    .badge-discount { background: #e6f4ea; color: #137333; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid #ceead6; }
     .roi-highlight { background: #e6f4ea; border: 1px solid #ceead6; border-radius: 10px; padding: 16px; margin-bottom: 24px; text-align: center; }
     .roi-amount { font-size: 22px; font-weight: 800; color: #137333; font-family: monospace; }
     .roi-sub { font-size: 11px; color: #0d652d; margin-top: 4px; }
@@ -83,6 +95,18 @@ export async function POST(req: NextRequest) {
           <span>Modalidad de Facturación:</span>
           <strong>${quote.billingPeriod === 'annual' ? 'Anual (-2 Meses Bonificados)' : 'Mensual Estándar'}</strong>
         </div>
+
+        ${
+          hasDiscount
+            ? `
+        <div class="metric-row">
+          <span>Condición Especial de Descuento:</span>
+          <span class="badge-discount">${quote.discountReason || 'Descuento Comercial Bonificado'}</span>
+        </div>
+        `
+            : ''
+        }
+
         <div class="metric-row">
           <span>Inversión Única de Implementación (Setup):</span>
           <strong style="font-family: monospace;">$${quote.setupFeeMxn.toLocaleString('es-MX')} MXN</strong>
@@ -106,8 +130,8 @@ export async function POST(req: NextRequest) {
       <div class="bank">
         <strong>Instrucciones para Formalización:</strong><br>
         Anticipo del 50% para inicio de calibración y ruta crítica (Día 1 al 10):<br>
-        <strong>Banco:</strong> BBVA México &bull; <strong>Beneficiario:</strong> Claudio Pulido / Valentina AI<br>
-        <strong>CLABE Interbancaria:</strong> 012 680 0154892301 22 &bull; <strong>Concepto:</strong> ${quote.folio}
+        <strong>Banco:</strong> BBVA México &bull; <strong>Beneficiario:</strong> VALENTINA AI S.A.S.<br>
+        <strong>CLABE Interbancaria:</strong> 012 680 01589412039 1 &bull; <strong>Concepto:</strong> ${quote.folio}
       </div>
 
       <p style="font-size: 12px; color: #5f6368; line-height: 1.5;">
@@ -136,12 +160,28 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const info = await transporter.sendMail({
-        from: `"Claudio Pulido — Valentina AI" <${workspaceUser}>`,
+      const cleanCompany = (quote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const attachmentFileName = `[Valentina_AI]_Propuesta_${cleanCompany}_${quote.folio}.html`;
+
+      const mailOptions: any = {
+        from: `"${senderName || 'Claudio Pulido — Valentina AI'}" <${workspaceUser}>`,
         to: emailTo,
         subject: emailSubject,
         html: emailHtml,
-      });
+        attachments: [
+          {
+            filename: attachmentFileName,
+            content: emailHtml,
+            contentType: 'text/html; charset=utf-8',
+          },
+        ],
+      };
+
+      if (ccEmail && ccEmail.trim()) {
+        mailOptions.cc = ccEmail.trim();
+      }
+
+      const info = await transporter.sendMail(mailOptions);
 
       return NextResponse.json({
         success: true,
@@ -149,6 +189,7 @@ export async function POST(req: NextRequest) {
         messageId: info.messageId,
         folio: quote.folio,
         sentTo: emailTo,
+        ccSentTo: ccEmail || null,
         sender: workspaceUser,
         timestamp: new Date().toISOString(),
         message: `Cotización ${quote.folio} despachada con éxito a ${emailTo} vía Google Workspace for Education.`,
@@ -161,6 +202,7 @@ export async function POST(req: NextRequest) {
       simulated: true,
       folio: quote.folio,
       sentTo: emailTo,
+      ccSentTo: ccEmail || null,
       sender: workspaceUser,
       timestamp: new Date().toISOString(),
       message: `Cotización ${quote.folio} procesada con éxito en modo de desarrollo. (Configura GOOGLE_WORKSPACE_APP_PASSWORD en .env para despacho SMTP real).`,

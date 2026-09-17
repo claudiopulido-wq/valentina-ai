@@ -185,6 +185,11 @@ export const SalesPipelineTab: React.FC<Props> = ({
                       >
                         Plan {q.plan} ({q.billingPeriod === 'annual' ? 'Anual' : 'Mensual'})
                       </span>
+                      {q.discountReason && (
+                        <span className="ml-1 inline-block px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#e6f4ea] text-[#137333]">
+                          Desc.
+                        </span>
+                      )}
                       <div className="font-mono text-[11px] mt-0.5">
                         <span className="text-[#1f1f1f]">Setup: ${q.setupFeeMxn.toLocaleString('es-MX')}</span>
                         <span className="text-[#5f6368]"> &bull; ${q.monthlyFeeMxn.toLocaleString('es-MX')}/m</span>
@@ -201,29 +206,47 @@ export const SalesPipelineTab: React.FC<Props> = ({
                     </td>
 
                     <td className="p-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                          q.status === 'accepted'
-                            ? 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]'
+                      <div className="space-y-1">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            q.status === 'accepted'
+                              ? 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]'
+                              : q.status === 'negotiating'
+                              ? 'bg-[#fef7e0] text-[#b06000] border-[#feefc3]'
+                              : q.status === 'sent'
+                              ? 'bg-[#e8f0fe] text-[#0b57d0] border-[#d3e3fd]'
+                              : 'bg-[#f1f3f4] text-[#5f6368] border-[#dadce0]'
+                          }`}
+                        >
+                          {q.status === 'accepted'
+                            ? '✓ ACEPTADA'
                             : q.status === 'negotiating'
-                            ? 'bg-[#fef7e0] text-[#b06000] border-[#feefc3]'
+                            ? '💬 EN NEGOCIACIÓN'
                             : q.status === 'sent'
-                            ? 'bg-[#e8f0fe] text-[#0b57d0] border-[#d3e3fd]'
-                            : 'bg-[#f1f3f4] text-[#5f6368] border-[#dadce0]'
-                        }`}
-                      >
-                        {q.status === 'accepted'
-                          ? '✓ ACEPTADA'
-                          : q.status === 'negotiating'
-                          ? '💬 EN NEGOCIACIÓN'
-                          : q.status === 'sent'
-                          ? '✉️ ENVIADA'
-                          : '📝 BORRADOR'}
-                      </span>
+                            ? '✉️ ENVIADA'
+                            : '📝 BORRADOR'}
+                        </span>
+                        {q.sentAt && (
+                          <div className="text-[9.5px] text-[#5f6368] font-mono">
+                            {q.sentAt.split('T')[0]} {q.lastSentTo ? `a ${q.lastSentTo.slice(0, 14)}...` : ''}
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        {q.driveFolderUrl && (
+                          <a
+                            href={q.driveFolderUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 rounded-lg text-[#0b57d0] hover:bg-[#e8f0fe] transition text-[11px]"
+                            title="Abrir unidad compartida de Google Drive"
+                          >
+                            Drive ↗
+                          </a>
+                        )}
                         <button
                           onClick={() => onViewQuote(q)}
                           className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-[#f1f3f4] text-[#0b57d0] border border-[#dadce0] transition cursor-pointer shadow-xs"
