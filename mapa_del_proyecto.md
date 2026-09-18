@@ -1,6 +1,6 @@
 # 🗺️ MAPA DE ARQUITECTURA DEL PROYECTO: VALENTINA AI
-> **Documento de Topología Técnica, Componentes, Flujo de Datos e Infraestructura.**  
-> *Versión:* 2.0 (Full Monorepo) | *Actualización:* 2026-09-10  
+> **Documento de Topología Técnica, Componentes, Flujo de Datos, Rutas y Endpoints.**  
+> *Versión:* 2.2 (Full Monorepo) | *Actualización:* 2026-09-17  
 > *Repositorio:* `claudiopulido-wq/valentina-ai`
 
 ---
@@ -31,6 +31,7 @@ El proyecto está diseñado bajo un modelo monorepo modular desacoplado en tres 
          ├────────────────────────┬───────────────────────────────┤
          │ • Supabase (Auth + DB) │ • Railway (WhatsApp Backend)  │
          │ • Vercel (Hosting Web) │ • Google Workspace (SMTP B2B) │
+         │ • Google Drive (Cloud) │ • Muapi (Generative Media)    │
          └────────────────────────┴───────────────────────────────┘
 ```
 
@@ -57,17 +58,22 @@ El proyecto está diseñado bajo un modelo monorepo modular desacoplado en tres 
 * **Hosting & Dominio Oficial:** Vercel (`prj_7kCmebng7N1otPjda6agWIPDqQgb`) ➔ **`https://portal.valentina-ai.mx`** (DNS CNAME y certificado SSL activos).
 * **Política de Entorno:** Entorno 100% cloud en producción. No se utiliza `localhost` para acceso de usuario ni pruebas.
 
+#### Rutas y Endpoints Activos de la Plataforma (`platform/src/app/api/`):
+* **`POST /api/sales/send-quote`:** Envío oficial de cotizaciones ejecutivas vía Google Workspace SMTP con soporte de adjuntos HTML y copia oculta (CC).
+* **`POST /api/sales/save-to-drive`:** Generación y archivado programático en la Unidad Compartida de Google Drive (`GOOGLE_DRIVE_FOLDER_ID`).
+* **`POST /api/channels/whatsapp/send-message`:** Despacho y enrutamiento de mensajes hacia la API de WhatsApp Cloud de Meta.
+* **`GET, POST /api/tenants/[tenantId]/knowledge`:** Ingesta y listado de fragmentos de la base de conocimiento vectorial RAG.
+* **`GET, PATCH, DELETE /api/tenants/[tenantId]/knowledge/[id]`:** Administración granular de vectores y documentos del tenant.
+* **`POST /api/tenants/[tenantId]/knowledge/[id]/reindexar`:** Reindexación vectorial bajo demanda.
+
 #### Árbol de Componentes y Lógica (`platform/src/`):
 ```tree
 platform/src/
 ├── app/
 │   ├── layout.tsx                     # Layout global con Google Font Inter
 │   ├── page.tsx                       # Orquestador de vistas según rol (SuperAdmin vs Portal Cliente)
-│   ├── globals.css                    # Tokens de diseño Google Workspace Clean Light
-│   └── api/                           # Endpoints Backend Server-Side
-│       ├── sales/send-quote/route.ts  # Despacho de cotizaciones vía Google Workspace SMTP
-│       └── tenants/[tenantId]/
-│           └── knowledge/             # CRUD de Base de Conocimiento RAG y reindexación
+│   ├── globals.css                    # Tokens de diseño Google Workspace Clean Light y @media print
+│   └── api/                           # Endpoints Backend Server-Side (save-to-drive, send-quote, knowledge)
 ├── components/
 │   ├── SuperAdminView.tsx             # Panel de Control Maestro (Orquestador ligero)
 │   ├── LiveOmnichannelInbox.tsx       # Bandeja de entrada omnicanal (WhatsApp/Web)

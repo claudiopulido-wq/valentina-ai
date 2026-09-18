@@ -9,9 +9,11 @@
 ## 🏗️ 2. Topología Monorepo
 * `platform/`: Aplicación Next.js 16 (App Router + React 19 + TypeScript) alojada y desplegada continuamente en **Vercel** (`valentina-portal`).
 * `/`: Landing Page corporativa institucional de alta conversión estética (HTML5, Vanilla CSS dark glassmorphism, Vanilla JS).
-* Documentación centralizada de arquitectura y auditoría:
-  - `mapa_del_proyecto.md`
-  - `auditoria_sistema_saas.md`
+* Documentación centralizada y viva (Tríada de Continuidad Técnica):
+  - `contexto.md`: Deudas técnicas, reglas de oro, aprendizajes y pendientes.
+  - `arquitectura.md`: Tecnologías, integraciones cloud y componentes nuevos.
+  - `mapa_del_proyecto.md`: Topología de rutas, endpoints y árbol de archivos.
+  - `auditoria_sistema_saas.md`: Auditoría de seguridad y monitoreo de deuda técnica.
 
 ## 🔒 3. Seguridad y Buenas Prácticas
 * Cero contraseñas en plano en el cliente (`MOCK_USERS` no almacena secretos).

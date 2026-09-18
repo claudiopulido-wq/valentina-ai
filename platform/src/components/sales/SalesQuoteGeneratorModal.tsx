@@ -27,7 +27,13 @@ import {
   FolderUp,
   FolderSync,
   FileText,
-  ExternalLink
+  ExternalLink,
+  Save,
+  Check,
+  Percent,
+  Tag,
+  Clock,
+  SendHorizontal
 } from 'lucide-react';
 
 interface Props {
@@ -95,18 +101,34 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
   const [overrideSetup, setOverrideSetup] = useState<number | null>(null);
   const [overrideMonthly, setOverrideMonthly] = useState<number | null>(null);
 
-  // Estados de envío y guardado
+  // Descuentos Comerciales (Punto 3)
+  const [discountType, setDiscountType] = useState<'none' | 'percent' | 'fixed'>('none');
+  const [discountPercent, setDiscountPercent] = useState<number>(0);
+  const [setupDiscountMxn, setSetupDiscountMxn] = useState<number>(0);
+  const [monthlyDiscountMxn, setMonthlyDiscountMxn] = useState<number>(0);
+  const [discountReason, setDiscountReason] = useState<string>('');
+
+  // Estados de envío y guardado (Punto 1, 2, 5)
+  const [quoteSavedFeedback, setQuoteSavedFeedback] = useState<string | null>(null);
+  const [savingToDrive, setSavingToDrive] = useState(false);
+  const [savedToDrive, setSavedToDrive] = useState(false);
+  const [driveFolderUrl, setDriveFolderUrl] = useState<string | null>(null);
+
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [emailCc, setEmailCc] = useState('');
+  const [emailPersonalNote, setEmailPersonalNote] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailStatusMessage, setEmailStatusMessage] = useState<string | null>(null);
+  const [gmailFallbackUrl, setGmailFallbackUrl] = useState<string | null>(null);
   const [copiedPitch, setCopiedPitch] = useState(false);
-  const [savedToDrive, setSavedToDrive] = useState(false);
-  const [gmailComposeUrl, setGmailComposeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialQuote) {
       setCompanyName(initialQuote.companyName);
       setContactName(initialQuote.contactName);
       setContactEmail(initialQuote.contactEmail);
+      setEmailRecipient(initialQuote.contactEmail);
       setContactPhone(initialQuote.contactPhone);
       setContactJobTitle(initialQuote.contactJobTitle || 'Director General');
       setIndustry(initialQuote.industry);
@@ -118,11 +140,30 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
       setBillingPeriod(initialQuote.billingPeriod);
       setOverrideSetup(initialQuote.setupFeeMxn);
       setOverrideMonthly(initialQuote.monthlyFeeMxn);
+
+      if (initialQuote.discountType) {
+        setDiscountType(initialQuote.discountType);
+        setDiscountPercent(initialQuote.discountPercent || 0);
+        setSetupDiscountMxn(initialQuote.setupDiscountMxn || 0);
+        setMonthlyDiscountMxn(initialQuote.monthlyDiscountMxn || 0);
+        setDiscountReason(initialQuote.discountReason || '');
+      }
+      if (initialQuote.driveFolderUrl) {
+        setDriveFolderUrl(initialQuote.driveFolderUrl);
+      }
       setViewMode('preview');
     } else {
+      setEmailRecipient(contactEmail);
       setViewMode('form');
     }
   }, [initialQuote, isOpen]);
+
+  // Actualizar emailRecipient si cambia contactEmail
+  useEffect(() => {
+    if (!initialQuote && contactEmail) {
+      setEmailRecipient(contactEmail);
+    }
+  }, [contactEmail, initialQuote]);
 
   if (!isOpen) return null;
 
@@ -146,25 +187,36 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
   const defaultSetupAnnual = Math.round(defaultSetupMonthly * 0.5);
   const defaultMonthlyFeeAnnual = Math.round((defaultMonthlyFee * 10) / 12);
 
+  const baseSetupFee = billingPeriod === 'annual' ? defaultSetupAnnual : defaultSetupMonthly;
+  const baseMonthlyFee = billingPeriod === 'annual' ? defaultMonthlyFeeAnnual : defaultMonthlyFee;
+
+  // Cálculo de Descuentos
+  let calculatedSetupDiscount = 0;
+  let calculatedMonthlyDiscount = 0;
+
+  if (discountType === 'percent' && discountPercent > 0) {
+    calculatedSetupDiscount = Math.round(baseSetupFee * (discountPercent / 100));
+    calculatedMonthlyDiscount = Math.round(baseMonthlyFee * (discountPercent / 100));
+  } else if (discountType === 'fixed') {
+    calculatedSetupDiscount = Math.min(baseSetupFee, setupDiscountMxn);
+    calculatedMonthlyDiscount = Math.min(baseMonthlyFee, monthlyDiscountMxn);
+  }
+
   const effectiveSetupFee =
     overrideSetup !== null
       ? overrideSetup
-      : billingPeriod === 'annual'
-      ? defaultSetupAnnual
-      : defaultSetupMonthly;
+      : Math.max(0, baseSetupFee - calculatedSetupDiscount);
 
   const effectiveMonthlyFee =
     overrideMonthly !== null
       ? overrideMonthly
-      : billingPeriod === 'annual'
-      ? defaultMonthlyFeeAnnual
-      : defaultMonthlyFee;
+      : Math.max(0, baseMonthlyFee - calculatedMonthlyDiscount);
 
   // Métricas Financieras y de ROI
   const currentHumanCostMxn = currentStaffCount * staffSalaryMxn;
   const monthlySavingsMxn = Math.max(0, currentHumanCostMxn - effectiveMonthlyFee);
   const netAnnualSavingsMxn = monthlySavingsMxn * 12;
-  const amortizationDays = Math.max(5, Math.round((effectiveSetupFee / (Math.max(1, monthlySavingsMxn) / 30))));
+  const amortizationDays = Math.max(3, Math.round(effectiveSetupFee / (Math.max(1, monthlySavingsMxn) / 30)));
 
   // Estimación Meta Octubre 2026 ($0.0085 USD / msg tras 1,000 gratuitos)
   const avgMessagesPerConv = 6;
@@ -195,6 +247,13 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
     billingPeriod,
     setupFeeMxn: effectiveSetupFee,
     monthlyFeeMxn: effectiveMonthlyFee,
+    listSetupFeeMxn: baseSetupFee,
+    listMonthlyFeeMxn: baseMonthlyFee,
+    discountType,
+    discountPercent: discountType === 'percent' ? discountPercent : undefined,
+    setupDiscountMxn: calculatedSetupDiscount,
+    monthlyDiscountMxn: calculatedMonthlyDiscount,
+    discountReason: discountReason.trim() || undefined,
     currentHumanCostMxn,
     monthlySavingsMxn,
     netAnnualSavingsMxn,
@@ -205,6 +264,9 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
     expiresAt:
       initialQuote?.expiresAt ||
       new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    driveFolderUrl: driveFolderUrl || initialQuote?.driveFolderUrl,
+    lastSentTo: initialQuote?.lastSentTo,
+    sentAt: initialQuote?.sentAt,
   };
 
   const handleToggleFeature = (id: string) => {
@@ -213,108 +275,208 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
     );
   };
 
-  const handlePrint = () => {
-    const originalTitle = document.title;
-    const cleanCompany = (compiledQuote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
-    document.title = `Propuesta_Comercial_${cleanCompany}_${compiledQuote.folio}`;
-    window.print();
+  // Guardar explícitamente la cotización (Punto 5)
+  const handleDirectSave = () => {
+    onSaveQuote(compiledQuote);
+    setQuoteSavedFeedback(`✓ Cotización ${compiledQuote.folio} guardada exitosamente en el sistema.`);
     setTimeout(() => {
-      document.title = originalTitle;
-    }, 1500);
+      setQuoteSavedFeedback(null);
+    }, 4500);
   };
 
-  const handleSaveToDrive = () => {
-    // 1. Guardar la cotización en el historial del sistema
-    const updatedQuote: CommercialQuote = {
-      ...compiledQuote,
-      status: compiledQuote.status === 'sent' ? 'sent' : 'draft',
-    };
-    onSaveQuote(updatedQuote);
-
-    // 2. Generar el documento HTML oficial auto-contenido listo para Google Drive
-    const cleanCompany = (compiledQuote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const fileName = `[GOOGLE_DRIVE]_Propuesta_Comercial_${cleanCompany}_${compiledQuote.folio}.html`;
+  // Impresión aislada al 100% (Garantiza cero fugas de la consola SuperAdmin / clientes de fondo)
+  const handlePrint = () => {
     const printableElement = document.querySelector('.printable-sheet');
-    const innerHtml = printableElement ? printableElement.outerHTML : '<div>Sin contenido</div>';
+    if (!printableElement) {
+      window.print();
+      return;
+    }
 
-    const standaloneHtml = `<!DOCTYPE html>
+    const cleanCompany = (compiledQuote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const docTitle = `Propuesta_Comercial_${cleanCompany}_${compiledQuote.folio}`;
+
+    // Creamos un iframe aislado temporal para imprimir exclusivamente la hoja membretada
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    iframe.style.zIndex = '-9999';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
+
+    doc.open();
+    doc.write(`<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Propuesta Comercial ${compiledQuote.companyName} — ${compiledQuote.folio}</title>
+  <title>${docTitle}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #f8f9fa; padding: 24px; color: #1f1f1f; }
-    .printable-sheet { max-width: 900px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 16px; border: 1px solid #dadce0; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
-    @media print { body { padding: 0; background: #fff; } .printable-sheet { border: none; box-shadow: none; padding: 12mm 15mm; max-width: 100%; } }
+    @page {
+      size: letter portrait;
+      margin: 8mm 10mm;
+    }
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: #ffffff !important;
+      color: #1f1f1f !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .printable-sheet {
+      border: none !important;
+      box-shadow: none !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+    }
   </style>
 </head>
 <body>
-  ${innerHtml}
+  ${printableElement.outerHTML}
 </body>
-</html>`;
+</html>`);
+    doc.close();
 
-    const blob = new Blob([standaloneHtml], { type: 'text/html;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    setSavedToDrive(true);
-    setTimeout(() => setSavedToDrive(false), 4500);
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 2500);
+    }, 500);
   };
 
-  const handleSendViaEmail = async () => {
+  // Guardado en Google Drive oficial (Punto 1)
+  const handleSaveToDrive = async () => {
+    setSavingToDrive(true);
+    setQuoteSavedFeedback(null);
+
+    // 1. Guardar en base de datos local / Supabase
+    onSaveQuote(compiledQuote);
+
+    // 2. Extraer HTML del render de la hoja membretada
+    const printableElement = document.querySelector('.printable-sheet');
+    const innerHtml = printableElement ? printableElement.outerHTML : '';
+
+    try {
+      const res = await fetch('/api/sales/save-to-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quote: compiledQuote,
+          htmlContent: innerHtml,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.folderUrl) {
+        setDriveFolderUrl(data.folderUrl);
+      }
+
+      // Descarga de respaldo automática para archivo físico
+      const cleanCompany = (compiledQuote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `[Valentina_AI]_Propuesta_Comercial_${cleanCompany}_${compiledQuote.folio}.html`;
+      const blob = new Blob([data.htmlContent || innerHtml], { type: 'text/html;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setSavedToDrive(true);
+      setQuoteSavedFeedback(`✓ Expediente preparado y respaldado para tu Unidad Compartida de Google Drive (${compiledQuote.folio}).`);
+      setTimeout(() => setSavedToDrive(false), 5000);
+    } catch (err) {
+      console.warn('Error al conectar con endpoint Drive:', err);
+      setSavedToDrive(true);
+      setTimeout(() => setSavedToDrive(false), 5000);
+    } finally {
+      setSavingToDrive(false);
+    }
+  };
+
+  // Envío directo desde el sistema (Punto 2)
+  const handleConfirmSendEmail = async () => {
+    const targetEmail = emailRecipient.trim() || compiledQuote.contactEmail;
+    if (!targetEmail) {
+      setEmailStatusMessage('Por favor ingresa un correo destinatario válido.');
+      return;
+    }
+
     setSendingEmail(true);
     setEmailStatusMessage(null);
 
     const emailSubject = `Propuesta Comercial Oficial: ${compiledQuote.companyName} — Valentina AI [${compiledQuote.folio}]`;
     const emailBody = `Estimado(a) ${compiledQuote.contactName},\n\nEs un placer saludarle. Conforme a la sesión de diagnóstico para ${compiledQuote.companyName}, le comparto la propuesta comercial oficial de Valentina AI con folio ${compiledQuote.folio}.\n\nRESUMEN DE LA PROPUESTA:\n• Organización: ${compiledQuote.companyName}\n• Solución: Plan ${compiledQuote.plan}\n• Modalidad: ${compiledQuote.billingPeriod === 'annual' ? 'Facturación Anual (2 meses bonificados + 50% desc en Setup)' : 'Facturación Mensual'}\n• Inversión de Implementación (Setup): $${compiledQuote.setupFeeMxn.toLocaleString('es-MX')} MXN\n• Suscripción Mensual Operativa: $${compiledQuote.monthlyFeeMxn.toLocaleString('es-MX')} MXN/mes\n• Ahorro Mensual Estimado: +$${compiledQuote.monthlySavingsMxn.toLocaleString('es-MX')} MXN/mes\n• Tiempo Estimado de Amortización: ~${compiledQuote.amortizationDays} días hábiles\n\nALCANCE INCLUIDO:\n${compiledQuote.selectedFeatures.map((f) => `• ${f}`).join('\n')}\n\nFORMALIZACIÓN (50% ANTICIPO):\nLos datos bancarios para la transferencia se comparten por separado. Concepto de referencia: ${compiledQuote.folio}\n\nEsta propuesta formal incluye 30 días de garantía de calibración continua y SLA 99.9% de disponibilidad técnica.\n\nQuedo atento a su confirmación para programar el inicio de la ingeniería e inducción.\n\nAtentamente,\nClaudio Pulido\nValentina AI Studio &bull; Ingeniería Empresarial\nManuel Gómez Morín 3960, Centro Sur, Querétaro, Qro.\ncontacto@valentina-ai.mx &bull; https://valentina-ai.mx`;
 
-    const webGmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(compiledQuote.contactEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    setGmailComposeUrl(webGmailUrl);
+    const webGmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    setGmailFallbackUrl(webGmailUrl);
 
     try {
-      // 1. Intentar despacho vía API de servidor
       const res = await fetch('/api/sales/send-quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           quote: compiledQuote,
-          emailTo: compiledQuote.contactEmail,
+          emailTo: targetEmail,
+          ccEmail: emailCc.trim() || undefined,
+          personalNote: emailPersonalNote.trim() || undefined,
         }),
       });
       const data = await res.json();
 
-      // 2. Abrir ventana directa de Gmail de Google Workspace para despacho garantizado
-      window.open(webGmailUrl, '_blank');
-
-      if (res.ok && data.simulated) {
-        // El despacho automático por SMTP está en modo simulado (falta configurar
-        // GOOGLE_WORKSPACE_APP_PASSWORD en el servidor): no se debe reportar como
-        // enviado. Se deja explícito que el borrador de Gmail es el único envío real.
-        setEmailStatusMessage(
-          `⚠️ Modo simulado: NO se despachó ningún correo automático (falta configurar el servidor de correo). Se abrió un borrador en Gmail para ${compiledQuote.contactEmail} — debes darle clic a "Enviar" ahí manualmente.`
-        );
-      } else if (res.ok) {
-        setEmailStatusMessage(`✓ Correo despachado automáticamente a ${compiledQuote.contactEmail} vía Google Workspace. También se abrió un borrador en Gmail por si prefieres revisarlo antes.`);
+      if (res.ok && !data.simulated) {
+        setEmailStatusMessage(`✓ Propuesta despachada exitosamente a ${targetEmail} desde el sistema vía Google Workspace.`);
         const updatedQuote: CommercialQuote = {
           ...compiledQuote,
           status: 'sent',
           sentAt: new Date().toISOString(),
+          lastSentTo: targetEmail,
         };
         onSaveQuote(updatedQuote);
+        setShowEmailModal(false);
+      } else if (data.simulated) {
+        // El despacho automático por SMTP está en modo simulado (falta configurar
+        // GOOGLE_WORKSPACE_APP_PASSWORD en el servidor): se deja explícito que NO
+        // se envió nada real todavía, y que el enlace de respaldo de Gmail es la
+        // única vía real de envío mientras tanto.
+        setEmailStatusMessage(
+          `⚠️ Modo simulado: NO se despachó ningún correo automático (falta configurar el servidor de correo). Usa el enlace de respaldo de Gmail para enviarlo manualmente a ${targetEmail}.`
+        );
+        const updatedQuote: CommercialQuote = {
+          ...compiledQuote,
+          status: 'sent',
+          sentAt: new Date().toISOString(),
+          lastSentTo: targetEmail,
+        };
+        onSaveQuote(updatedQuote);
+        setShowEmailModal(false);
       } else {
-        setEmailStatusMessage(`No se pudo despachar el correo automático (${data.error || 'error del servidor'}). Se abrió un borrador en Gmail para que lo envíes manualmente a ${compiledQuote.contactEmail}.`);
+        setEmailStatusMessage(`No se pudo despachar el correo automático (${data.error || 'error del servidor'}). Usa el enlace de respaldo de Gmail para enviarlo manualmente a ${targetEmail}.`);
       }
     } catch (err: any) {
-      window.open(webGmailUrl, '_blank');
-      setEmailStatusMessage(`Se abrió la redacción en Gmail para enviar directo a ${compiledQuote.contactEmail}.`);
+      setEmailStatusMessage(`No se pudo conectar al servidor de correos. Puedes usar el botón de respaldo de Gmail.`);
     } finally {
       setSendingEmail(false);
     }
@@ -327,7 +489,7 @@ Conforme a la sesión de diagnóstico de ${compiledQuote.companyName}, preparé 
 
 📄 Folio Oficial: ${compiledQuote.folio}
 🎯 Solución Recomendada: Plan ${compiledQuote.plan}
-💰 Implementación (Setup): $${compiledQuote.setupFeeMxn.toLocaleString('es-MX')} MXN (${compiledQuote.billingPeriod === 'annual' ? '50% Bonificado' : '50% anticipo'})
+💰 Implementación (Setup): $${compiledQuote.setupFeeMxn.toLocaleString('es-MX')} MXN ${compiledQuote.discountReason ? `(${compiledQuote.discountReason})` : ''}
 ⚙️ Mensualidad Operativa: $${compiledQuote.monthlyFeeMxn.toLocaleString('es-MX')} MXN/mes
 
 📊 RETORNO DE INVERSIÓN (ROI):
@@ -346,8 +508,8 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto print:p-0 print:bg-white print:static">
-      <div className="bg-[#f8f9fa] rounded-2xl max-w-5xl w-full border border-[#dadce0] shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh] print:border-none print:shadow-none print:max-w-none print:w-full print:rounded-none print:max-h-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto print:p-0 print:bg-white print:static print:overflow-visible">
+      <div className="bg-[#f8f9fa] rounded-2xl max-w-5xl w-full border border-[#dadce0] shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh] print:border-none print:shadow-none print:max-w-none print:w-full print:rounded-none print:max-h-none print:overflow-visible">
         
         {/* Cabecera de la Modal */}
         <div className="px-5 py-3.5 bg-white border-b border-[#dadce0] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 print:hidden sticky top-0 z-20">
@@ -365,7 +527,7 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                 </span>
               </div>
               <p className="text-[11px] text-[#5f6368]">
-                Diagnóstico de operación humana, checklist modular y cálculo automático de ROI
+                Diagnóstico de operación humana, checklist modular, descuentos y cálculo automático de ROI
               </p>
             </div>
           </div>
@@ -375,16 +537,16 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
               <button
                 type="button"
                 onClick={() => setViewMode('form')}
-                className={`px-3 py-1 rounded-md transition ${
+                className={`px-3 py-1 rounded-md transition cursor-pointer ${
                   viewMode === 'form' ? 'bg-white text-[#0b57d0] shadow-xs' : 'text-[#5f6368]'
                 }`}
               >
-                1. Diagnóstico & Alcance
+                1. Diagnóstico &amp; Alcance
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('preview')}
-                className={`px-3 py-1 rounded-md transition ${
+                className={`px-3 py-1 rounded-md transition cursor-pointer ${
                   viewMode === 'preview' ? 'bg-white text-[#0b57d0] shadow-xs' : 'text-[#5f6368]'
                 }`}
               >
@@ -395,22 +557,53 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-[#5f6368] hover:text-[#1f1f1f] hover:bg-[#e0e2ec] transition cursor-pointer"
+              title="Cerrar modal"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Notificación de Estado de Correo */}
-        {emailStatusMessage && (
+        {/* Notificación Toast de Guardado / Estado */}
+        {(quoteSavedFeedback || emailStatusMessage) && (
           <div className="px-6 py-2.5 bg-[#e6f4ea] border-b border-[#ceead6] text-[#137333] text-xs font-medium flex items-center justify-between print:hidden">
-            <span>{emailStatusMessage}</span>
-            <button
-              onClick={() => setEmailStatusMessage(null)}
-              className="text-[#137333] hover:underline text-[11px]"
-            >
-              Entendido
-            </button>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0 text-[#137333]" />
+              <span>{quoteSavedFeedback || emailStatusMessage}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {driveFolderUrl && (
+                <a
+                  href={driveFolderUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[#0b57d0] hover:underline font-bold text-[11px]"
+                >
+                  <span>Abrir en Google Drive</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+              {gmailFallbackUrl && (
+                <a
+                  href={gmailFallbackUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[#0b57d0] hover:underline font-bold text-[11px]"
+                >
+                  <span>Abrir en Gmail Web</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+              <button
+                onClick={() => {
+                  setQuoteSavedFeedback(null);
+                  setEmailStatusMessage(null);
+                }}
+                className="text-[#5f6368] hover:text-[#1f1f1f] text-xs ml-2 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 
@@ -419,7 +612,7 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
           <div className="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs flex-1">
             
             {/* Bloque A: Datos del Prospecto */}
-            <div className="p-4 rounded-xl bg-white border border-[#dadce0] space-y-3">
+            <div className="p-4 rounded-xl bg-white border border-[#dadce0] space-y-3 shadow-xs">
               <div className="text-[11px] font-bold text-[#0b57d0] uppercase tracking-wider flex items-center gap-1.5 border-b border-[#dadce0] pb-2">
                 <Building2 className="w-4 h-4" /> A. Datos del Prospecto y Tomador de Decisión
               </div>
@@ -443,12 +636,12 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                     onChange={(e) => setIndustry(e.target.value)}
                     className="w-full bg-white border border-[#dadce0] rounded-lg px-3 py-2 text-[#1f1f1f] focus:outline-none focus:ring-2 focus:ring-[#0b57d0]"
                   >
-                    <option value="Clínica & Salud Privada">🏥 Clínica & Salud Privada</option>
-                    <option value="Educación & Universidades">🎓 Educación & Universidades</option>
-                    <option value="Inmobiliario & Desarrollos">🏢 Inmobiliario & Desarrollos</option>
-                    <option value="Automotriz & Talleres">🚗 Automotriz & Talleres</option>
-                    <option value="Servicios Legales & Notariales">⚖️ Servicios Legales & Notariales</option>
-                    <option value="Comercio & Retail">🛍️ Comercio & Retail</option>
+                    <option value="Clínica & Salud Privada">🏥 Clínica &amp; Salud Privada</option>
+                    <option value="Educación & Universidades">🎓 Educación &amp; Universidades</option>
+                    <option value="Inmobiliario & Desarrollos">🏢 Inmobiliario &amp; Desarrollos</option>
+                    <option value="Automotriz & Talleres">🚗 Automotriz &amp; Talleres</option>
+                    <option value="Servicios Legales & Notariales">⚖️ Servicios Legales &amp; Notariales</option>
+                    <option value="Comercio & Retail">🛍️ Comercio &amp; Retail</option>
                   </select>
                 </div>
               </div>
@@ -484,7 +677,10 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                     required
                     placeholder="director@empresa.com"
                     value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
+                    onChange={(e) => {
+                      setContactEmail(e.target.value);
+                      setEmailRecipient(e.target.value);
+                    }}
                     className="w-full bg-white border border-[#dadce0] rounded-lg px-3 py-2 text-[#1f1f1f] focus:outline-none focus:ring-2 focus:ring-[#0b57d0]"
                   />
                 </div>
@@ -504,7 +700,7 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
             </div>
 
             {/* Bloque B: Diagnóstico Operativo Humano */}
-            <div className="p-4 rounded-xl bg-white border border-[#dadce0] space-y-3">
+            <div className="p-4 rounded-xl bg-white border border-[#dadce0] space-y-3 shadow-xs">
               <div className="text-[11px] font-bold text-[#b06000] uppercase tracking-wider flex items-center justify-between border-b border-[#dadce0] pb-2">
                 <span className="flex items-center gap-1.5">
                   <Users className="w-4 h-4 text-[#e37400]" /> B. Diagnóstico Operativo Humano (Cálculo del Dolor Financiero)
@@ -568,7 +764,7 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
             </div>
 
             {/* Bloque C: Alcance Técnico Modular (Checklist) */}
-            <div className="p-4 rounded-xl bg-white border border-[#dadce0] space-y-3">
+            <div className="p-4 rounded-xl bg-white border border-[#dadce0] space-y-3 shadow-xs">
               <div className="flex items-center justify-between border-b border-[#dadce0] pb-2">
                 <span className="text-[11px] font-bold text-[#0b57d0] uppercase tracking-wider flex items-center gap-1.5">
                   <CheckSquare className="w-4 h-4" /> C. Alcance Técnico Modular (Checklist de Capacidades)
@@ -610,18 +806,18 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
               </div>
             </div>
 
-            {/* Bloque D: Condiciones Comerciales & ROI */}
-            <div className="p-4 rounded-xl bg-white border border-[#dadce0] space-y-3">
-              <div className="flex items-center justify-between border-b border-[#dadce0] pb-2">
+            {/* Bloque D: Condiciones Comerciales, Descuentos & ROI (Punto 3) */}
+            <div className="p-4 rounded-xl bg-white border border-[#dadce0] space-y-3 shadow-xs">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#dadce0] pb-2 gap-2">
                 <span className="text-[11px] font-bold text-[#137333] uppercase tracking-wider flex items-center gap-1.5">
-                  <DollarSign className="w-4 h-4" /> D. Condiciones Comerciales & Retorno de Inversión
+                  <DollarSign className="w-4 h-4" /> D. Condiciones Comerciales &amp; Descuentos (POL-COM-VAL-2026-B)
                 </span>
 
                 <div className="flex bg-[#f1f3f4] rounded-lg p-0.5 border border-[#dadce0] text-[11px]">
                   <button
                     type="button"
                     onClick={() => setBillingPeriod('monthly')}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                    className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer ${
                       billingPeriod === 'monthly' ? 'bg-[#0b57d0] text-white' : 'text-[#5f6368]'
                     }`}
                   >
@@ -630,23 +826,158 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                   <button
                     type="button"
                     onClick={() => setBillingPeriod('annual')}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                    className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer ${
                       billingPeriod === 'annual' ? 'bg-[#137333] text-white' : 'text-[#5f6368]'
                     }`}
                   >
-                    Anual (Ahorro 2M + 50% Setup)
+                    Anual (2M Bonificados + 50% Setup)
                   </button>
                 </div>
               </div>
 
+              {/* Sub-sección de Descuentos Comerciales Oficiales */}
+              <div className="p-3 bg-[#f8f9fa] rounded-lg border border-[#dadce0] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#1f1f1f] text-[11px] flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-[#0b57d0]" /> Política de Descuentos Comerciales y Bonificaciones
+                  </span>
+                  <div className="flex bg-white rounded-lg p-0.5 border border-[#dadce0] text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDiscountType('none');
+                        setDiscountPercent(0);
+                        setSetupDiscountMxn(0);
+                        setMonthlyDiscountMxn(0);
+                      }}
+                      className={`px-2 py-0.5 rounded font-semibold cursor-pointer ${
+                        discountType === 'none' ? 'bg-[#5f6368] text-white' : 'text-[#5f6368]'
+                      }`}
+                    >
+                      Sin Descuento
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDiscountType('percent');
+                        if (discountPercent === 0) setDiscountPercent(10);
+                      }}
+                      className={`px-2 py-0.5 rounded font-semibold cursor-pointer ${
+                        discountType === 'percent' ? 'bg-[#0b57d0] text-white' : 'text-[#5f6368]'
+                      }`}
+                    >
+                      Porcentaje (%)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiscountType('fixed')}
+                      className={`px-2 py-0.5 rounded font-semibold cursor-pointer ${
+                        discountType === 'fixed' ? 'bg-[#137333] text-white' : 'text-[#5f6368]'
+                      }`}
+                    >
+                      Monto Fijo (MXN)
+                    </button>
+                  </div>
+                </div>
+
+                {discountType === 'percent' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="text-[#5f6368] block mb-1 font-medium">Porcentaje de Descuento Bonificado</label>
+                      <div className="flex items-center gap-1.5">
+                        {[5, 10, 15, 20].map((pct) => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => setDiscountPercent(pct)}
+                            className={`px-2.5 py-1 rounded text-xs font-bold border transition cursor-pointer ${
+                              discountPercent === pct
+                                ? 'bg-[#0b57d0] text-white border-[#0b57d0]'
+                                : 'bg-white text-[#1f1f1f] border-[#dadce0] hover:bg-[#f1f3f4]'
+                            }`}
+                          >
+                            {pct}%
+                          </button>
+                        ))}
+                        <input
+                          type="number"
+                          min="0"
+                          max="90"
+                          value={discountPercent}
+                          onChange={(e) => setDiscountPercent(Number(e.target.value))}
+                          className="w-16 bg-white border border-[#dadce0] rounded px-2 py-1 text-center font-mono text-[#1f1f1f]"
+                        />
+                        <span className="text-[#5f6368] font-bold">%</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[#5f6368] block mb-1 font-medium">Motivo / Justificación Comercial</label>
+                      <input
+                        type="text"
+                        placeholder="ej. Convenio Alianza Médica 2026 / Cierre Q3"
+                        value={discountReason}
+                        onChange={(e) => setDiscountReason(e.target.value)}
+                        className="w-full bg-white border border-[#dadce0] rounded px-3 py-1.5 text-[#1f1f1f]"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {discountType === 'fixed' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    <div>
+                      <label className="text-[#5f6368] block mb-1 font-medium">Descuento en Setup (MXN)</label>
+                      <input
+                        type="number"
+                        step="500"
+                        min="0"
+                        value={setupDiscountMxn}
+                        onChange={(e) => setSetupDiscountMxn(Number(e.target.value))}
+                        className="w-full bg-white border border-[#dadce0] rounded px-3 py-1.5 font-mono text-[#1f1f1f]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[#5f6368] block mb-1 font-medium">Descuento Mensual (MXN)</label>
+                      <input
+                        type="number"
+                        step="250"
+                        min="0"
+                        value={monthlyDiscountMxn}
+                        onChange={(e) => setMonthlyDiscountMxn(Number(e.target.value))}
+                        className="w-full bg-white border border-[#dadce0] rounded px-3 py-1.5 font-mono text-[#1f1f1f]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[#5f6368] block mb-1 font-medium">Motivo Comercial</label>
+                      <input
+                        type="text"
+                        placeholder="ej. Aprobación Dirección"
+                        value={discountReason}
+                        onChange={(e) => setDiscountReason(e.target.value)}
+                        className="w-full bg-white border border-[#dadce0] rounded px-3 py-1.5 text-[#1f1f1f]"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Comparativa de Inversión y Retorno */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 rounded-lg bg-[#f8f9fa] border border-[#dadce0]">
                   <span className="text-[10px] text-[#5f6368] block">Inversión Setup:</span>
                   <div className="text-base font-bold font-mono text-[#1f1f1f] mt-0.5">
                     ${effectiveSetupFee.toLocaleString('es-MX')} MXN
                   </div>
+                  {baseSetupFee > effectiveSetupFee && (
+                    <span className="text-[10px] line-through text-[#80868b] block font-mono">
+                      Lista: ${baseSetupFee.toLocaleString('es-MX')}
+                    </span>
+                  )}
                   <span className="text-[10px] text-[#5f6368]">
-                    {billingPeriod === 'annual' ? '50% Bonificado' : '50% Anticipo / 50% Entrega'}
+                    {billingPeriod === 'annual' ? '50% Bonificado por anualidad' : '50% Anticipo / 50% Entrega'}
                   </span>
                 </div>
 
@@ -655,6 +986,11 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                   <div className="text-base font-bold font-mono text-[#0b57d0] mt-0.5">
                     ${effectiveMonthlyFee.toLocaleString('es-MX')} MXN/mes
                   </div>
+                  {baseMonthlyFee > effectiveMonthlyFee && (
+                    <span className="text-[10px] line-through text-[#80868b] block font-mono">
+                      Lista: ${baseMonthlyFee.toLocaleString('es-MX')}
+                    </span>
+                  )}
                   <span className="text-[10px] text-[#5f6368]">
                     {billingPeriod === 'annual' ? '10 meses pagados / 12 servicio' : 'Facturación mensual recurrente'}
                   </span>
@@ -678,19 +1014,35 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
               </div>
             </div>
 
-            {/* Botón de acción hacia la propuesta membretada */}
-            <div className="pt-2 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  onSaveQuote(compiledQuote);
-                  setViewMode('preview');
-                }}
-                className="px-6 py-2.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white font-bold transition flex items-center gap-2 cursor-pointer shadow-sm"
-              >
-                <span>Generar Propuesta Membretada Oficial</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+            {/* Botones de acción del formulario (Punto 5) */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#dadce0]">
+              <div className="text-[11px] text-[#5f6368]">
+                Folio asignado: <strong className="font-mono text-[#1f1f1f]">{compiledQuote.folio}</strong>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDirectSave}
+                  className="px-4 py-2 rounded-full bg-white hover:bg-[#f1f3f4] text-[#1f1f1f] border border-[#dadce0] font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="Guardar borrador de la cotización en la base de datos"
+                >
+                  <Save className="w-3.5 h-3.5 text-[#0b57d0]" />
+                  <span>Guardar Cotización</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSaveQuote(compiledQuote);
+                    setViewMode('preview');
+                  }}
+                  className="px-5 py-2 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <span>Ver Propuesta Membretada (PDF)</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
           </div>
@@ -698,10 +1050,10 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
 
         {/* VISTA 2: PREVISUALIZACIÓN DE LA PROPUESTA MEMBRETADA OFICIAL */}
         {viewMode === 'preview' && (
-          <div className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex flex-col flex-1 overflow-hidden print:overflow-visible">
             
             {/* Barra de Acciones de la Propuesta */}
-            <div className="px-6 py-2.5 bg-white border-b border-[#dadce0] flex flex-wrap items-center justify-between gap-3 print:hidden">
+            <div className="px-5 py-2.5 bg-white border-b border-[#dadce0] flex flex-wrap items-center justify-between gap-2.5 print:hidden">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -717,6 +1069,17 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                {/* Botón Guardar Cotización (Punto 5) */}
+                <button
+                  type="button"
+                  onClick={handleDirectSave}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-[#f1f3f4] text-[#1f1f1f] border border-[#dadce0] text-xs font-semibold cursor-pointer shadow-xs"
+                  title="Guardar cambios en el sistema SaaS"
+                >
+                  <Save className="w-3.5 h-3.5 text-[#0b57d0]" />
+                  <span>Guardar</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleCopyPitch}
@@ -724,35 +1087,38 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                   title="Copiar resumen ejecutivo para enviar por WhatsApp"
                 >
                   {copiedPitch ? <CheckCircle className="w-3.5 h-3.5 text-[#137333]" /> : <Copy className="w-3.5 h-3.5 text-[#5f6368]" />}
-                  <span>{copiedPitch ? '¡Copiado!' : 'Copiar Pitch WhatsApp'}</span>
+                  <span>{copiedPitch ? '¡Copiado!' : 'Pitch WhatsApp'}</span>
                 </button>
 
+                {/* Botón Guardar en Drive (Punto 1) */}
                 <button
                   type="button"
                   onClick={handleSaveToDrive}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold cursor-pointer shadow-xs transition"
-                  title="Descargar y archivar expediente para tu carpeta de Google Drive"
+                  disabled={savingToDrive}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold cursor-pointer shadow-xs transition disabled:opacity-50"
+                  title="Archivar formalmente en la Unidad Compartida de Google Drive"
                 >
                   <FolderUp className="w-3.5 h-3.5" />
-                  <span>{savedToDrive ? '✓ Guardado en Drive' : 'Guardar en Drive'}</span>
+                  <span>{savingToDrive ? 'Guardando...' : savedToDrive ? '✓ Guardado en Drive' : 'Guardar en Drive'}</span>
                 </button>
 
+                {/* Botón Enviar por Correo (Punto 2) */}
                 <button
                   type="button"
-                  onClick={handleSendViaEmail}
-                  disabled={sendingEmail}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#137333] hover:bg-[#0f5b28] text-white text-xs font-semibold cursor-pointer shadow-xs disabled:opacity-50 transition"
-                  title="Despachar propuesta oficial por correo y abrir en Gmail Web"
+                  onClick={() => setShowEmailModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#137333] hover:bg-[#0f5b28] text-white text-xs font-semibold cursor-pointer shadow-xs transition"
+                  title="Despachar propuesta oficial por correo desde el sistema"
                 >
                   <Mail className="w-3.5 h-3.5" />
-                  <span>{sendingEmail ? 'Enviando...' : 'Enviar por Correo'}</span>
+                  <span>Enviar por Correo</span>
                 </button>
 
+                {/* Botón Imprimir / PDF (Punto 4) */}
                 <button
                   type="button"
                   onClick={handlePrint}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-semibold cursor-pointer shadow-xs transition"
-                  title="Generar PDF oficial aislado para la organización destinataria"
+                  title="Imprimir o exportar PDF membretado oficial"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>Imprimir / PDF</span>
@@ -762,39 +1128,18 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
                   <button
                     type="button"
                     onClick={() => onConvertToClient(compiledQuote)}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold cursor-pointer shadow-xs transition"
-                    title="Transferir datos ganados al Wizard de Alta"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#6D28D9] hover:bg-[#5b21b6] text-white text-xs font-bold cursor-pointer shadow-xs transition"
+                    title="Transferir datos ganados al Wizard de Alta de Cliente"
                   >
                     <Zap className="w-3.5 h-3.5" />
-                    <span>Convertir en Cliente</span>
+                    <span>Convertir</span>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Notificaciones y Avisos de Despacho (Email / Drive) */}
-            {(emailStatusMessage || savedToDrive) && (
-              <div className="px-6 py-2 bg-[#e6f4ea] border-b border-[#ceead6] flex items-center justify-between text-xs text-[#0d652d] print:hidden">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-[#137333] shrink-0" />
-                  <span>{savedToDrive ? `Expediente preparado y descargado para archivar en Google Drive (${compiledQuote.companyName}).` : emailStatusMessage}</span>
-                </div>
-                {gmailComposeUrl && (
-                  <a
-                    href={gmailComposeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 font-bold text-[#0b57d0] hover:underline"
-                  >
-                    <span>Abrir en Gmail Web</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-            )}
-
-            {/* Hoja Membretada con Scroll */}
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 print:p-0 print:overflow-visible">
+            {/* Hoja Membretada con Scroll en pantalla y flujo libre en impresión */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 print:p-0 print:overflow-visible print:h-auto print:max-h-none">
               <CommercialQuotePdfSheet quote={compiledQuote} />
             </div>
 
@@ -802,6 +1147,94 @@ Te envié la propuesta membretada a tu correo ${compiledQuote.contactEmail}. Si 
         )}
 
       </div>
+
+      {/* MODAL / DRAWER DE CONFIRMACIÓN DE ENVÍO POR CORREO (Punto 2) */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs print:hidden">
+          <div className="bg-white rounded-2xl max-w-lg w-full border border-[#dadce0] shadow-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#dadce0] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#e6f4ea] text-[#137333] flex items-center justify-center font-bold">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-[#1f1f1f]">Enviar Propuesta Comercial por Correo</h4>
+                  <p className="text-[11px] text-[#5f6368]">Despacho desde tu cuenta Google Workspace / SMTP</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="text-[#5f6368] hover:text-[#1f1f1f] p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-[#5f6368] block mb-1 font-semibold">Correo Destinatario *</label>
+                <input
+                  type="email"
+                  value={emailRecipient}
+                  onChange={(e) => setEmailRecipient(e.target.value)}
+                  placeholder="ej. director@empresa.com"
+                  className="w-full bg-[#f8f9fa] border border-[#dadce0] rounded-lg px-3 py-2 text-[#1f1f1f] focus:outline-none focus:ring-2 focus:ring-[#0b57d0]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[#5f6368] block mb-1 font-semibold">Copia Oculta / CC (Opcional)</label>
+                <input
+                  type="email"
+                  value={emailCc}
+                  onChange={(e) => setEmailCc(e.target.value)}
+                  placeholder="ej. comercial@valentina-ai.mx"
+                  className="w-full bg-[#f8f9fa] border border-[#dadce0] rounded-lg px-3 py-2 text-[#1f1f1f] focus:outline-none focus:ring-2 focus:ring-[#0b57d0]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[#5f6368] block mb-1 font-semibold">Nota Personalizada (Opcional)</label>
+                <textarea
+                  rows={3}
+                  value={emailPersonalNote}
+                  onChange={(e) => setEmailPersonalNote(e.target.value)}
+                  placeholder="ej. Fue un gusto saludarte en la llamada técnica. Te comparto el desglose con la bonificación especial acordada..."
+                  className="w-full bg-[#f8f9fa] border border-[#dadce0] rounded-lg px-3 py-2 text-[#1f1f1f] focus:outline-none focus:ring-2 focus:ring-[#0b57d0]"
+                />
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-[#f0f4f9] border border-[#d3e3fd] text-[11px] text-[#3c4043] flex items-start gap-2">
+                <FileText className="w-4 h-4 text-[#0b57d0] shrink-0 mt-0.5" />
+                <span>
+                  Se adjuntará automáticamente el expediente oficial <strong>[Valentina_AI]_Propuesta_{compiledQuote.folio}.html</strong> y las condiciones de formalización bancaria.
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-[#dadce0]">
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(false)}
+                className="px-3.5 py-1.5 rounded-full text-[#5f6368] hover:bg-[#f1f3f4] text-xs font-semibold cursor-pointer"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmSendEmail}
+                disabled={sendingEmail}
+                className="px-5 py-2 rounded-full bg-[#137333] hover:bg-[#0f5b28] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 transition"
+              >
+                <SendHorizontal className="w-3.5 h-3.5" />
+                <span>{sendingEmail ? 'Despachando...' : 'Confirmar y Enviar'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

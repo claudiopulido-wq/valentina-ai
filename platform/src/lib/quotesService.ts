@@ -129,10 +129,22 @@ function mapRowToQuote(row: any): CommercialQuote {
     amortizationDays: Number(row.amortization_days ?? data.amortizationDays ?? 15),
     estimatedMetaMonthlyCostMxn: data.estimatedMetaMonthlyCostMxn || 0,
     status: row.status || data.status || 'draft',
+    discountType: data.discountType,
+    discountPercent: data.discountPercent,
+    setupDiscountMxn: data.setupDiscountMxn,
+    monthlyDiscountMxn: data.monthlyDiscountMxn,
+    discountReason: data.discountReason,
+    listSetupFeeMxn: data.listSetupFeeMxn,
+    listMonthlyFeeMxn: data.listMonthlyFeeMxn,
     createdAt: row.created_at ? new Date(row.created_at).toISOString().split('T')[0] : data.createdAt || new Date().toISOString().split('T')[0],
     expiresAt: data.expiresAt || new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
     notes: data.notes,
     sentAt: data.sentAt,
+    lastSentTo: data.lastSentTo,
+    lastMessageId: data.lastMessageId,
+    driveFileUrl: data.driveFileUrl,
+    driveFolderUrl: data.driveFolderUrl,
+    savedToDriveAt: data.savedToDriveAt,
   };
 }
 

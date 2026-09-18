@@ -61,7 +61,9 @@ export const sendQuoteSchema = z.object({
     })
     .passthrough(),
   emailTo: z.string().email(),
+  ccEmail: z.string().email().optional().or(z.literal('')),
   personalNote: z.string().max(1000).optional(),
+  senderName: z.string().max(150).optional(),
 });
 
 export const knowledgeCreateSchema = z.object({

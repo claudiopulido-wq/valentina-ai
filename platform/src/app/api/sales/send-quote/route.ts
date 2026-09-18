@@ -20,13 +20,13 @@ export async function POST(req: NextRequest) {
     // El objeto validado conserva los campos adicionales de CommercialQuote
     // (passthrough) que la plantilla del correo necesita más abajo.
     const quote = parsed.data.quote as unknown as CommercialQuote;
-    const { emailTo, personalNote } = parsed.data;
+    const { emailTo, ccEmail, personalNote, senderName } = parsed.data;
 
     // Idempotencia: reenviar la misma cotización al mismo destinatario dentro
     // de una ventana corta se trata como reintento, no como un segundo correo.
     const idempotencyKey = `send-quote:${quote.id}:${emailTo}`;
     const { result, deduped } = await withIdempotency(idempotencyKey, 30_000, () =>
-      dispatchQuoteEmail(quote, emailTo, personalNote)
+      dispatchQuoteEmail(quote, emailTo, personalNote, ccEmail, senderName)
     );
 
     return NextResponse.json({ ...result.body, deduped }, { status: result.httpStatus });
@@ -47,7 +47,9 @@ interface DispatchResult {
 async function dispatchQuoteEmail(
   quote: CommercialQuote,
   emailTo: string,
-  personalNote: string | undefined
+  personalNote: string | undefined,
+  ccEmail: string | undefined,
+  senderName: string | undefined
 ): Promise<DispatchResult> {
   try {
     const workspaceUser =
@@ -58,6 +60,15 @@ async function dispatchQuoteEmail(
       process.env.GOOGLE_WORKSPACE_APP_PASSWORD || process.env.SMTP_PASSWORD;
 
     const emailSubject = `Propuesta Comercial Oficial: ${quote.companyName} — Valentina AI [${quote.folio}]`;
+
+    // Desglose de Descuentos si existen
+    const hasDiscount = Boolean(
+      quote.discountType &&
+      quote.discountType !== 'none' &&
+      ((quote.discountPercent && quote.discountPercent > 0) ||
+       (quote.setupDiscountMxn && quote.setupDiscountMxn > 0) ||
+       (quote.monthlyDiscountMxn && quote.monthlyDiscountMxn > 0))
+    );
 
     // Plantilla HTML Ejecutiva
     const emailHtml = `
@@ -78,6 +89,7 @@ async function dispatchQuoteEmail(
     .card-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #5f6368; letter-spacing: 0.5px; margin-bottom: 12px; }
     .metric-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e0e2ec; font-size: 13px; }
     .metric-row:last-child { border-bottom: none; }
+    .badge-discount { background: #e6f4ea; color: #137333; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid #ceead6; }
     .roi-highlight { background: #e6f4ea; border: 1px solid #ceead6; border-radius: 10px; padding: 16px; margin-bottom: 24px; text-align: center; }
     .roi-amount { font-size: 22px; font-weight: 800; color: #137333; font-family: monospace; }
     .roi-sub { font-size: 11px; color: #0d652d; margin-top: 4px; }
@@ -109,6 +121,18 @@ async function dispatchQuoteEmail(
           <span>Modalidad de Facturación:</span>
           <strong>${quote.billingPeriod === 'annual' ? 'Anual (-2 Meses Bonificados)' : 'Mensual Estándar'}</strong>
         </div>
+
+        ${
+          hasDiscount
+            ? `
+        <div class="metric-row">
+          <span>Condición Especial de Descuento:</span>
+          <span class="badge-discount">${quote.discountReason || 'Descuento Comercial Bonificado'}</span>
+        </div>
+        `
+            : ''
+        }
+
         <div class="metric-row">
           <span>Inversión Única de Implementación (Setup):</span>
           <strong style="font-family: monospace;">$${quote.setupFeeMxn.toLocaleString('es-MX')} MXN</strong>
@@ -161,12 +185,28 @@ async function dispatchQuoteEmail(
         },
       });
 
-      const info = await transporter.sendMail({
-        from: `"Claudio Pulido — Valentina AI" <${workspaceUser}>`,
+      const cleanCompany = (quote.companyName || 'Cliente').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const attachmentFileName = `[Valentina_AI]_Propuesta_${cleanCompany}_${quote.folio}.html`;
+
+      const mailOptions: any = {
+        from: `"${senderName || 'Claudio Pulido — Valentina AI'}" <${workspaceUser}>`,
         to: emailTo,
         subject: emailSubject,
         html: emailHtml,
-      });
+        attachments: [
+          {
+            filename: attachmentFileName,
+            content: emailHtml,
+            contentType: 'text/html; charset=utf-8',
+          },
+        ],
+      };
+
+      if (ccEmail && ccEmail.trim()) {
+        mailOptions.cc = ccEmail.trim();
+      }
+
+      const info = await transporter.sendMail(mailOptions);
 
       return {
         httpStatus: 200,
@@ -176,6 +216,7 @@ async function dispatchQuoteEmail(
           messageId: info.messageId,
           folio: quote.folio,
           sentTo: emailTo,
+          ccSentTo: ccEmail || null,
           sender: workspaceUser,
           timestamp: new Date().toISOString(),
           message: `Cotización ${quote.folio} despachada con éxito a ${emailTo} vía Google Workspace for Education.`,
@@ -191,6 +232,7 @@ async function dispatchQuoteEmail(
         simulated: true,
         folio: quote.folio,
         sentTo: emailTo,
+        ccSentTo: ccEmail || null,
         sender: workspaceUser,
         timestamp: new Date().toISOString(),
         message: `Cotización ${quote.folio} procesada con éxito en modo de desarrollo. (Configura GOOGLE_WORKSPACE_APP_PASSWORD en .env para despacho SMTP real).`,

@@ -264,12 +264,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (isSupabaseConfigured) {
-        await supabase.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined,
+        const redirectUrl =
+          typeof window !== 'undefined' && !window.location.origin.includes('localhost')
+            ? `${window.location.origin}/reset-password`
+            : 'https://portal.valentina-ai.mx/reset-password';
+
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo: redirectUrl,
         });
+
+        if (error) {
+          console.warn('Reset password Supabase error:', error);
+          if (error.status === 429) {
+            setErrorMsg('Demasiadas solicitudes de recuperación. Por favor espera unos momentos antes de reintentar.');
+            setLoading(false);
+            return;
+          }
+        }
       }
       setResetSuccess(true);
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Reset password error:', err);
       setResetSuccess(true); // Se muestra éxito por seguridad para no enumerar usuarios existentes
     } finally {

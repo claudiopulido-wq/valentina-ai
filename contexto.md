@@ -1,7 +1,7 @@
 # 🧠 CONTEXTO MAESTRO DEL PROYECTO VALENTINA AI
-> **Documento de Continuidad Operativa, Arquitectura, Credenciales y Estado del Sistema.**
-> *Última actualización:* 2026-09-10  
-> *Propósito:* Garantizar que cualquier sesión de IA o desarrollador entienda inmediatamente la estructura completa del proyecto sin tener que explorar o re-leer todo el código fuente.
+> **Documento de Continuidad Operativa, Aprendizajes, Reglas de Oro, Deudas Técnicas y Estado del Sistema.**
+> *Última actualización:* 2026-09-17  
+> *Propósito:* Garantizar que cualquier sesión de IA o desarrollador entienda inmediatamente la estructura completa del proyecto, deudas resueltas, aprendizajes críticos y pendientes sin tener que explorar o re-leer todo el código fuente.
 
 ---
 
@@ -14,18 +14,18 @@ Proyecto Valentina/
 ├── index.html                     # [1] LANDING PAGE CORPORATIVA (HTML5 / Vanilla CSS / JS)
 ├── js/, css/, assets/             # Assets, videos cinemáticos (Wan 2.1, Hailuo 02) y estilos
 ├── platform/                      # [2] PORTAL SAAS & SUPERADMIN (Next.js 16 + React 19 + Tailwind v4)
-│   ├── src/app/                   # App Router de Next.js
+│   ├── src/app/                   # App Router de Next.js y Server-Side API Routes
+│   │   └── api/sales/             # Endpoints: send-quote (SMTP) y save-to-drive (Google Drive)
 │   ├── src/components/            # Componentes UI (Google Workspace Light Style)
 │   │   ├── dossier/               # Generador de Expedientes Digitales (4 Documentos Oficiales)
 │   │   ├── onboarding/            # Wizard de Alta de Clientes (4 Pasos)
-│   │   └── sales/                 # Cotizador B2B, Diagnóstico y ROI
+│   │   └── sales/                 # Cotizador B2B, Descuentos, Diagnóstico y ROI
 │   └── src/lib/                   # Conectores de Supabase, API y Permisos
 ├── studio/                        # [3] MEDIA STUDIO & OPEN HIGGSFIELD (Open Generative AI)
-│   ├── packages/studio/           # Motor de generación visual y pipelines encadenados
-│   ├── src/lib/muapi.js           # Conector a motor Muapi (IA Image/Video)
-│   └── project_knowledge.md       # Documentación técnica del Media Studio
 ├── assets/politicas-y-precios/    # Políticas comerciales oficiales (POL-COM-VAL-2026-B)
-└── contexto.md                    # ESTE ARCHIVO MAESTRO
+├── contexto.md                    # [DOC 1] CONTEXTO MAESTRO, APRENDIZAJES Y DEUDAS TÉCNICAS
+├── arquitectura.md                # [DOC 2] ARQUITECTURA TECNOLÓGICA Y CONEXIONES EXTERNAS
+└── mapa_del_proyecto.md           # [DOC 3] MAPA DE RUTAS, ENDPOINTS Y COMPONENTES
 ```
 
 ---
@@ -85,13 +85,43 @@ Proyecto Valentina/
   3. *Anexo Técnico RACI & Checklist de Prerrequisitos* (Ruta crítica de 10 a 21 días).
   4. *Cédula de Entrega de Credenciales* (Con código QR y clave de contingencia).
 
-### C. Cotizador & Pipeline B2B
-* Pestaña 4 en SuperAdmin (`platform/src/components/sales/SalesQuoteGeneratorModal.tsx`).
+### C. Cotizador & Pipeline B2B (Actualizado 2026-09-17)
+* Componentes clave: `platform/src/components/sales/SalesQuoteGeneratorModal.tsx` y `CommercialQuotePdfSheet.tsx`.
 * **Diagnóstico de Nómina:** Permite calcular el costo de asesores comerciales humanos frente a Valentina, proyectando ahorro neto mensual y días de amortización de la inversión.
-* **Generación de Folio:** Emite folios oficiales `COT-VAL-2026-XXXX`.
-* **Conversión 1-Click:** El botón `⚡ Convertir en Cliente` pasa la cotización aprobada directamente al padrón de empresas y activa su expediente legal.
+* **Política de Descuentos Dinámica:** Soporta descuentos en porcentaje (%) o montos fijos (MXN) en Setup y Mensualidad con motivo de aprobación comercial, reflejando precios de lista tachados y bonificaciones en la cotización oficial.
+* **Integración Google Drive:** Endpoint `/api/sales/save-to-drive` con respaldo para `GOOGLE_DRIVE_FOLDER_ID`, descarga normalizada y enlace directo para abrir la unidad compartida.
+* **Despacho Directo por Servidor:** Endpoint `/api/sales/send-quote` con modal de confirmación (destinatario editable, CC opcional, nota personalizada y adjunto oficial) vía Google Workspace SMTP.
+* **Persistencia Inmediata:** Botón explícito "Guardar Cotización" en Paso 1 y Paso 2 conectado con Supabase (`commercial_quotes`) y caché local.
+* **Conversión 1-Click:** El botón `⚡ Convertir en Cliente` transfiere la cotización aprobada directamente al padrón de empresas y activa su expediente legal.
 
 ---
+
+## 5. ⚖️ Reglas de Oro y Formas de Trabajar
+
+1. **Política Cero-Localhost:** El portal oficial de pruebas y producción es exclusivamente `https://portal.valentina-ai.mx`. Jamás compartir o documentar URLs con `localhost:3000`.
+2. **Modularidad Estricta:** Ningún componente debe superar las ~300 líneas. Componentes mayores deben descomponerse en subcomponentes (`components/sales/`, `components/superadmin/`, etc.).
+3. **Seguridad y Secretos:** Cero contraseñas en texto plano. Autenticación exclusiva vía Supabase Auth. Variables con llaves privadas sin prefijo `NEXT_PUBLIC_`.
+4. **Documentación Viva:** Mantener sincronizada la tríada documental (`contexto.md`, `arquitectura.md`, `mapa_del_proyecto.md`) en cada sesión.
+5. **Aislamiento en Impresión:** Para exportación PDF, usar siempre selectores contextuales (`body:has(.printable-sheet)`) y jamás `body > * { display: none !important; }` porque oculta el árbol raíz de Next.js.
+
+---
+
+## 6. 💡 Aprendizajes Críticos y Soluciones Recientes
+
+* **Bug de Impresión PDF en Blanco:** En Next.js App Router, todo el DOM cuelga de un `div` hijo de `body`. Al aplicar `body > * { display: none; }`, la app entera se volvía invisible para `window.print()`. Se solucionó aplicando `body:has(.printable-sheet) > *:not(:has(.printable-sheet)) { display: none !important; }` y desbloqueando los padres con `overflow: visible !important; position: static !important;`.
+* **Despacho de Correo SMTP con Gmail:** Si el servidor cuenta con `GOOGLE_WORKSPACE_APP_PASSWORD`, el correo se envía directamente por Node.js con `nodemailer` sin abrir ventanas emergentes. Gmail Web se mantiene únicamente como opción de respaldo.
+* **Sincronización Híbrida Supabase + Local:** `quotesService.ts` implementa estrategia offline-first: lee de Supabase y respalda en `localStorage`. Si la tabla no está creada aún, no rompe la UI y conserva la continuidad.
+
+---
+
+## 7. 📌 Deudas Técnicas y Pendientes
+
+| Deuda / Pendiente | Nivel | Estado | Detalle |
+| :--- | :---: | :---: | :--- |
+| Configurar `GOOGLE_DRIVE_FOLDER_ID` | Medio | Pendiente usuario | El usuario creará la unidad compartida y colocará su ID en variables de entorno. |
+| Inyectar `GOOGLE_WORKSPACE_APP_PASSWORD` en Vercel | Medio | En producción | Para despacho 100% real por SMTP en el dominio oficial `portal.valentina-ai.mx`. |
+| Autenticación JWT en Server Proxy | Alto | Identificada | Migrar header `x-user-id` a validación criptográfica `supabase.auth.getUser()`. |
+
 
 ## 5. 🛠️ Comandos de Ejecución Local
 

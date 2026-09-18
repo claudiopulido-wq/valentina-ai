@@ -130,11 +130,11 @@
    ========================================================================== */
 @media print {
   @page {
-    size: A4 portrait;
+    size: letter portrait;
     margin: 8mm 10mm;
   }
 
-  /* Ocultar el fondo completo del dashboard, sidebar, headers de la consola */
+  /* Fondo blanco forzado */
   html, body {
     background: #ffffff !important;
     color: #1f1f1f !important;
@@ -142,36 +142,40 @@
     padding: 0 !important;
     width: 100% !important;
     height: auto !important;
+    min-height: 100% !important;
     overflow: visible !important;
   }
 
-  /* Ocultar todo lo que no sea la hoja imprimible */
-  body > * {
+  /* Cuando hay una hoja imprimible activa, ocultar cualquier hermano fuera del árbol */
+  body:has(.printable-sheet) > *:not(:has(.printable-sheet)) {
     display: none !important;
   }
 
-  /* Si hay un modal con hoja imprimible, mostrar solo ese contenedor */
-  body:has(.printable-sheet) {
-    display: block !important;
+  /* Desbloquear todos los contenedores padre del modal para que fluyan al imprimir */
+  body:has(.printable-sheet),
+  body:has(.printable-sheet) div:has(.printable-sheet) {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    background: transparent !important;
   }
 
   body:has(.printable-sheet) [role="dialog"],
-  body:has(.printable-sheet) .fixed,
-  body:has(.printable-sheet) .overflow-y-auto {
+  body:has(.printable-sheet) .fixed:has(.printable-sheet) {
     position: static !important;
     overflow: visible !important;
-    background: transparent !important;
+    background: #ffffff !important;
     border: none !important;
     box-shadow: none !important;
     display: block !important;
     max-width: 100% !important;
     width: 100% !important;
-    inset: 0 !important;
+    inset: auto !important;
     padding: 0 !important;
     margin: 0 !important;
   }
 
-  /* Ocultar controles, botones de acción y cabecera del modal */
+  /* Ocultar explícitamente elementos de navegación, botones y cabeceras de pantalla */
   button, 
   nav, 
   header, 
@@ -193,7 +197,6 @@
     border: none !important;
     box-shadow: none !important;
     background: #ffffff !important;
-    page-break-inside: avoid;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }

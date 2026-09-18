@@ -176,6 +176,15 @@ export interface CommercialQuote {
   setupFeeMxn: number;
   monthlyFeeMxn: number;
 
+  // Condiciones Comerciales & Descuentos Aplicados
+  discountType?: 'percent' | 'fixed' | 'none';
+  discountPercent?: number;
+  setupDiscountMxn?: number;
+  monthlyDiscountMxn?: number;
+  discountReason?: string;
+  listSetupFeeMxn?: number;
+  listMonthlyFeeMxn?: number;
+
   // Métricas Financieras Proyectadas (ROI)
   currentHumanCostMxn: number;
   monthlySavingsMxn: number;
@@ -183,11 +192,16 @@ export interface CommercialQuote {
   amortizationDays: number;
   estimatedMetaMonthlyCostMxn: number;
 
-  // Metadatos
+  // Metadatos y Trazabilidad Enterprise
   status: QuoteStatus;
   createdAt: string;
   expiresAt: string;
   notes?: string;
   sentAt?: string;
+  lastSentTo?: string;
+  lastMessageId?: string;
+  driveFileUrl?: string;
+  driveFolderUrl?: string;
+  savedToDriveAt?: string;
 }
 

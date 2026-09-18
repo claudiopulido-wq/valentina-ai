@@ -206,9 +206,17 @@ export const CommercialQuotePdfSheet: React.FC<Props> = ({ quote }) => {
 
       {/* 5. Tabla Desglose de Inversión Profesional */}
       <div className="space-y-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#1f1f1f] flex items-center gap-1.5">
-          <DollarSign className="w-4 h-4 text-[#0b57d0]" /> 3. Condiciones Comerciales e Inversión (POL-COM-VAL-2026-B)
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#1f1f1f] flex items-center gap-1.5">
+            <DollarSign className="w-4 h-4 text-[#0b57d0]" /> 3. Condiciones Comerciales e Inversión (POL-COM-VAL-2026-B)
+          </h3>
+          {quote.discountReason && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
+              {quote.discountReason}
+            </span>
+          )}
+        </div>
+
         <div className="overflow-x-auto border border-[#dadce0] rounded-xl text-xs">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -221,16 +229,28 @@ export const CommercialQuotePdfSheet: React.FC<Props> = ({ quote }) => {
             <tbody className="divide-y divide-[#dadce0]">
               <tr>
                 <td className="p-3">
-                  <div className="font-bold text-[#1f1f1f]">Implementación & Calibración Inicial (Setup Fee)</div>
+                  <div className="font-bold text-[#1f1f1f]">Implementación &amp; Calibración Inicial (Setup Fee)</div>
                   <div className="text-[#5f6368] text-[11px]">
                     Arquitectura de prompts, guardrails anti-alucinaciones, ingesta RAG, conexión a canales y pruebas de estrés.
                   </div>
+                  {quote.setupDiscountMxn && quote.setupDiscountMxn > 0 && quote.listSetupFeeMxn ? (
+                    <div className="mt-1 text-[10.5px] font-semibold text-[#137333]">
+                      ✓ Bonificación especial aplicada: -${quote.setupDiscountMxn.toLocaleString('es-MX')} MXN
+                    </div>
+                  ) : null}
                 </td>
                 <td className="p-3 text-[#5f6368]">
-                  {isAnnual ? 'Pago Único (50% Descuento Aplicado)' : '50% Anticipo a la firma / 50% Entrega'}
+                  {isAnnual ? 'Pago Único (50% Bonificado por Anualidad)' : '50% Anticipo a la firma / 50% Entrega'}
                 </td>
-                <td className="p-3 text-right font-mono font-bold text-sm text-[#1f1f1f]">
-                  ${quote.setupFeeMxn.toLocaleString('es-MX')} MXN
+                <td className="p-3 text-right">
+                  {quote.listSetupFeeMxn && quote.listSetupFeeMxn > quote.setupFeeMxn ? (
+                    <span className="line-through text-[#80868b] text-[11px] block font-mono">
+                      ${quote.listSetupFeeMxn.toLocaleString('es-MX')} MXN
+                    </span>
+                  ) : null}
+                  <span className="font-mono font-bold text-sm text-[#1f1f1f]">
+                    ${quote.setupFeeMxn.toLocaleString('es-MX')} MXN
+                  </span>
                 </td>
               </tr>
               <tr>
@@ -239,12 +259,24 @@ export const CommercialQuotePdfSheet: React.FC<Props> = ({ quote }) => {
                   <div className="text-[#5f6368] text-[11px]">
                     Tokens de IA, hosting cloud multi-tenant dedicado, SLA 99.9%, monitoreo continuo y hasta 2h/mes de soporte.
                   </div>
+                  {quote.monthlyDiscountMxn && quote.monthlyDiscountMxn > 0 && quote.listMonthlyFeeMxn ? (
+                    <div className="mt-1 text-[10.5px] font-semibold text-[#137333]">
+                      ✓ Tarifa preferencial bonificada: -${quote.monthlyDiscountMxn.toLocaleString('es-MX')} MXN/mes
+                    </div>
+                  ) : null}
                 </td>
                 <td className="p-3 text-[#5f6368]">
                   {isAnnual ? 'Facturación Anual (10 meses pagados / 2 meses bonificados)' : 'Facturación Mensual Recurrente'}
                 </td>
-                <td className="p-3 text-right font-mono font-bold text-sm text-[#0b57d0]">
-                  ${quote.monthlyFeeMxn.toLocaleString('es-MX')} MXN / mes
+                <td className="p-3 text-right">
+                  {quote.listMonthlyFeeMxn && quote.listMonthlyFeeMxn > quote.monthlyFeeMxn ? (
+                    <span className="line-through text-[#80868b] text-[11px] block font-mono">
+                      ${quote.listMonthlyFeeMxn.toLocaleString('es-MX')} MXN/m
+                    </span>
+                  ) : null}
+                  <span className="font-mono font-bold text-sm text-[#0b57d0]">
+                    ${quote.monthlyFeeMxn.toLocaleString('es-MX')} MXN / mes
+                  </span>
                 </td>
               </tr>
             </tbody>
