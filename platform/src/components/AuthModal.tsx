@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthUser, Tenant } from '../types/platform';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { fetchMyProfile, completeForcedPasswordChange } from '../lib/adminDataService';
 import { ValentinaLogo } from './ValentinaLogo';
 import {
   Lock,
@@ -137,15 +138,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         });
 
         if (data?.user) {
-          const matchedUser: AuthUser = users.find((u) => u.email.toLowerCase() === cleanEmail) || {
-            id: data.user.id,
-            email: data.user.email || cleanEmail,
-            fullName: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
-            role: (data.user.user_metadata?.role as any) || 'tenant_admin',
-            status: 'active',
-            createdAt: new Date().toISOString().split('T')[0],
-            tenantId: (data.user.user_metadata?.tenant_id as string) || tenants[0]?.id || '',
-          };
+          // Perfil autoritativo desde el servidor (tabla platform_users), que
+          // refleja cuentas provisionadas en cualquier dispositivo/sesión. Si
+          // la llamada falla (tabla aún no migrada, red caída), se cae al
+          // directorio local ya cargado en este navegador como respaldo.
+          const serverProfile = await fetchMyProfile();
+          const matchedUser: AuthUser =
+            serverProfile ||
+            users.find((u) => u.email.toLowerCase() === cleanEmail) || {
+              id: data.user.id,
+              email: data.user.email || cleanEmail,
+              fullName: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
+              role: (data.user.user_metadata?.role as any) || 'tenant_admin',
+              status: 'active',
+              createdAt: new Date().toISOString().split('T')[0],
+              tenantId: (data.user.user_metadata?.tenant_id as string) || tenants[0]?.id || '',
+            };
 
           const matchedTenant = matchedUser.tenantId
             ? tenants.find((t) => t.id === matchedUser.tenantId) || null
@@ -164,33 +172,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
 
         if (error) {
-          // Si Supabase Auth no tiene el usuario creado aún, verificar contra el directorio maestro
-          const foundUser = users.find(
-            (u) => u.email.toLowerCase().trim() === cleanEmail
-          );
-
-          if (
-            foundUser &&
-            (foundUser.password === password ||
-              password === 'Valentina2026*' ||
-              (!foundUser.password && password.length >= 6))
-          ) {
-            const userTenant = foundUser.tenantId
-              ? tenants.find((t) => t.id === foundUser.tenantId) || null
-              : tenants[0] || null;
-
-            if (foundUser.mustChangePassword) {
-              setPendingAuthUser({ user: foundUser, tenant: userTenant });
-              setView('force_password_change');
-              setLoading(false);
-              return;
-            }
-
-            setLoading(false);
-            onLoginSuccess(foundUser, userTenant);
-            return;
-          }
-
+          // Credenciales rechazadas por Supabase Auth: nunca se compara contra
+          // contraseñas locales ni se acepta una clave maestra. Solo cuenta de
+          // intentos fallidos y bloqueo temporal por fuerza bruta.
           const nextAttempts = failedAttempts + 1;
           setFailedAttempts(nextAttempts);
 
@@ -206,51 +190,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
       } catch (err: any) {
         console.error('Error durante autenticación Supabase:', err);
-
-        // Fallback resiliente al directorio maestro ante fallas de red
-        const foundUser = users.find(
-          (u) => u.email.toLowerCase().trim() === cleanEmail
-        );
-        if (
-          foundUser &&
-          (foundUser.password === password || password === 'Valentina2026*')
-        ) {
-          const userTenant = foundUser.tenantId
-            ? tenants.find((t) => t.id === foundUser.tenantId) || null
-            : tenants[0] || null;
-          setLoading(false);
-          onLoginSuccess(foundUser, userTenant);
-          return;
-        }
-
         setErrorMsg('Error de comunicación con el servicio de autenticación. Intenta nuevamente.');
         setLoading(false);
         return;
       }
     } else {
-      // Si Supabase no estuviera configurado
-      const foundUser = users.find(
-        (u) => u.email.toLowerCase().trim() === cleanEmail
-      );
-
-      if (!foundUser || (foundUser.password && foundUser.password !== password && password !== 'Valentina2026*')) {
-        setErrorMsg('Credenciales no válidas.');
-        setLoading(false);
-        return;
-      }
-
-      const userTenant = foundUser.tenantId
-        ? tenants.find((t) => t.id === foundUser.tenantId) || null
-        : null;
-
+      // Sin Supabase configurado no existe un mecanismo seguro de autenticación:
+      // se rechaza el acceso en vez de comparar contra contraseñas locales.
+      setErrorMsg('El servicio de autenticación no está disponible en este momento. Contacta a soporte técnico.');
       setLoading(false);
-      onLoginSuccess(foundUser, userTenant);
       return;
     }
   };
 
   // 3. Flujo de actualización forzada de contraseña (Primer Login)
-  const handleForcePasswordChangeSubmit = (e: React.FormEvent) => {
+  const handleForcePasswordChangeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
@@ -271,6 +225,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
+    setLoading(true);
+
+    // La contraseña real se actualiza en Supabase Auth (sesión propia del
+    // usuario, que sí tiene permiso para cambiar su propia clave). Si esto
+    // falla, no se procede: mostrar éxito sin persistir dejaría al usuario
+    // creyendo que ya cambió su clave cuando la provisional sigue activa.
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) {
+      console.error('Error al actualizar contraseña en Supabase Auth:', updateError);
+      setErrorMsg('No se pudo actualizar tu contraseña en el servidor de autenticación. Intenta nuevamente.');
+      setLoading(false);
+      return;
+    }
+
+    await completeForcedPasswordChange();
+
     const updatedUser: AuthUser = {
       ...pendingAuthUser.user,
       mustChangePassword: false,
@@ -278,10 +248,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (onUpdateUserPassword) {
       onUpdateUserPassword(updatedUser.id, newPassword);
-    }
-
-    if (isSupabaseConfigured) {
-      supabase.auth.updateUser({ password: newPassword }).catch((err) => console.warn('Supabase update pass error:', err));
     }
 
     setLoading(false);

@@ -21,15 +21,13 @@ export interface KnowledgeServiceError {
 /**
  * Encabezados de autorización y sesión para las llamadas a los Route Handlers de Next.js.
  */
-async function getAuthHeaders(user: AuthUser | null): Promise<HeadersInit> {
+async function getAuthHeaders(_user: AuthUser | null): Promise<HeadersInit> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
-  if (user) {
-    headers['x-user-id'] = user.id;
-  }
-
+  // El servidor solo acepta un JWT de Supabase Auth verificado; no existe
+  // ningún header alterno de identidad (ver serverAuth.ts).
   // Si Supabase está disponible en el browser, adjuntar el JWT real de la sesión
   if (typeof window !== 'undefined') {
     try {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeKnowledgeRequest } from '@/lib/serverAuth';
+import { knowledgeUpdateSchema, validationErrorResponse } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 const PLATFORM_API_BASE_URL =
   process.env.PLATFORM_API_BASE_URL || 'https://whatsapp-empresarial-production.up.railway.app';
@@ -31,14 +33,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return authCheck.response;
   }
 
-  let body: any;
+  let rawBody: unknown;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return NextResponse.json(
       { error: 'El cuerpo de la solicitud no es un JSON válido.', code: 'INVALID_JSON' },
       { status: 400 }
     );
+  }
+
+  const parsed = knowledgeUpdateSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error);
   }
 
   if (!PLATFORM_API_KEY) {
@@ -56,13 +63,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         Authorization: `Bearer ${PLATFORM_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(parsed.data),
     });
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('[API Proxy] Error al editar documento en Railway:', error);
+  } catch (error: any) {
+    logger.error('Error al editar documento en Railway', {
+      route: '/api/tenants/[tenantId]/knowledge/[id]',
+      tenantId: numericTenantId,
+      docId: numericDocId,
+      error: error?.message,
+    });
     return NextResponse.json(
       { error: 'Error de comunicación con el servicio de base de conocimientos.', code: 'GATEWAY_ERROR' },
       { status: 502 }
@@ -114,8 +126,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const data = await response.json().catch(() => ({}));
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('[API Proxy] Error al borrar documento en Railway:', error);
+  } catch (error: any) {
+    logger.error('Error al borrar documento en Railway', {
+      route: '/api/tenants/[tenantId]/knowledge/[id]',
+      tenantId: numericTenantId,
+      docId: numericDocId,
+      error: error?.message,
+    });
     return NextResponse.json(
       { error: 'Error de comunicación con el servicio de base de conocimientos.', code: 'GATEWAY_ERROR' },
       { status: 502 }

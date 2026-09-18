@@ -181,10 +181,24 @@ export async function syncCommercialQuotesFromSupabase(): Promise<CommercialQuot
   }
 }
 
+export interface SaveQuoteResult {
+  /** Siempre true: el guardado local nunca falla salvo cuota de almacenamiento excedida. */
+  savedLocally: boolean;
+  /** false si Supabase no está configurado, si la tabla no existe aún, o si la escritura falló. */
+  syncedToCloud: boolean;
+  /** Mensaje legible solo cuando syncedToCloud es false, para mostrar al usuario. */
+  cloudError?: string;
+}
+
 /**
- * Guardar o actualizar una cotización en Supabase y en localStorage
+ * Guardar o actualizar una cotización en Supabase y en localStorage.
+ *
+ * Antes esta función devolvía `void` y solo dejaba un `console.warn` si la
+ * escritura en Supabase fallaba: el usuario nunca se enteraba de que su
+ * cotización "guardada" en realidad solo vivía en el localStorage de ese
+ * navegador. Ahora se devuelve el resultado para que la UI pueda avisar.
  */
-export async function saveCommercialQuote(quote: CommercialQuote): Promise<void> {
+export async function saveCommercialQuote(quote: CommercialQuote): Promise<SaveQuoteResult> {
   // 1. Guardar de inmediato en localStorage
   const current = getLocalCommercialQuotes();
   const exists = current.some((q) => q.id === quote.id);
@@ -194,37 +208,49 @@ export async function saveCommercialQuote(quote: CommercialQuote): Promise<void>
   setLocalCommercialQuotes(updated);
 
   // 2. Persistir en Supabase de forma asíncrona si está configurado
-  if (isSupabaseConfigured) {
-    try {
-      const payload = {
-        id: quote.id,
-        folio: quote.folio,
-        company_name: quote.companyName,
-        contact_name: quote.contactName,
-        contact_email: quote.contactEmail,
-        contact_phone: quote.contactPhone,
-        contact_job_title: quote.contactJobTitle || null,
-        industry: quote.industry,
-        plan: quote.plan,
-        billing_period: quote.billingPeriod,
-        setup_fee_mxn: quote.setupFeeMxn,
-        monthly_fee_mxn: quote.monthlyFeeMxn,
-        monthly_savings_mxn: quote.monthlySavingsMxn,
-        net_annual_savings_mxn: quote.netAnnualSavingsMxn,
-        amortization_days: quote.amortizationDays,
-        status: quote.status,
-        selected_features: quote.selectedFeatures,
-        quote_data: quote,
-        updated_at: new Date().toISOString(),
-      };
+  if (!isSupabaseConfigured) {
+    return { savedLocally: true, syncedToCloud: false, cloudError: 'Supabase no está configurado en este entorno.' };
+  }
 
-      const { error } = await supabase.from('commercial_quotes').upsert(payload);
-      if (error && error.code !== '42P01') {
-        console.warn('[quotesService] Error al hacer upsert en Supabase:', error.message);
-      }
-    } catch (err) {
-      console.warn('[quotesService] Excepción al guardar cotización en Supabase:', err);
+  try {
+    const payload = {
+      id: quote.id,
+      folio: quote.folio,
+      company_name: quote.companyName,
+      contact_name: quote.contactName,
+      contact_email: quote.contactEmail,
+      contact_phone: quote.contactPhone,
+      contact_job_title: quote.contactJobTitle || null,
+      industry: quote.industry,
+      plan: quote.plan,
+      billing_period: quote.billingPeriod,
+      setup_fee_mxn: quote.setupFeeMxn,
+      monthly_fee_mxn: quote.monthlyFeeMxn,
+      monthly_savings_mxn: quote.monthlySavingsMxn,
+      net_annual_savings_mxn: quote.netAnnualSavingsMxn,
+      amortization_days: quote.amortizationDays,
+      status: quote.status,
+      selected_features: quote.selectedFeatures,
+      quote_data: quote,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('commercial_quotes').upsert(payload);
+    if (error && error.code !== '42P01') {
+      console.warn('[quotesService] Error al hacer upsert en Supabase:', error.message);
+      return { savedLocally: true, syncedToCloud: false, cloudError: error.message };
     }
+    if (error?.code === '42P01') {
+      return {
+        savedLocally: true,
+        syncedToCloud: false,
+        cloudError: 'La tabla commercial_quotes aún no existe en Supabase (ejecuta el esquema SQL).',
+      };
+    }
+    return { savedLocally: true, syncedToCloud: true };
+  } catch (err: any) {
+    console.warn('[quotesService] Excepción al guardar cotización en Supabase:', err);
+    return { savedLocally: true, syncedToCloud: false, cloudError: err?.message || 'Error de red desconocido.' };
   }
 }
 

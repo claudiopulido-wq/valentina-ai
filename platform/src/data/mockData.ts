@@ -623,7 +623,6 @@ export const MOCK_USERS: AuthUser[] = [
   {
     id: 'user-superadmin',
     email: 'contacto@valentina-ai.mx',
-    password: 'Valentina2026*',
     fullName: 'Claudio Pulido',
     tenantId: null, // Acceso global a todos los clientes
     role: 'superadmin',
@@ -637,7 +636,6 @@ export const MOCK_USERS: AuthUser[] = [
   {
     id: 'user-superadmin-uges',
     email: 'claudio.pulido@uges.edu.mx',
-    password: 'Valentina2026*',
     fullName: 'Claudio Pulido (Google Workspace)',
     tenantId: null, // Acceso global a todos los clientes
     role: 'superadmin',
@@ -651,7 +649,6 @@ export const MOCK_USERS: AuthUser[] = [
   {
     id: 'user-valentina-admin',
     email: 'soporte@valentina-ai.mx',
-    password: 'Valentina2026*',
     fullName: 'Ing. Soporte & Operaciones Valentina AI',
     tenantId: 'tenant-valentina-ai',
     role: 'tenant_admin',

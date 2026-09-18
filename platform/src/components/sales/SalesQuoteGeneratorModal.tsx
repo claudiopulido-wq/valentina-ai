@@ -274,7 +274,7 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
     setEmailStatusMessage(null);
 
     const emailSubject = `Propuesta Comercial Oficial: ${compiledQuote.companyName} — Valentina AI [${compiledQuote.folio}]`;
-    const emailBody = `Estimado(a) ${compiledQuote.contactName},\n\nEs un placer saludarle. Conforme a la sesión de diagnóstico para ${compiledQuote.companyName}, le comparto la propuesta comercial oficial de Valentina AI con folio ${compiledQuote.folio}.\n\nRESUMEN DE LA PROPUESTA:\n• Organización: ${compiledQuote.companyName}\n• Solución: Plan ${compiledQuote.plan}\n• Modalidad: ${compiledQuote.billingPeriod === 'annual' ? 'Facturación Anual (2 meses bonificados + 50% desc en Setup)' : 'Facturación Mensual'}\n• Inversión de Implementación (Setup): $${compiledQuote.setupFeeMxn.toLocaleString('es-MX')} MXN\n• Suscripción Mensual Operativa: $${compiledQuote.monthlyFeeMxn.toLocaleString('es-MX')} MXN/mes\n• Ahorro Mensual Estimado: +$${compiledQuote.monthlySavingsMxn.toLocaleString('es-MX')} MXN/mes\n• Tiempo Estimado de Amortización: ~${compiledQuote.amortizationDays} días hábiles\n\nALCANCE INCLUIDO:\n${compiledQuote.selectedFeatures.map((f) => `• ${f}`).join('\n')}\n\nDATOS PARA FORMALIZACIÓN (50% ANTICIPO):\nBanco: BBVA México\nBeneficiario: VALENTINA AI S.A.S.\nCLABE Interbancaria: 012 680 01589412039 1\nConcepto: ${compiledQuote.folio}\n\nEsta propuesta formal incluye 30 días de garantía de calibración continua y SLA 99.9% de disponibilidad técnica.\n\nQuedo atento a su confirmación para programar el inicio de la ingeniería e inducción.\n\nAtentamente,\nClaudio Pulido\nValentina AI Studio &bull; Ingeniería Empresarial\nManuel Gómez Morín 3960, Centro Sur, Querétaro, Qro.\ncontacto@valentina-ai.mx &bull; https://valentina-ai.mx`;
+    const emailBody = `Estimado(a) ${compiledQuote.contactName},\n\nEs un placer saludarle. Conforme a la sesión de diagnóstico para ${compiledQuote.companyName}, le comparto la propuesta comercial oficial de Valentina AI con folio ${compiledQuote.folio}.\n\nRESUMEN DE LA PROPUESTA:\n• Organización: ${compiledQuote.companyName}\n• Solución: Plan ${compiledQuote.plan}\n• Modalidad: ${compiledQuote.billingPeriod === 'annual' ? 'Facturación Anual (2 meses bonificados + 50% desc en Setup)' : 'Facturación Mensual'}\n• Inversión de Implementación (Setup): $${compiledQuote.setupFeeMxn.toLocaleString('es-MX')} MXN\n• Suscripción Mensual Operativa: $${compiledQuote.monthlyFeeMxn.toLocaleString('es-MX')} MXN/mes\n• Ahorro Mensual Estimado: +$${compiledQuote.monthlySavingsMxn.toLocaleString('es-MX')} MXN/mes\n• Tiempo Estimado de Amortización: ~${compiledQuote.amortizationDays} días hábiles\n\nALCANCE INCLUIDO:\n${compiledQuote.selectedFeatures.map((f) => `• ${f}`).join('\n')}\n\nFORMALIZACIÓN (50% ANTICIPO):\nLos datos bancarios para la transferencia se comparten por separado. Concepto de referencia: ${compiledQuote.folio}\n\nEsta propuesta formal incluye 30 días de garantía de calibración continua y SLA 99.9% de disponibilidad técnica.\n\nQuedo atento a su confirmación para programar el inicio de la ingeniería e inducción.\n\nAtentamente,\nClaudio Pulido\nValentina AI Studio &bull; Ingeniería Empresarial\nManuel Gómez Morín 3960, Centro Sur, Querétaro, Qro.\ncontacto@valentina-ai.mx &bull; https://valentina-ai.mx`;
 
     const webGmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(compiledQuote.contactEmail)}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
     setGmailComposeUrl(webGmailUrl);
@@ -294,8 +294,15 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
       // 2. Abrir ventana directa de Gmail de Google Workspace para despacho garantizado
       window.open(webGmailUrl, '_blank');
 
-      if (res.ok) {
-        setEmailStatusMessage(`✓ Despacho preparado para ${compiledQuote.contactEmail}. Se abrió tu ventana de Gmail para confirmación.`);
+      if (res.ok && data.simulated) {
+        // El despacho automático por SMTP está en modo simulado (falta configurar
+        // GOOGLE_WORKSPACE_APP_PASSWORD en el servidor): no se debe reportar como
+        // enviado. Se deja explícito que el borrador de Gmail es el único envío real.
+        setEmailStatusMessage(
+          `⚠️ Modo simulado: NO se despachó ningún correo automático (falta configurar el servidor de correo). Se abrió un borrador en Gmail para ${compiledQuote.contactEmail} — debes darle clic a "Enviar" ahí manualmente.`
+        );
+      } else if (res.ok) {
+        setEmailStatusMessage(`✓ Correo despachado automáticamente a ${compiledQuote.contactEmail} vía Google Workspace. También se abrió un borrador en Gmail por si prefieres revisarlo antes.`);
         const updatedQuote: CommercialQuote = {
           ...compiledQuote,
           status: 'sent',
@@ -303,7 +310,7 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
         };
         onSaveQuote(updatedQuote);
       } else {
-        setEmailStatusMessage(`Se abrió la redacción oficial en Gmail lista para enviar a ${compiledQuote.contactEmail}.`);
+        setEmailStatusMessage(`No se pudo despachar el correo automático (${data.error || 'error del servidor'}). Se abrió un borrador en Gmail para que lo envíes manualmente a ${compiledQuote.contactEmail}.`);
       }
     } catch (err: any) {
       window.open(webGmailUrl, '_blank');

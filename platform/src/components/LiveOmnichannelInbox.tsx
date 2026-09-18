@@ -11,6 +11,7 @@ import {
   User,
   Search,
   AlertTriangle,
+  AlertCircle,
   Sparkles,
   Zap,
   ShieldAlert,
@@ -83,6 +84,7 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
   };
 
   const [isSending, setIsSending] = useState(false);
+  const [sendBanner, setSendBanner] = useState<{ type: 'error' | 'warning'; text: string } | null>(null);
 
   // Send Operator Message
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -122,6 +124,21 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
 
     setReplyText('');
     setIsSending(true);
+    setSendBanner(null);
+
+    const applyMessageState = (patch: Partial<ChatMessage>) => {
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (c.id === selectedConv.id) {
+            return {
+              ...c,
+              messages: c.messages.map((m) => (m.id === tempMsgId ? { ...m, ...patch } : m)),
+            };
+          }
+          return c;
+        })
+      );
+    };
 
     try {
       const response = await fetch('/api/channels/whatsapp/send-message', {
@@ -138,23 +155,30 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
         }),
       });
 
-      if (response.ok) {
-        setConversations((prev) =>
-          prev.map((c) => {
-            if (c.id === selectedConv.id) {
-              return {
-                ...c,
-                messages: c.messages.map((m) =>
-                  m.id === tempMsgId ? { ...m, status: 'sent' as const } : m
-                ),
-              };
-            }
-            return c;
-          })
-        );
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.success !== false) {
+        applyMessageState({ status: 'sent', simulated: Boolean(data.simulated) });
+        if (data.simulated) {
+          setSendBanner({
+            type: 'warning',
+            text: 'Modo sandbox: el mensaje no salió realmente por WhatsApp (falta configurar PLATFORM_API_KEY en el servidor).',
+          });
+        }
+      } else {
+        applyMessageState({ status: 'failed' });
+        setSendBanner({
+          type: 'error',
+          text: data.error || 'No se pudo entregar el mensaje por WhatsApp. El destinatario no lo recibió.',
+        });
       }
     } catch (err) {
-      console.warn('[LiveOmnichannelInbox] Fallo en despacho:', err);
+      console.error('[LiveOmnichannelInbox] Fallo en despacho:', err);
+      applyMessageState({ status: 'failed' });
+      setSendBanner({
+        type: 'error',
+        text: 'Error de red al intentar enviar el mensaje. El destinatario no lo recibió.',
+      });
     } finally {
       setIsSending(false);
     }
@@ -476,11 +500,47 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
                             <span className="text-[#137333] font-semibold">${msg.costMxn.toFixed(4)} MXN</span>
                           </div>
                         )}
+
+                        {/* Estado real de entrega para mensajes del operador humano */}
+                        {msg.sender === 'human_operator' && msg.status === 'failed' && (
+                          <div className="mt-1.5 pt-1.5 border-t border-[#fad2cf] text-[10px] font-semibold text-[#c5221f] flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>No entregado</span>
+                          </div>
+                        )}
+                        {msg.sender === 'human_operator' && msg.status !== 'failed' && msg.simulated && (
+                          <div className="mt-1.5 pt-1.5 border-t border-[#feefc3] text-[10px] font-semibold text-[#b06000] flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>Simulado (no real)</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
+
+              {/* Banner de resultado del último envío (error real / modo sandbox) */}
+              {sendBanner && (
+                <div
+                  className={`px-3.5 py-2 border-t text-xs flex items-center justify-between ${
+                    sendBanner.type === 'error'
+                      ? 'bg-[#fce8e6] border-[#f5c2c7] text-[#c5221f]'
+                      : 'bg-[#fef7e0] border-[#feefc3] text-[#b06000]'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{sendBanner.text}</span>
+                  </span>
+                  <button
+                    onClick={() => setSendBanner(null)}
+                    className="text-current opacity-70 hover:opacity-100 cursor-pointer shrink-0 ml-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
 
               {/* Banner informativo de modo supervisión para directores */}
               {isDirector && (

@@ -86,7 +86,8 @@ export interface ChatMessage {
     total: number;
   };
   costMxn: number;
-  status: 'sending' | 'sent' | 'delivered' | 'read';
+  status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+  simulated?: boolean; // true si el envío fue solo un simulacro (gateway no configurado)
   mediaUrl?: string;
   mediaType?: 'audio' | 'image' | 'pdf';
 }

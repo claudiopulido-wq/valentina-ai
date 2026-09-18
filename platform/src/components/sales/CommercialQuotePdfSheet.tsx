@@ -316,13 +316,11 @@ export const CommercialQuotePdfSheet: React.FC<Props> = ({ quote }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-1">
         <div className="p-3.5 rounded-xl border border-[#dadce0] bg-[#f8f9fa] space-y-1">
           <span className="font-bold text-[#1f1f1f] block text-[11px] uppercase tracking-wider">
-            Cuenta Oficial para Pago de Anticipo (50%)
+            Condiciones de Pago de Anticipo (50%)
           </span>
           <div className="font-mono text-[11px] space-y-0.5 text-[#1f1f1f]">
-            <div><strong>Beneficiario:</strong> VALENTINA AI S.A.S.</div>
-            <div><strong>Banco:</strong> BBVA México</div>
-            <div><strong>CLABE Interbancaria:</strong> 012 680 01589412039 1</div>
-            <div><strong>Concepto:</strong> Cotización {quote.folio}</div>
+            <div>Los datos bancarios para la transferencia se comparten por separado con el cliente.</div>
+            <div><strong>Concepto de referencia:</strong> Cotización {quote.folio}</div>
           </div>
         </div>
 

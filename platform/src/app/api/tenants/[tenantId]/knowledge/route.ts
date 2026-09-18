@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeKnowledgeRequest } from '@/lib/serverAuth';
+import { knowledgeCreateSchema, validationErrorResponse } from '@/lib/validation';
+import { logger } from '@/lib/logger';
 
 const PLATFORM_API_BASE_URL =
   process.env.PLATFORM_API_BASE_URL || 'https://whatsapp-empresarial-production.up.railway.app';
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   // 2. Validación de configuración del servidor
   if (!PLATFORM_API_KEY) {
-    console.error('[API Proxy] PLATFORM_API_KEY no configurada en las variables de entorno del servidor.');
+    logger.error('PLATFORM_API_KEY no configurada', { route: '/api/tenants/[tenantId]/knowledge', tenantId: numericTenantId });
     return NextResponse.json(
       { error: 'Configuración interna del servidor incompleta.', code: 'SERVER_CONFIG_ERROR' },
       { status: 500 }
@@ -58,8 +60,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (error) {
-    console.error('[API Proxy] Error al conectar con Railway Knowledge API:', error);
+  } catch (error: any) {
+    logger.error('Error al conectar con Railway Knowledge API', {
+      route: '/api/tenants/[tenantId]/knowledge',
+      tenantId: numericTenantId,
+      error: error?.message,
+    });
     return NextResponse.json(
       { error: 'Error de comunicación con el servicio de base de conocimientos.', code: 'GATEWAY_ERROR' },
       { status: 502 }
@@ -89,9 +95,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   }
 
   // 2. Validación de payload
-  let body: any;
+  let rawBody: unknown;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return NextResponse.json(
       { error: 'El cuerpo de la solicitud no es un JSON válido.', code: 'INVALID_JSON' },
@@ -99,13 +105,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const { titulo, contenido, categoria } = body;
-  if (!titulo || !contenido || !categoria) {
-    return NextResponse.json(
-      { error: 'Los campos titulo, contenido y categoria son obligatorios.', code: 'MISSING_FIELDS' },
-      { status: 400 }
-    );
+  const parsed = knowledgeCreateSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error);
   }
+  const { titulo, contenido, categoria } = parsed.data;
 
   if (!PLATFORM_API_KEY) {
     return NextResponse.json(
@@ -128,8 +132,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('[API Proxy] Error al crear documento en Railway:', error);
+  } catch (error: any) {
+    logger.error('Error al crear documento en Railway', {
+      route: '/api/tenants/[tenantId]/knowledge',
+      tenantId: numericTenantId,
+      error: error?.message,
+    });
     return NextResponse.json(
       { error: 'Error de comunicación con el servicio de base de conocimientos.', code: 'GATEWAY_ERROR' },
       { status: 502 }

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "studio",
+      "runtimeExecutable": "C:\\Users\\ASUS\\studio-dev.cmd",
+      "runtimeArgs": [],
+      "port": 3001
+    },
+    {
+      "name": "platform",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "platform", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { CommercialQuote } from '@/types/platform';
-
-interface SendQuotePayload {
-  quote: CommercialQuote;
-  emailTo: string;
-  personalNote?: string;
-}
+import { sendQuoteSchema, validationErrorResponse } from '@/lib/validation';
+import { withIdempotency } from '@/lib/idempotency';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/sales/send-quote
@@ -14,16 +11,45 @@ interface SendQuotePayload {
  */
 export async function POST(req: NextRequest) {
   try {
-    const body: SendQuotePayload = await req.json();
-    const { quote, emailTo, personalNote } = body;
-
-    if (!quote || !emailTo) {
-      return NextResponse.json(
-        { error: 'Datos de cotización o destinatario faltantes.' },
-        { status: 400 }
-      );
+    const rawBody = await req.json();
+    const parsed = sendQuoteSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return validationErrorResponse(parsed.error);
     }
 
+    // El objeto validado conserva los campos adicionales de CommercialQuote
+    // (passthrough) que la plantilla del correo necesita más abajo.
+    const quote = parsed.data.quote as unknown as CommercialQuote;
+    const { emailTo, personalNote } = parsed.data;
+
+    // Idempotencia: reenviar la misma cotización al mismo destinatario dentro
+    // de una ventana corta se trata como reintento, no como un segundo correo.
+    const idempotencyKey = `send-quote:${quote.id}:${emailTo}`;
+    const { result, deduped } = await withIdempotency(idempotencyKey, 30_000, () =>
+      dispatchQuoteEmail(quote, emailTo, personalNote)
+    );
+
+    return NextResponse.json({ ...result.body, deduped }, { status: result.httpStatus });
+  } catch (error: any) {
+    logger.error('Error al enviar cotización', { route: '/api/sales/send-quote', error: error?.message });
+    return NextResponse.json(
+      { error: error?.message || 'Error interno al procesar el envío de la cotización.' },
+      { status: 500 }
+    );
+  }
+}
+
+interface DispatchResult {
+  httpStatus: number;
+  body: Record<string, unknown>;
+}
+
+async function dispatchQuoteEmail(
+  quote: CommercialQuote,
+  emailTo: string,
+  personalNote: string | undefined
+): Promise<DispatchResult> {
+  try {
     const workspaceUser =
       process.env.GOOGLE_WORKSPACE_USER ||
       process.env.SMTP_USER ||
@@ -105,9 +131,8 @@ export async function POST(req: NextRequest) {
 
       <div class="bank">
         <strong>Instrucciones para Formalización:</strong><br>
-        Anticipo del 50% para inicio de calibración y ruta crítica (Día 1 al 10):<br>
-        <strong>Banco:</strong> BBVA México &bull; <strong>Beneficiario:</strong> Claudio Pulido / Valentina AI<br>
-        <strong>CLABE Interbancaria:</strong> 012 680 0154892301 22 &bull; <strong>Concepto:</strong> ${quote.folio}
+        Anticipo del 50% para inicio de calibración y ruta crítica (Día 1 al 10). Los datos bancarios para la transferencia se comparten por separado con el titular de la cuenta.<br>
+        <strong>Concepto de referencia:</strong> ${quote.folio}
       </div>
 
       <p style="font-size: 12px; color: #5f6368; line-height: 1.5;">
@@ -143,33 +168,43 @@ export async function POST(req: NextRequest) {
         html: emailHtml,
       });
 
-      return NextResponse.json({
+      return {
+        httpStatus: 200,
+        body: {
+          success: true,
+          simulated: false,
+          messageId: info.messageId,
+          folio: quote.folio,
+          sentTo: emailTo,
+          sender: workspaceUser,
+          timestamp: new Date().toISOString(),
+          message: `Cotización ${quote.folio} despachada con éxito a ${emailTo} vía Google Workspace for Education.`,
+        },
+      };
+    }
+
+    // Modo simulado / sandbox (cuando no se ha configurado la contraseña de aplicación de Google)
+    return {
+      httpStatus: 200,
+      body: {
         success: true,
-        simulated: false,
-        messageId: info.messageId,
+        simulated: true,
         folio: quote.folio,
         sentTo: emailTo,
         sender: workspaceUser,
         timestamp: new Date().toISOString(),
-        message: `Cotización ${quote.folio} despachada con éxito a ${emailTo} vía Google Workspace for Education.`,
-      });
-    }
-
-    // Modo simulado / sandbox (cuando no se ha configurado la contraseña de aplicación de Google)
-    return NextResponse.json({
-      success: true,
-      simulated: true,
-      folio: quote.folio,
-      sentTo: emailTo,
-      sender: workspaceUser,
-      timestamp: new Date().toISOString(),
-      message: `Cotización ${quote.folio} procesada con éxito en modo de desarrollo. (Configura GOOGLE_WORKSPACE_APP_PASSWORD en .env para despacho SMTP real).`,
-    });
+        message: `Cotización ${quote.folio} procesada con éxito en modo de desarrollo. (Configura GOOGLE_WORKSPACE_APP_PASSWORD en .env para despacho SMTP real).`,
+      },
+    };
   } catch (error: any) {
-    console.error('[SendQuote API] Error al enviar cotización:', error);
-    return NextResponse.json(
-      { error: error?.message || 'Error interno al procesar el envío de la cotización.' },
-      { status: 500 }
-    );
+    logger.error('Error al despachar el correo de la cotización', {
+      route: '/api/sales/send-quote',
+      folio: quote.folio,
+      error: error?.message,
+    });
+    return {
+      httpStatus: 500,
+      body: { error: error?.message || 'Error interno al procesar el envío de la cotización.' },
+    };
   }
 }

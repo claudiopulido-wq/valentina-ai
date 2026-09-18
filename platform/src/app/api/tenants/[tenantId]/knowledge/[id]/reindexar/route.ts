@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authorizeKnowledgeRequest } from '@/lib/serverAuth';
+import { logger } from '@/lib/logger';
 
 const PLATFORM_API_BASE_URL =
   process.env.PLATFORM_API_BASE_URL || 'https://whatsapp-empresarial-production.up.railway.app';
@@ -49,8 +50,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const data = await response.json().catch(() => ({}));
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('[API Proxy] Error al reindexar documento en Railway:', error);
+  } catch (error: any) {
+    logger.error('Error al reindexar documento en Railway', {
+      route: '/api/tenants/[tenantId]/knowledge/[id]/reindexar',
+      tenantId: numericTenantId,
+      docId: numericDocId,
+      error: error?.message,
+    });
     return NextResponse.json(
       { error: 'Error de comunicación con el servicio de base de conocimientos.', code: 'GATEWAY_ERROR' },
       { status: 502 }

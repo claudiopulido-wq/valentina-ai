@@ -137,10 +137,10 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
               type="button"
               onClick={handleSimulateWebhook}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f8f9fa] hover:bg-[#e8f0fe] text-[#0b57d0] border border-[#d3e3fd] text-xs font-semibold transition cursor-pointer shadow-xs"
-              title="Disparar correos y notificación por API"
+              title="Vista previa: esta acción NO envía ningún correo o mensaje real todavía"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{simulatedWebhookSent ? '¡Notificación Disparada!' : 'Disparar por API'}</span>
+              <span>{simulatedWebhookSent ? 'Vista previa mostrada' : 'Vista previa de notificación (demo)'}</span>
             </button>
 
             <button
@@ -173,17 +173,17 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
           </div>
         </div>
 
-        {/* Notificación Flotante de Webhook Disparado */}
+        {/* Aviso de Vista Previa (esta acción NO despacha nada real) */}
         {simulatedWebhookSent && (
-          <div className="px-6 py-2.5 bg-[#e6f4ea] border-b border-[#ceead6] text-[#137333] text-xs font-medium flex items-center justify-between gap-3 animate-fadeIn print:hidden">
+          <div className="px-6 py-2.5 bg-[#fef7e0] border-b border-[#feefc3] text-[#b06000] text-xs font-medium flex items-center justify-between gap-3 animate-fadeIn print:hidden">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#137333] shrink-0" />
+              <Sparkles className="w-4 h-4 text-[#b06000] shrink-0" />
               <span>
-                <strong>¡Expediente Despachado con Éxito!</strong> Correo transaccional enviado a <u>{effectiveUser.email}</u> (Resend API) y alerta operativa enviada al WhatsApp del equipo de ingeniería.
+                <strong>Vista previa únicamente:</strong> ningún correo ni mensaje de WhatsApp fue enviado de verdad a <u>{effectiveUser.email}</u>. Usa "Copiar Correo" para enviarlo tú mismo, o imprime/descarga el expediente en PDF.
               </span>
             </div>
-            <span className="text-[10px] font-mono text-[#137333] bg-white px-2 py-0.5 rounded border border-[#ceead6]">
-              STATUS 200 OK
+            <span className="text-[10px] font-mono text-[#b06000] bg-white px-2 py-0.5 rounded border border-[#feefc3]">
+              DEMO
             </span>
           </div>
         )}

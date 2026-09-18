@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tenant, AuthUser, CommercialQuote } from '../types/platform';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import {
   getLocalCommercialQuotes,
   syncCommercialQuotesFromSupabase,
@@ -10,6 +9,7 @@ import {
   getLocalCloudCosts,
   setLocalCloudCosts,
 } from '../lib/quotesService';
+import { resetUserPassword as resetUserPasswordReal } from '../lib/adminDataService';
 import { ExecutiveCredentialPdf } from './ExecutiveCredentialPdf';
 import { ClientOnboardingWizard } from './onboarding/ClientOnboardingWizard';
 import { ClientDossierModal } from './dossier/ClientDossierModal';
@@ -36,7 +36,7 @@ interface Props {
   users: AuthUser[];
   onSelectTenant: (tenant: Tenant) => void;
   onEnterAsClient: (tenant: Tenant) => void;
-  onCreateTenantAndUser?: (newTenant: Tenant, newUser: AuthUser) => void;
+  onCreateTenantAndUser?: (newTenant: Tenant, newUser: AuthUser) => Promise<void>;
   onUpdateTenant?: (updatedTenant: Tenant) => void;
   onToggleUserStatus?: (userId: string) => void;
   onResetUserPassword?: (userId: string, newPassword: string) => void;
@@ -80,6 +80,16 @@ export const SuperAdminView: React.FC<Props> = ({
   const [vercelCostMxn, setVercelCostMxn] = useState<number>(initialCosts.vercel);
   const [domainCostMxn, setDomainCostMxn] = useState<number>(initialCosts.domain);
   const [infraSaveNote, setInfraSaveNote] = useState(false);
+  const [cloudSyncWarning, setCloudSyncWarning] = useState<string | null>(null);
+
+  const notifyIfCloudSyncFailed = (result: { syncedToCloud: boolean; cloudError?: string }) => {
+    if (!result.syncedToCloud) {
+      setCloudSyncWarning(
+        `Guardado localmente, pero no se sincronizó con la nube: ${result.cloudError || 'error desconocido'}. Solo tú ves este cambio hasta que se resuelva.`
+      );
+      setTimeout(() => setCloudSyncWarning(null), 8000);
+    }
+  };
 
   const handleSaveInfra = () => {
     setLocalCloudCosts({
@@ -203,6 +213,69 @@ CREATE TABLE IF NOT EXISTS commercial_quotes (
 ALTER TABLE commercial_quotes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
     FOR ALL USING (true);
+
+-- 7. Tenants: fuente de verdad REAL y compartida del directorio de empresas.
+--    Antes de esta tabla, "crear cliente" solo escribía en el localStorage
+--    del navegador del SuperAdmin que lo daba de alta y nadie más lo veía.
+CREATE TABLE IF NOT EXISTS tenants (
+    id TEXT PRIMARY KEY,              -- ej. 'tenant-uges' (mismo id usado en toda la app)
+    slug TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    plan TEXT NOT NULL DEFAULT 'Growth',
+    railway_tenant_id INT,             -- mapeo dinámico hacia el backend RAG de Railway
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,  -- resto de campos del Tenant (canales, datos fiscales, etc.)
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "tenants_select_authenticated" ON tenants
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "tenants_service_role_write" ON tenants
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- 8. Perfiles de usuarios de la plataforma (rol/tenant/nivel). Las
+--    contraseñas NUNCA se guardan aquí: viven exclusivamente en el store
+--    interno de Supabase Auth (auth.users), gestionado por la API de
+--    administrador con la service_role key.
+CREATE TABLE IF NOT EXISTS platform_users (
+    id TEXT PRIMARY KEY,               -- coincide con auth.users.id cuando existe cuenta real
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    tenant_id TEXT REFERENCES tenants(id),
+    role TEXT NOT NULL,
+    level TEXT,
+    job_title TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    notes TEXT,
+    must_change_password BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE platform_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "platform_users_select_authenticated" ON platform_users
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "platform_users_service_role_write" ON platform_users
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- 9. Auditoría de acciones administrativas (alta/edición de tenants y
+--    usuarios, reseteo de contraseñas). Solo el servidor (service_role)
+--    escribe aquí; ningún SuperAdmin puede borrar su propio rastro desde
+--    el cliente.
+CREATE TABLE IF NOT EXISTS audit_log (
+    id BIGSERIAL PRIMARY KEY,
+    action TEXT NOT NULL,          -- ej. 'tenant.create', 'user.password_reset'
+    actor_id TEXT NOT NULL,        -- id del SuperAdmin que ejecutó la acción
+    actor_email TEXT NOT NULL,
+    target_id TEXT NOT NULL,       -- id del tenant/usuario afectado
+    details JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "audit_log_select_authenticated" ON audit_log
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "audit_log_service_role_write" ON audit_log
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
 `;
 
   const copySql = () => {
@@ -211,29 +284,22 @@ CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
     setTimeout(() => setCopiedSql(false), 2000);
   };
 
-  const handleWizardComplete = (newTenant: Tenant, newUser: AuthUser) => {
-    if (onCreateTenantAndUser) {
-      onCreateTenantAndUser(newTenant, newUser);
-    }
-
-    // Registrar en Supabase Authentication si está configurado
-    if (isSupabaseConfigured && newUser.password) {
-      supabase.auth
-        .signUp({
-          email: newUser.email,
-          password: newUser.password,
-          options: {
-            data: {
-              full_name: newUser.fullName,
-              role: 'tenant_admin',
-              tenant_id: newTenant.id,
-              job_title: newUser.jobTitle,
-              level: newUser.level,
-              must_change_password: true,
-            },
-          },
-        })
-        .catch((err) => console.warn('Supabase auto-create user error:', err));
+  const handleWizardComplete = async (newTenant: Tenant, newUser: AuthUser) => {
+    // La creación real (tenant en Supabase + cuenta de Supabase Auth vía API
+    // de administrador) ahora ocurre server-side en `onCreateTenantAndUser`.
+    // Ya no se usa `supabase.auth.signUp` desde el cliente: ese endpoint es
+    // de auto-registro público, no el mecanismo correcto para que un
+    // SuperAdmin provisione la cuenta de otra persona.
+    try {
+      if (onCreateTenantAndUser) {
+        await onCreateTenantAndUser(newTenant, newUser);
+      }
+    } catch (err: any) {
+      window.alert(
+        `No se pudo crear el cliente en el servidor: ${err?.message || 'error desconocido'}.\n\n` +
+          'Verifica que SUPABASE_SERVICE_ROLE_KEY esté configurada y que las tablas "tenants"/"platform_users" existan (botón "Ver esquema SQL").'
+      );
+      return;
     }
 
     setShowNewTenantModal(false);
@@ -242,7 +308,7 @@ CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
   };
 
   const handleSaveQuote = (newOrUpdatedQuote: CommercialQuote) => {
-    saveCommercialQuote(newOrUpdatedQuote);
+    saveCommercialQuote(newOrUpdatedQuote).then(notifyIfCloudSyncFailed);
     setQuotes((prev) => {
       const exists = prev.some((q) => q.id === newOrUpdatedQuote.id);
       return exists
@@ -300,10 +366,11 @@ CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
       secondaryChannels: quote.selectedFeatures.some((f) => f.toLowerCase().includes('webchat')) ? ['webchat'] : [],
     };
 
+    const tempPasswordSuffix = Math.floor(1000 + Math.random() * 9000);
     const newUser: AuthUser = {
       id: `user-${slug}-admin`,
       email: quote.contactEmail.toLowerCase().trim(),
-      password: `Val_${slug.slice(0, 4)}!2026`,
+      password: `Val_${slug.slice(0, 4)}-${tempPasswordSuffix}!`,
       fullName: quote.contactName,
       tenantId: newTenantId,
       role: 'tenant_admin',
@@ -314,26 +381,42 @@ CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
       mustChangePassword: true,
     };
 
-    if (onCreateTenantAndUser) {
-      onCreateTenantAndUser(newTenant, newUser);
-    }
+    (async () => {
+      try {
+        if (onCreateTenantAndUser) {
+          await onCreateTenantAndUser(newTenant, newUser);
+        }
+      } catch (err: any) {
+        window.alert(
+          `No se pudo crear el cliente en el servidor: ${err?.message || 'error desconocido'}.`
+        );
+        return;
+      }
 
-    const acceptedQuote: CommercialQuote = { ...quote, status: 'accepted' };
-    saveCommercialQuote(acceptedQuote);
+      const acceptedQuote: CommercialQuote = { ...quote, status: 'accepted' };
+      saveCommercialQuote(acceptedQuote).then(notifyIfCloudSyncFailed);
 
-    setQuotes((prev) => {
-      return prev.map((item) => (item.id === quote.id ? acceptedQuote : item));
-    });
+      setQuotes((prev) => prev.map((item) => (item.id === quote.id ? acceptedQuote : item)));
 
-    setShowQuoteGeneratorModal(false);
-    setDossierModal({ tenant: newTenant, user: newUser, initialTab: 'quote' });
+      setShowQuoteGeneratorModal(false);
+      setDossierModal({ tenant: newTenant, user: newUser, initialTab: 'quote' });
+    })();
   };
 
 
-  const handleResetPassword = (targetUser: AuthUser) => {
-    // Generar contraseña temporal segura
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const newTempPassword = `Val2026!#${randomSuffix}`;
+  const handleResetPassword = async (targetUser: AuthUser) => {
+    let newTempPassword: string;
+    try {
+      // Genera Y aplica la nueva contraseña REAL en Supabase Auth del lado
+      // del servidor (antes esto solo actualizaba un campo en memoria del
+      // navegador sin tocar la cuenta real).
+      newTempPassword = await resetUserPasswordReal(targetUser.id);
+    } catch (err: any) {
+      window.alert(
+        `No se pudo resetear la contraseña real de ${targetUser.email}: ${err?.message || 'error desconocido'}.`
+      );
+      return;
+    }
 
     if (onResetUserPassword) {
       onResetUserPassword(targetUser.id, newTempPassword);
@@ -358,6 +441,14 @@ CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
 
   return (
     <div className="w-full space-y-6">
+      {/* Aviso de sincronización con la nube fallida (guardado local únicamente) */}
+      {cloudSyncWarning && (
+        <div className="p-3.5 rounded-xl bg-[#fef7e0] border border-[#feefc3] text-[#b06000] text-xs font-medium flex items-start gap-2.5">
+          <span className="shrink-0">⚠️</span>
+          <span>{cloudSyncWarning}</span>
+        </div>
+      )}
+
       {/* Google Console Org Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">

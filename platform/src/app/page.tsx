@@ -11,6 +11,14 @@ import {
   UgesKnowledgeDoc,
 } from '../lib/ugesDataService';
 import {
+  fetchTenants,
+  fetchUsers,
+  createTenant as persistNewTenant,
+  updateTenant as persistTenantUpdate,
+  createUser as persistNewUser,
+  updateUser as persistUserUpdate,
+} from '../lib/adminDataService';
+import {
   ClientTab,
   getAllowedTabsForUser,
   getDefaultTabForUser,
@@ -45,6 +53,7 @@ import {
   Sparkles,
   Filter,
   Menu,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function PlatformHome() {
@@ -191,11 +200,55 @@ export default function PlatformHome() {
     loadUgesRealData();
   }, [loadUgesRealData]);
 
+  // Hidratar tenants/usuarios desde el servidor (Supabase) apenas hay sesión.
+  // Antes de esto, "crear cliente" o "resetear contraseña" solo modificaban
+  // el localStorage de ESE navegador; ahora la fuente de verdad es compartida
+  // entre dispositivos y sesiones. Si la tabla aún no existe o el admin
+  // client no está configurado, las funciones devuelven listas vacías y se
+  // conserva silenciosamente el respaldo local/semilla ya cargado en el estado.
+  useEffect(() => {
+    if (!currentUser) return;
+    let cancelled = false;
+
+    (async () => {
+      const [serverTenants, serverUsers] = await Promise.all([
+        fetchTenants(),
+        currentUser.role === 'superadmin' ? fetchUsers() : Promise.resolve([]),
+      ]);
+      if (cancelled) return;
+
+      if (serverTenants.length > 0) {
+        setTenants(serverTenants);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('valentina_tenants', JSON.stringify(serverTenants));
+          } catch (e) {
+            console.warn('Error saving synced tenants:', e);
+          }
+        }
+        setCurrentTenant((prev) => serverTenants.find((t) => t.id === prev.id) || serverTenants[0] || prev);
+      }
+
+      if (serverUsers.length > 0) {
+        setUsers(serverUsers);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
+
   const handleLoginSuccess = (user: AuthUser, tenant: Tenant | null) => {
-    setCurrentUser(user);
+    // Nunca se conserva la contraseña en memoria del cliente ni en localStorage
+    // una vez completada la autenticación: la sesión real la sostiene Supabase Auth.
+    const { password: _discardedPassword, ...safeUser } = user;
+    void _discardedPassword;
+
+    setCurrentUser(safeUser);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('valentina_auth_user', JSON.stringify(user));
+        localStorage.setItem('valentina_auth_user', JSON.stringify(safeUser));
       } catch (e) {
         console.warn('Error saving auth user:', e);
       }
@@ -214,6 +267,8 @@ export default function PlatformHome() {
   };
 
   const handleUpdateTenant = (updatedTenant: Tenant) => {
+    // Actualización optimista en UI + persistencia real en Supabase en segundo
+    // plano (antes esto SOLO tocaba localStorage y nunca llegaba al servidor).
     setTenants((prev) => {
       const next = prev.map((t) => (t.id === updatedTenant.id ? updatedTenant : t));
       if (typeof window !== 'undefined') {
@@ -227,11 +282,35 @@ export default function PlatformHome() {
     });
 
     setCurrentTenant((prev) => (prev.id === updatedTenant.id ? updatedTenant : prev));
+
+    persistTenantUpdate(updatedTenant.id, updatedTenant).catch((err) => {
+      console.error('[handleUpdateTenant] No se pudo persistir el cambio en el servidor:', err);
+    });
   };
 
-  const handleCreateTenantAndUser = (newTenant: Tenant, newUser: AuthUser) => {
+  /**
+   * Da de alta el tenant y su usuario administrador REALES en el servidor
+   * (tabla `tenants` + cuenta de Supabase Auth vía `/api/users`). A
+   * diferencia del comportamiento anterior, si el servidor rechaza la
+   * operación (falta SUPABASE_SERVICE_ROLE_KEY, tablas no migradas, correo
+   * duplicado) la función lanza el error para que quien la invoque NO
+   * proceda como si el cliente ya existiera.
+   */
+  const handleCreateTenantAndUser = async (newTenant: Tenant, newUser: AuthUser): Promise<void> => {
+    const persistedTenant = await persistNewTenant(newTenant);
+    const persistedUser = await persistNewUser({
+      email: newUser.email,
+      fullName: newUser.fullName,
+      tenantId: persistedTenant.id,
+      role: newUser.role,
+      level: newUser.level,
+      jobTitle: newUser.jobTitle,
+      notes: newUser.notes,
+      password: newUser.password || '',
+    });
+
     setTenants((prev) => {
-      const next = [newTenant, ...prev];
+      const next = [persistedTenant, ...prev.filter((t) => t.id !== persistedTenant.id)];
       if (typeof window !== 'undefined') {
         try {
           localStorage.setItem('valentina_tenants', JSON.stringify(next));
@@ -241,21 +320,20 @@ export default function PlatformHome() {
       }
       return next;
     });
-    setUsers((prev) => [newUser, ...prev]);
+    setUsers((prev) => [persistedUser, ...prev.filter((u) => u.id !== persistedUser.id)]);
   };
 
   const handleToggleUserStatus = (userId: string) => {
+    const target = users.find((u) => u.id === userId);
+    const nextStatus = target?.status === 'active' ? 'suspended' : 'active';
+
     setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === userId) {
-          return {
-            ...u,
-            status: u.status === 'active' ? 'suspended' : 'active',
-          };
-        }
-        return u;
-      })
+      prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u))
     );
+
+    persistUserUpdate(userId, { status: nextStatus }).catch((err) => {
+      console.error('[handleToggleUserStatus] No se pudo persistir el estado en el servidor:', err);
+    });
   };
 
   const handleUpdateUserPassword = (userId: string, newPassword: string) => {
@@ -675,11 +753,13 @@ export default function PlatformHome() {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 font-medium">
-                      <span className="w-2 h-2 rounded-full bg-[#137333]"></span>
-                      <span>
-                        Organización: <strong className="text-[#1f1f1f]">{currentTenant.name}</strong>
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-[#fef7e0] text-[#b06000] border border-[#feefc3] font-medium shadow-xs">
+                        <AlertTriangle className="w-3.5 h-3.5 text-[#b06000]" />
+                        <span>
+                          Datos de ejemplo (DEMO) — {currentTenant.name} aún no tiene un chatbot en vivo conectado a esta consola
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
