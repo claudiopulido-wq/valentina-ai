@@ -27,7 +27,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # @supabase/realtime-js (usado por conversationsService.ts) requiere
+          # el WebSocket nativo de Node 22+; con Node 20 el import falla con
+          # "Node.js detected but native WebSocket not found" incluso en
+          # pruebas que no usan Realtime, porque supabaseClient.ts construye
+          # el cliente al cargarse el módulo.
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: platform/package-lock.json
 
