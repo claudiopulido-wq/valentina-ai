@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSuperAdmin } from '@/lib/serverAuth';
 import { supabaseAdmin, isSupabaseAdminConfigured } from '@/lib/supabaseAdmin';
-import { MOCK_USERS } from '@/data/mockData';
 import { AuthUser } from '@/types/platform';
 import { createUserSchema, validationErrorResponse } from '@/lib/validation';
 import { logger } from '@/lib/logger';
@@ -25,9 +24,13 @@ function mapRowToAuthUser(row: Record<string, any>): AuthUser {
 
 /**
  * GET /api/users
- * Directorio completo de usuarios (solo SuperAdmin). Combina la tabla real
- * `platform_users` con el directorio semilla (`MOCK_USERS`) para las cuentas
- * fundacionales que aún no se han migrado a la tabla, sin duplicar por email.
+ * Directorio completo de usuarios reales (solo SuperAdmin), leído
+ * exclusivamente de `platform_users`. Antes esto se completaba con el
+ * directorio semilla (`MOCK_USERS`) para "cuentas fundacionales aún no
+ * migradas", pero esas cuentas ficticias no tienen alta real en Supabase
+ * Auth y no pueden iniciar sesión — mostrarlas junto a las reales, sin
+ * distinción, hacía parecer que había más personas con acceso del que
+ * realmente hay.
  */
 export async function GET(request: NextRequest) {
   const authCheck = await requireSuperAdmin(request);
@@ -48,12 +51,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const knownEmails = new Set(dbUsers.map((u) => u.email.toLowerCase()));
-  const legacySeedUsers = MOCK_USERS.filter((u) => !knownEmails.has(u.email.toLowerCase())).map(
-    ({ password, ...rest }) => rest
-  );
-
-  return NextResponse.json({ users: [...dbUsers, ...legacySeedUsers] });
+  return NextResponse.json({ users: dbUsers });
 }
 
 /**
