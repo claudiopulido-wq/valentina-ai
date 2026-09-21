@@ -98,7 +98,7 @@ export const ChannelHardwareCard: React.FC<Props> = ({ channels, tenantName }) =
               {/* Hardware Specs Grid */}
               <div className="grid grid-cols-1 gap-2 pt-2 border-t border-[#f1f3f4] text-xs">
                 <div className="p-2.5 rounded-xl bg-[#f8f9fa] border border-[#e0e2ec]">
-                  <span className="text-[11px] text-[#5f6368]">Mensajes Hoy</span>
+                  <span className="text-[11px] text-[#5f6368]">Actividad Hoy</span>
                   <p className="font-mono font-bold text-[#0b57d0] text-sm">{ch.dailyMessagesCount}</p>
                 </div>
               </div>

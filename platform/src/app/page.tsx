@@ -136,13 +136,19 @@ export default function PlatformHome() {
   // contacts/conversations/messages + Supabase Realtime.
   const [platformConversations, setPlatformConversations] = useState<Conversation[] | null>(null);
   const [isSyncingPlatform, setIsSyncingPlatform] = useState<boolean>(false);
+  const [platformLastSyncTime, setPlatformLastSyncTime] = useState<string | null>(null);
 
   const loadPlatformConversations = useCallback((tenant: Tenant) => {
     setIsSyncingPlatform(true);
     const loader = tenant.railwayTenantId
       ? fetchRailwayTenantThreads(tenant.railwayTenantId, tenant.id)
       : fetchTenantConversations(tenant.id);
-    loader.then((convs) => setPlatformConversations(convs)).finally(() => setIsSyncingPlatform(false));
+    loader
+      .then((convs) => {
+        setPlatformConversations(convs);
+        setPlatformLastSyncTime(new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }));
+      })
+      .finally(() => setIsSyncingPlatform(false));
   }, []);
 
   useEffect(() => {
@@ -477,6 +483,26 @@ export default function PlatformHome() {
     currentTenant.id === 'tenant-uges' && ugesTelemetry && ugesTelemetry.length > 0
       ? ugesTelemetry
       : MOCK_TELEMETRY;
+
+  // Canales & Hardware con datos reales: UGES ya actualiza dailyMessagesCount
+  // en loadUgesRealData(). Para tenants con railwayTenantId (Valentina AI
+  // México, etc.), antes el conteo y "última señal" se quedaban congelados
+  // en el valor capturado manualmente al sembrar el tenant, sin importar
+  // cuántos mensajes reales entraran — la tarjeta de canal contradecía al
+  // banner "Datos en vivo" de arriba. Ahora se deriva de las conversaciones
+  // reales que ya se están sondeando cada 4s.
+  const currentChannels =
+    hasRealLiveConversations && currentTenant.id !== 'tenant-uges'
+      ? currentTenant.channels.map((ch) => {
+          const activeThreadsForChannel = currentConversations.filter((c) => c.channel === ch.type);
+          if (activeThreadsForChannel.length === 0) return ch;
+          return {
+            ...ch,
+            dailyMessagesCount: activeThreadsForChannel.length,
+            lastPing: platformLastSyncTime ? `En vivo · ${platformLastSyncTime}` : ch.lastPing,
+          };
+        })
+      : currentTenant.channels;
 
   // Filtrar documentos de base de conocimiento para UGES
   const filteredKnowledgeDocs = (ugesKnowledgeDocs || []).filter((doc) => {
@@ -831,7 +857,7 @@ export default function PlatformHome() {
               {clientTab === 'channels' && allowedTabs.includes('channels') && (
                 <div className="space-y-6">
                   <ChannelHardwareCard
-                    channels={currentTenant.channels}
+                    channels={currentChannels}
                     tenantName={currentTenant.name}
                   />
                 </div>
