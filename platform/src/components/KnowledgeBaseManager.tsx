@@ -278,9 +278,10 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({
             <span>Integración RAG en Proceso de Aprovisionamiento</span>
           </div>
           <p className="text-xs text-[#5f6368] leading-relaxed">
-            Esta cuenta empresarial se encuentra actualmente en fase de configuración de bot y canales.
-            La base de conocimientos vectorial en vivo está disponible para la organización{' '}
-            <strong className="text-[#1f1f1f]">Universidad UGES</strong> (Tenant #1).
+            Esta cuenta empresarial se encuentra actualmente en fase de configuración de bot y canales
+            — todavía no tiene asignado un identificador de tenant en el backend de Railway
+            (<code className="font-mono">railwayTenantId</code>), que es lo que conecta esta pestaña con
+            su base de conocimientos vectorial real.
           </p>
           <p className="text-xs text-[#747775]">
             Para conectar el modelo de conocimiento de esta empresa, solicita el alta de su tenant en el backend de Valentina.
