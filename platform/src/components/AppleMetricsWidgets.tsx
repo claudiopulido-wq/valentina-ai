@@ -17,6 +17,19 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
   const subscriptionFee = tenant.subscriptionFeeMxn || 8500;
   const metaChatsUsed = tenant.metaFreeConversationsUsed || 94;
 
+  // Tope superior: sin él, un gasto de IA casi nulo (tenant.totalSpentMxn ~ $0) dispara
+  // el múltiplo a cifras de miles de x, un dato técnicamente real pero engañoso.
+  const MAX_DISPLAYED_ROI_MULTIPLE = 200;
+  const rawRoiMultiple = estimatedSavingsMxn / Math.max(1, tenant.totalSpentMxn);
+  const roiMultipleExceedsCap = rawRoiMultiple > MAX_DISPLAYED_ROI_MULTIPLE;
+  const displayedRoiMultiple = Math.max(1, Math.round(Math.min(rawRoiMultiple, MAX_DISPLAYED_ROI_MULTIPLE)));
+
+  const avgAiHandledPercentage = telemetry.length
+    ? Math.round(telemetry.reduce((sum, day) => sum + day.aiHandledPercentage, 0) / telemetry.length)
+    : 0;
+  const avgEscalatedPercentage = Math.max(0, 100 - avgAiHandledPercentage);
+  const totalHoursSavedWeek = telemetry.reduce((sum, day) => sum + day.hoursSaved, 0);
+
   return (
     <section className="w-full space-y-4">
       {/* Top Banner: Tenant Welcome */}
@@ -133,7 +146,7 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
               </div>
               <p className="text-xs text-[#5f6368] flex items-center gap-1">
                 <span className="text-[#137333] font-bold font-mono">
-                  {Math.max(1, Math.round(estimatedSavingsMxn / Math.max(1, tenant.totalSpentMxn)))}x
+                  {roiMultipleExceedsCap ? `${MAX_DISPLAYED_ROI_MULTIPLE}x+` : `${displayedRoiMultiple}x`}
                 </span> retorno sobre gasto operativo
               </p>
             </div>
@@ -156,23 +169,23 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
 
           <div className="space-y-1">
             <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
-              96.4%
+              {avgAiHandledPercentage}%
             </div>
             <p className="text-xs text-[#5f6368]">
-              Sin intervención humana
+              Sin intervención humana (promedio últimos {telemetry.length} días)
             </p>
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#f1f3f4] flex items-center justify-between text-xs text-[#5f6368]">
             <span>Escalados a humanos:</span>
-            <span className="font-mono font-bold text-[#b06000]">3.6% (Casos complejos)</span>
+            <span className="font-mono font-bold text-[#b06000]">{avgEscalatedPercentage}% (Casos complejos)</span>
           </div>
         </div>
 
-        {/* Card 4: Response Latency */}
+        {/* Card 4: Weekly Hours Saved */}
         <div className="bg-white border border-[#dadce0] rounded-2xl p-5 shadow-sm hover:shadow transition">
           <div className="flex items-center justify-between text-[#5f6368] mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider">Velocidad Respuesta</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">Horas Ahorradas</span>
             <div className="p-2 rounded-xl bg-[#f1f3f4] text-[#5f6368]">
               <Clock className="w-4 h-4" />
             </div>
@@ -180,16 +193,18 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
 
           <div className="space-y-1">
             <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
-              1.1 seg
+              {totalHoursSavedWeek.toFixed(1)} hrs
             </div>
             <p className="text-xs text-[#5f6368]">
-              WhatsApp Cloud API realtime
+              Suma de horas humanas evitadas (últimos {telemetry.length} días)
             </p>
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#f1f3f4] flex items-center justify-between text-xs text-[#5f6368]">
-            <span>Promedio recepcionista:</span>
-            <span className="font-mono font-bold text-[#c5221f]">28 min</span>
+            <span>Mensajes totales del periodo:</span>
+            <span className="font-mono font-bold text-[#1f1f1f]">
+              {telemetry.reduce((sum, day) => sum + day.totalMessages, 0).toLocaleString('es-MX')}
+            </span>
           </div>
         </div>
       </div>

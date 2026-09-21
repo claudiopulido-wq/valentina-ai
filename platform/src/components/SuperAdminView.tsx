@@ -73,7 +73,8 @@ export const SuperAdminView: React.FC<Props> = ({
     });
   }, []);
 
-  // Costos mensuales reales de infraestructura cloud (Persistidos en localStorage y Supabase)
+  // Costos mensuales reales de infraestructura cloud (Persistidos solo en localStorage del navegador —
+  // no se sincronizan con Supabase ni son compartidos entre dispositivos/usuarios)
   const initialCosts = getLocalCloudCosts();
   const [supabaseCostMxn, setSupabaseCostMxn] = useState<number>(initialCosts.supabase);
   const [railwayCostMxn, setRailwayCostMxn] = useState<number>(initialCosts.railway);
@@ -137,57 +138,123 @@ export const SuperAdminView: React.FC<Props> = ({
 
   const supabaseSqlSchema = `-- VALENTINA AI: SCHEMA MULTI-TENANT CON ROW LEVEL SECURITY (RLS)
 -- Pega este código en el SQL Editor de tu proyecto en Supabase
+-- NOTA DE ORDEN: cada CREATE TABLE usa REFERENCES hacia una tabla ya creada
+-- arriba en este mismo script; si ejecutas esto de una sola vez en un
+-- proyecto nuevo, respeta este orden. "IF NOT EXISTS" hace seguro reejecutar
+-- el script completo si ya corriste una versión anterior.
 
--- 1. Tabla Maestra de Organizaciones (Tenants)
-CREATE TABLE organizations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
+-- 1. Tenants: fuente de verdad REAL y compartida del directorio de empresas.
+--    Antes de esta tabla, "crear cliente" solo escribía en el localStorage
+--    del navegador del SuperAdmin que lo daba de alta y nadie más lo veía.
+CREATE TABLE IF NOT EXISTS tenants (
+    id TEXT PRIMARY KEY,              -- ej. 'tenant-uges' (mismo id usado en toda la app)
     slug TEXT UNIQUE NOT NULL,
-    industry TEXT,
-    plan_tier TEXT DEFAULT 'Enterprise',
-    monthly_budget_mxn NUMERIC DEFAULT 3000,
-    created_at TIMESTAMPTZ DEFAULT now()
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    plan TEXT NOT NULL DEFAULT 'Growth',
+    railway_tenant_id INT,             -- mapeo dinámico hacia el backend RAG de Railway
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,  -- resto de campos del Tenant (canales, datos fiscales, etc.)
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "tenants_select_authenticated" ON tenants
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "tenants_service_role_write" ON tenants
+    FOR ALL USING (auth.role() = 'service_role');
 
--- 2. Habilitar RLS en Organizaciones
-ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
-
--- 3. Canales Conectados (WhatsApp Cloud API / Webchat)
-CREATE TABLE channels (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    channel_type TEXT NOT NULL,
-    identifier TEXT NOT NULL,
-    status TEXT DEFAULT 'connected',
-    last_ping TIMESTAMPTZ DEFAULT now()
+-- 2. Perfiles de usuarios de la plataforma (rol/tenant/nivel). Las
+--    contraseñas NUNCA se guardan aquí: viven exclusivamente en el store
+--    interno de Supabase Auth (auth.users), gestionado por la API de
+--    administrador con la service_role key.
+CREATE TABLE IF NOT EXISTS platform_users (
+    id TEXT PRIMARY KEY,               -- coincide con auth.users.id cuando existe cuenta real
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT NOT NULL,
+    tenant_id TEXT REFERENCES tenants(id),
+    role TEXT NOT NULL,
+    level TEXT,
+    job_title TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    notes TEXT,
+    must_change_password BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
-ALTER TABLE channels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE platform_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "platform_users_select_authenticated" ON platform_users
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "platform_users_service_role_write" ON platform_users
+    FOR ALL USING (auth.role() = 'service_role');
 
--- 4. Contactos y Prospectos
-CREATE TABLE contacts (
+-- 3. Contactos y Prospectos reales por tenant.
+CREATE TABLE IF NOT EXISTS contacts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    phone_or_email TEXT NOT NULL,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     name TEXT,
-    qualification_score INT DEFAULT 75,
+    phone_or_email TEXT NOT NULL,
+    channel_origin TEXT NOT NULL DEFAULT 'whatsapp',
+    city TEXT,
+    qualification_score INT,
+    tags JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "contacts_select_authenticated" ON contacts
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "contacts_service_role_write" ON contacts
+    FOR ALL USING (auth.role() = 'service_role');
 
--- 5. Conversaciones con Telemetría
-CREATE TABLE conversations (
+-- 4. Conversaciones reales por tenant. Una fila por hilo con un contacto.
+CREATE TABLE IF NOT EXISTS conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     contact_id UUID NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
-    channel_type TEXT NOT NULL,
-    status TEXT DEFAULT 'ai_handling',
-    total_tokens INT DEFAULT 0,
-    total_cost_mxn NUMERIC(10, 4) DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT now()
+    channel TEXT NOT NULL DEFAULT 'whatsapp',
+    status TEXT NOT NULL DEFAULT 'ai_handling',
+    sentiment TEXT NOT NULL DEFAULT 'neutral',
+    summary TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "conversations_select_authenticated" ON conversations
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "conversations_service_role_write" ON conversations
+    FOR ALL USING (auth.role() = 'service_role');
 
--- 6. Cotizaciones Comerciales B2B (Pipeline)
+-- 5. Mensajes individuales de cada conversación (entrantes del cliente vía
+--    Meta/WhatsApp y salientes de la IA o de un operador humano).
+CREATE TABLE IF NOT EXISTS messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    sender TEXT NOT NULL, -- 'user' | 'ai_agent' | 'human_operator'
+    sender_name TEXT,
+    content TEXT NOT NULL,
+    tokens_prompt INT DEFAULT 0,
+    tokens_completion INT DEFAULT 0,
+    cost_mxn NUMERIC(10, 5) DEFAULT 0,
+    status TEXT DEFAULT 'sent',
+    simulated BOOLEAN DEFAULT false,
+    media_url TEXT,
+    media_type TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "messages_select_authenticated" ON messages
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "messages_service_role_write" ON messages
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- 6. Habilitar Supabase Realtime en estas tablas: sin esto, la consola NUNCA
+--    recibe actualizaciones en vivo y solo se refresca al recargar la página.
+--    Si tu proyecto ya las tiene agregadas, Supabase mostrará un error de
+--    "already member of publication" que puedes ignorar sin problema.
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE conversations;
+
+-- 7. Cotizaciones Comerciales B2B (Pipeline)
 CREATE TABLE IF NOT EXISTS commercial_quotes (
     id TEXT PRIMARY KEY,
     folio TEXT NOT NULL,
@@ -214,51 +281,7 @@ ALTER TABLE commercial_quotes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
     FOR ALL USING (true);
 
--- 7. Tenants: fuente de verdad REAL y compartida del directorio de empresas.
---    Antes de esta tabla, "crear cliente" solo escribía en el localStorage
---    del navegador del SuperAdmin que lo daba de alta y nadie más lo veía.
-CREATE TABLE IF NOT EXISTS tenants (
-    id TEXT PRIMARY KEY,              -- ej. 'tenant-uges' (mismo id usado en toda la app)
-    slug TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'active',
-    plan TEXT NOT NULL DEFAULT 'Growth',
-    railway_tenant_id INT,             -- mapeo dinámico hacia el backend RAG de Railway
-    data JSONB NOT NULL DEFAULT '{}'::jsonb,  -- resto de campos del Tenant (canales, datos fiscales, etc.)
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "tenants_select_authenticated" ON tenants
-    FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "tenants_service_role_write" ON tenants
-    FOR ALL USING (auth.role() = 'service_role');
-
--- 8. Perfiles de usuarios de la plataforma (rol/tenant/nivel). Las
---    contraseñas NUNCA se guardan aquí: viven exclusivamente en el store
---    interno de Supabase Auth (auth.users), gestionado por la API de
---    administrador con la service_role key.
-CREATE TABLE IF NOT EXISTS platform_users (
-    id TEXT PRIMARY KEY,               -- coincide con auth.users.id cuando existe cuenta real
-    email TEXT UNIQUE NOT NULL,
-    full_name TEXT NOT NULL,
-    tenant_id TEXT REFERENCES tenants(id),
-    role TEXT NOT NULL,
-    level TEXT,
-    job_title TEXT,
-    status TEXT NOT NULL DEFAULT 'active',
-    notes TEXT,
-    must_change_password BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE platform_users ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "platform_users_select_authenticated" ON platform_users
-    FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "platform_users_service_role_write" ON platform_users
-    FOR ALL USING (auth.role() = 'service_role');
-
--- 9. Auditoría de acciones administrativas (alta/edición de tenants y
+-- 8. Auditoría de acciones administrativas (alta/edición de tenants y
 --    usuarios, reseteo de contraseñas). Solo el servidor (service_role)
 --    escribe aquí; ningún SuperAdmin puede borrar su propio rastro desde
 --    el cliente.

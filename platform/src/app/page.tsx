@@ -11,6 +11,11 @@ import {
   UgesKnowledgeDoc,
 } from '../lib/ugesDataService';
 import {
+  fetchTenantConversations,
+  subscribeToTenantConversations,
+} from '../lib/conversationsService';
+import { fetchRailwayTenantThreads } from '../lib/railwayConversationsService';
+import {
   fetchTenants,
   fetchUsers,
   createTenant as persistNewTenant,
@@ -41,7 +46,6 @@ import {
   CheckCircle2,
   Shield,
   LogOut,
-  Bell,
   Search,
   ChevronRight,
   Building2,
@@ -104,7 +108,6 @@ export default function PlatformHome() {
 
   const [activeView, setActiveView] = useState<'client' | 'admin'>('admin');
   const [clientTab, setClientTab] = useState<ClientTab>('inbox');
-  const [topSearch, setTopSearch] = useState('');
   const [showTenantSwitcherModal, setShowTenantSwitcherModal] = useState(false);
   const [tenantSearchQuery, setTenantSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -117,6 +120,47 @@ export default function PlatformHome() {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [kbCategoryFilter, setKbCategoryFilter] = useState<string>('all');
   const [kbSearch, setKbSearch] = useState<string>('');
+
+  // Conversaciones reales del tenant activo (cualquiera excepto UGES, que
+  // tiene su propio proyecto Supabase de solo lectura arriba).
+  //
+  // Camino principal: tenants con `railwayTenantId` configurado corren su
+  // chatbot en el gateway compartido de Railway (whatsapp-empresarial-
+  // production) — el mismo backend que ya opera UGES. Ahí se hace polling
+  // cada 4s a /api/tenants/:id/conversaciones (contrato confirmado en vivo
+  // el 2026-09-19), que es el mecanismo de "tiempo real" que ese servicio
+  // soporta hoy (no expone websockets/Realtime propios).
+  //
+  // Camino de respaldo: un tenant sin `railwayTenantId` (no conectado al
+  // gateway compartido) usa las tablas propias Supabase
+  // contacts/conversations/messages + Supabase Realtime.
+  const [platformConversations, setPlatformConversations] = useState<Conversation[] | null>(null);
+  const [isSyncingPlatform, setIsSyncingPlatform] = useState<boolean>(false);
+
+  const loadPlatformConversations = useCallback((tenant: Tenant) => {
+    setIsSyncingPlatform(true);
+    const loader = tenant.railwayTenantId
+      ? fetchRailwayTenantThreads(tenant.railwayTenantId, tenant.id)
+      : fetchTenantConversations(tenant.id);
+    loader.then((convs) => setPlatformConversations(convs)).finally(() => setIsSyncingPlatform(false));
+  }, []);
+
+  useEffect(() => {
+    if (currentTenant.id === 'tenant-uges') return;
+
+    setPlatformConversations(null);
+    loadPlatformConversations(currentTenant);
+
+    if (currentTenant.railwayTenantId) {
+      const intervalId = setInterval(() => loadPlatformConversations(currentTenant), 4_000);
+      return () => clearInterval(intervalId);
+    }
+
+    const unsubscribe = subscribeToTenantConversations(currentTenant.id, () => {
+      loadPlatformConversations(currentTenant);
+    });
+    return () => unsubscribe();
+  }, [currentTenant.id, currentTenant.railwayTenantId, loadPlatformConversations]);
 
   // Carga asíncrona de datos de la base de datos real de UGES (Solo Lectura)
   const loadUgesRealData = useCallback(async () => {
@@ -198,6 +242,15 @@ export default function PlatformHome() {
 
   useEffect(() => {
     loadUgesRealData();
+
+    // La base de datos de UGES es un proyecto Supabase de terceros al que
+    // solo tenemos acceso de lectura (no administramos su esquema, así que
+    // no podemos habilitar Supabase Realtime ahí). Un sondeo periódico es el
+    // mecanismo de "tiempo real" honesto que sí podemos ofrecer sin tocar un
+    // sistema que no es nuestro: antes de esto, la única forma de ver un
+    // mensaje nuevo era recargar la página completa a mano.
+    const intervalId = setInterval(loadUgesRealData, 45_000);
+    return () => clearInterval(intervalId);
   }, [loadUgesRealData]);
 
   // Hidratar tenants/usuarios desde el servidor (Supabase) apenas hay sesión.
@@ -409,10 +462,16 @@ export default function PlatformHome() {
     ? tenants
     : tenants.filter((t) => t.id === currentUser.tenantId);
 
-  const currentConversations =
-    currentTenant.id === 'tenant-uges' && ugesConversations && ugesConversations.length > 0
-      ? ugesConversations
-      : MOCK_CONVERSATIONS[currentTenant.id] || [];
+  const hasRealLiveConversations =
+    currentTenant.id === 'tenant-uges'
+      ? Boolean(ugesConversations && ugesConversations.length > 0)
+      : Boolean(platformConversations && platformConversations.length > 0);
+
+  const currentConversations = hasRealLiveConversations
+    ? currentTenant.id === 'tenant-uges'
+      ? (ugesConversations as Conversation[])
+      : (platformConversations as Conversation[])
+    : MOCK_CONVERSATIONS[currentTenant.id] || [];
 
   const currentTelemetry =
     currentTenant.id === 'tenant-uges' && ugesTelemetry && ugesTelemetry.length > 0
@@ -509,18 +568,6 @@ export default function PlatformHome() {
             </span>
           </div>
 
-          {/* Quick Search Bar (Oculta en móviles para evitar colapso) */}
-          <div className="hidden md:flex items-center w-64 lg:w-96 relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#747775]" />
-            <input
-              type="text"
-              value={topSearch}
-              onChange={(e) => setTopSearch(e.target.value)}
-              placeholder="Buscar en la consola de Valentina..."
-              className="w-full bg-[#f1f3f4] hover:bg-[#e0e2ec] focus:bg-white border border-transparent focus:border-[#dadce0] rounded-full pl-9 pr-4 py-1.5 text-xs text-[#1f1f1f] placeholder-[#747775] focus:outline-none focus:ring-2 focus:ring-[#0b57d0] transition"
-            />
-          </div>
-
           {/* Right Actions, User & Prominent Logout Button */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* View switcher buttons for SuperAdmin */}
@@ -548,15 +595,6 @@ export default function PlatformHome() {
                 </button>
               </div>
             )}
-
-            {/* Notifications Button */}
-            <button
-              title="Notificaciones"
-              className="p-2 rounded-full hover:bg-[#f1f3f4] text-[#5f6368] hover:text-[#1f1f1f] transition cursor-pointer relative"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#0b57d0] rounded-full"></span>
-            </button>
 
             {/* User Avatar */}
             <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-[#dadce0]">
@@ -730,25 +768,37 @@ export default function PlatformHome() {
 
                 {/* Quick Status e Indicador de Base de Datos en Vivo */}
                 <div className="flex items-center gap-2.5 text-xs text-[#5f6368]">
-                  {currentTenant.id === 'tenant-uges' ? (
+                  {hasRealLiveConversations ? (
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-[#e6f4ea] text-[#137333] border border-[#ceead6] font-medium shadow-xs">
                         <Database className="w-3.5 h-3.5 text-[#137333]" />
-                        <span>Supabase Read-Only (302 msgs · 47 leads)</span>
-                        {lastSyncTime && (
+                        <span>
+                          {currentTenant.id === 'tenant-uges' ? 'Supabase Read-Only' : 'Datos en vivo'} (
+                          {currentConversations.reduce((sum, c) => sum + c.messages.length, 0)} msgs ·{' '}
+                          {currentConversations.filter((c) => c.sentiment === 'lead_qualified').length} leads)
+                        </span>
+                        {currentTenant.id === 'tenant-uges' && lastSyncTime && (
                           <span className="text-[#34a853] font-mono text-[10px]">
                             [{lastSyncTime}]
                           </span>
                         )}
                       </div>
                       <button
-                        onClick={() => loadUgesRealData()}
-                        disabled={isSyncingUges}
-                        title="Actualizar datos desde la base de datos de la Universidad (Solo Lectura)"
+                        onClick={() =>
+                          currentTenant.id === 'tenant-uges'
+                            ? loadUgesRealData()
+                            : loadPlatformConversations(currentTenant)
+                        }
+                        disabled={currentTenant.id === 'tenant-uges' ? isSyncingUges : isSyncingPlatform}
+                        title="Actualizar datos en vivo"
                         className="p-1.5 rounded-full hover:bg-white text-[#0b57d0] border border-[#dadce0] transition cursor-pointer disabled:opacity-50"
                       >
                         <RefreshCw
-                          className={`w-3.5 h-3.5 ${isSyncingUges ? 'animate-spin text-[#0b57d0]' : ''}`}
+                          className={`w-3.5 h-3.5 ${
+                            (currentTenant.id === 'tenant-uges' ? isSyncingUges : isSyncingPlatform)
+                              ? 'animate-spin text-[#0b57d0]'
+                              : ''
+                          }`}
                         />
                       </button>
                     </div>
@@ -773,6 +823,7 @@ export default function PlatformHome() {
                     conversations={currentConversations}
                     tenantName={currentTenant.name}
                     currentUser={currentUser}
+                    railwayTenantId={currentTenant.railwayTenantId}
                   />
                 </div>
               )}

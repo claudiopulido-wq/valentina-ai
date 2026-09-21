@@ -12,6 +12,7 @@ import { supabaseAdmin, isSupabaseAdminConfigured } from './supabaseAdmin';
  */
 const FALLBACK_TENANT_ID_MAPPING: Record<string, number> = {
   'tenant-uges': 1,
+  'tenant-valentina-ai': 3,
 };
 
 /**
@@ -204,21 +205,22 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthUs
   }
 }
 
+type AuthzResult = { authorized: true; user: AuthUser } | { authorized: false; response: NextResponse };
+
 /**
- * Guardián de seguridad estricto contra Broken Access Control / IDOR (Insecure Direct Object References).
- * 
- * 1. Verifica autenticación (401 si no hay usuario válido).
- * 2. Valida aislamiento Multi-Tenant (403 si el usuario intenta acceder a la base de datos de otro cliente).
- * 3. Valida permisos RBAC por nivel (403 si no tiene permiso para consultar o editar conocimiento).
+ * Núcleo compartido contra Broken Access Control / IDOR (Insecure Direct
+ * Object References): autenticación + aislamiento multi-tenant. Usado tanto
+ * por la base de conocimientos como por conversaciones/mensajes, que son
+ * dos recursos distintos pero comparten exactamente esta misma comprobación
+ * de "¿este usuario puede tocar el tenant numérico que está pidiendo?".
  */
-export async function authorizeKnowledgeRequest(
+async function authorizeTenantScopedRequest(
   request: NextRequest,
   requestedNumericTenantId: number,
-  action: 'read' | 'write'
-): Promise<{ authorized: true; user: AuthUser } | { authorized: false; response: NextResponse }> {
+  forbiddenMessage: string
+): Promise<AuthzResult> {
   const user = await getAuthenticatedUser(request);
 
-  // 1. Verificación de Autenticación
   if (!user) {
     return {
       authorized: false,
@@ -232,46 +234,56 @@ export async function authorizeKnowledgeRequest(
     };
   }
 
-  // 2. Control de Acceso y Aislamiento de Tenant (Prevención IDOR)
   const isSuperAdmin = user.role === 'superadmin';
 
   if (!isSuperAdmin) {
     const expectedSlug = await getSlugForNumericTenantId(requestedNumericTenantId);
 
-    // Si el tenant numérico solicitado no existe o no coincide con la empresa del usuario
     if (!expectedSlug || user.tenantId !== expectedSlug) {
       return {
         authorized: false,
         response: NextResponse.json(
-          {
-            error: 'Acceso denegado: No tienes autorización para gestionar la base de conocimientos de esta organización.',
-            code: 'FORBIDDEN_TENANT_MISMATCH',
-          },
+          { error: forbiddenMessage, code: 'FORBIDDEN_TENANT_MISMATCH' },
           { status: 403 }
         ),
       };
     }
   }
 
-  // 3. Control Basado en Roles (RBAC)
-  const allowedTabs = getAllowedTabsForUser(user);
+  return { authorized: true, user };
+}
 
-  // Verificación de lectura: Debe tener la pestaña 'knowledge' habilitada en su rol
+/**
+ * Guardián de seguridad para la base de conocimientos: autenticación +
+ * aislamiento multi-tenant + RBAC por nivel (solo `canEditKnowledge` puede
+ * escribir).
+ */
+export async function authorizeKnowledgeRequest(
+  request: NextRequest,
+  requestedNumericTenantId: number,
+  action: 'read' | 'write'
+): Promise<AuthzResult> {
+  const base = await authorizeTenantScopedRequest(
+    request,
+    requestedNumericTenantId,
+    'Acceso denegado: No tienes autorización para gestionar la base de conocimientos de esta organización.'
+  );
+  if (!base.authorized) return base;
+  const user = base.user;
+
+  const allowedTabs = getAllowedTabsForUser(user);
   if (!allowedTabs.includes('knowledge')) {
     return {
       authorized: false,
       response: NextResponse.json(
-        {
-          error: 'Tu perfil no tiene asignado acceso a la base de conocimientos.',
-          code: 'FORBIDDEN_TAB_ACCESS',
-        },
+        { error: 'Tu perfil no tiene asignado acceso a la base de conocimientos.', code: 'FORBIDDEN_TAB_ACCESS' },
         { status: 403 }
       ),
     };
   }
 
-  // Verificación de escritura: Solo usuarios con canEditKnowledge o SuperAdmin
   if (action === 'write') {
+    const isSuperAdmin = user.role === 'superadmin';
     const levelConfig = user.level ? LEVEL_CONFIGS[user.level] : null;
     const canEdit = isSuperAdmin || (levelConfig && levelConfig.canEditKnowledge);
 
@@ -281,6 +293,57 @@ export async function authorizeKnowledgeRequest(
         response: NextResponse.json(
           {
             error: 'Permisos insuficientes: Tu nivel de usuario es de solo lectura y no puede crear, modificar o eliminar contenido de la base de conocimientos.',
+            code: 'FORBIDDEN_WRITE_ACTION',
+          },
+          { status: 403 }
+        ),
+      };
+    }
+  }
+
+  return { authorized: true, user };
+}
+
+/**
+ * Guardián de seguridad para conversaciones/mensajes en vivo: autenticación +
+ * aislamiento multi-tenant + RBAC por nivel (solo `canInterveneChat` puede
+ * enviar mensajes como operador humano).
+ */
+export async function authorizeConversationsRequest(
+  request: NextRequest,
+  requestedNumericTenantId: number,
+  action: 'read' | 'write'
+): Promise<AuthzResult> {
+  const base = await authorizeTenantScopedRequest(
+    request,
+    requestedNumericTenantId,
+    'Acceso denegado: No tienes autorización para ver las conversaciones de esta organización.'
+  );
+  if (!base.authorized) return base;
+  const user = base.user;
+
+  const allowedTabs = getAllowedTabsForUser(user);
+  if (!allowedTabs.includes('inbox')) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Tu perfil no tiene asignada la bandeja de conversaciones.', code: 'FORBIDDEN_TAB_ACCESS' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  if (action === 'write') {
+    const isSuperAdmin = user.role === 'superadmin';
+    const levelConfig = user.level ? LEVEL_CONFIGS[user.level] : null;
+    const canReply = isSuperAdmin || (levelConfig && levelConfig.canInterveneChat);
+
+    if (!canReply) {
+      return {
+        authorized: false,
+        response: NextResponse.json(
+          {
+            error: 'Permisos insuficientes: Tu nivel de usuario no puede responder mensajes como operador humano.',
             code: 'FORBIDDEN_WRITE_ACTION',
           },
           { status: 403 }

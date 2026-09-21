@@ -47,6 +47,9 @@ export const GoogleSidebar: React.FC<GoogleSidebarProps> = ({
   const isSuperAdmin = currentUser.role === 'superadmin';
   const allowedTabs = getAllowedTabsForUser(currentUser);
   const levelConfig = getUserLevelConfig(currentUser);
+  const connectedChannelsCount = currentTenant.channels.filter((ch) => ch.status === 'connected').length;
+  const totalChannelsCount = currentTenant.channels.length;
+  const allChannelsConnected = totalChannelsCount > 0 && connectedChannelsCount === totalChannelsCount;
 
   const handleNavClick = (view: 'client' | 'admin', tab?: ClientTab) => {
     onChangeView(view);
@@ -183,14 +186,26 @@ export const GoogleSidebar: React.FC<GoogleSidebarProps> = ({
 
       {/* Bottom: System Status & User Profile */}
       <div className="p-3 border-t border-[#dadce0] bg-[#f8f9fa] space-y-2">
-        {/* System Health Status */}
-        <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-white border border-[#dadce0] text-xs">
-          <div className="flex items-center gap-2 text-[#137333] font-medium">
-            <span className="w-2 h-2 rounded-full bg-[#137333] animate-pulse"></span>
-            <span>Meta API: En línea</span>
+        {/* System Health Status: refleja el estado real de los canales del tenant activo */}
+        {totalChannelsCount > 0 && (
+          <div className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-white border border-[#dadce0] text-xs">
+            <div
+              className={`flex items-center gap-2 font-medium ${
+                allChannelsConnected ? 'text-[#137333]' : 'text-[#b06000]'
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  allChannelsConnected ? 'bg-[#137333] animate-pulse' : 'bg-[#b06000]'
+                }`}
+              ></span>
+              <span>Canales: {allChannelsConnected ? 'Todos en línea' : 'Revisar estado'}</span>
+            </div>
+            <span className="text-[10px] font-mono text-[#5f6368]">
+              {connectedChannelsCount}/{totalChannelsCount}
+            </span>
           </div>
-          <span className="text-[10px] font-mono text-[#5f6368]">118ms</span>
-        </div>
+        )}
 
         {/* User Card & Clear Logout Button */}
         <div className="p-2.5 rounded-xl bg-white border border-[#dadce0] space-y-2">

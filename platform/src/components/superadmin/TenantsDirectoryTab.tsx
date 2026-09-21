@@ -2,6 +2,12 @@ import React from 'react';
 import { Tenant, AuthUser } from '../../types/platform';
 import { Search, FileText, ArrowRight, Pencil } from 'lucide-react';
 
+const TENANT_STATUS_STYLES: Record<Tenant['status'], { label: string; className: string }> = {
+  active: { label: 'Activo', className: 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]' },
+  trial: { label: 'Prueba', className: 'bg-[#e8f0fe] text-[#0b57d0] border-[#d3e3fd]' },
+  suspended: { label: 'Suspendido', className: 'bg-[#fce8e6] text-[#c5221f] border-[#fad2cf]' },
+};
+
 interface Props {
   tenants: Tenant[];
   users: AuthUser[];
@@ -81,21 +87,24 @@ export const TenantsDirectoryTab: React.FC<Props> = ({
 
       {/* Clean Google Play Console Table */}
       <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
+        <p className="sm:hidden text-[11px] text-[#5f6368] px-4 pt-3 flex items-center gap-1">
+          <ArrowRight className="w-3 h-3" /> Desliza horizontalmente para ver todas las columnas
+        </p>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[720px] text-left text-xs">
             <thead className="bg-[#f8f9fa] border-b border-[#dadce0] text-[#5f6368] font-semibold text-[11px]">
               <tr>
                 <th className="p-4">Aplicación</th>
                 <th className="p-4">Usuarios con la app instalada</th>
                 <th className="p-4">Estado de la app</th>
                 <th className="p-4">Facturación &amp; Consumo IA</th>
-                <th className="p-4">Última actualización</th>
                 <th className="p-4 text-right">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f3f4]">
               {filteredTenants.map((t) => {
-                const waChannel = t.channels.find((c) => c.type === 'whatsapp');
+                const tenantUsersCount = users.filter((u) => u.tenantId === t.id).length;
+                const statusStyle = TENANT_STATUS_STYLES[t.status];
 
                 return (
                   <tr key={t.id} className="hover:bg-[#f8f9fa] transition">
@@ -112,13 +121,13 @@ export const TenantsDirectoryTab: React.FC<Props> = ({
                     </td>
 
                     <td className="p-4 font-mono text-[#1f1f1f]">
-                      {waChannel ? '33' : '0'}
+                      {tenantUsersCount}
                     </td>
 
                     <td className="p-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#137333]"></span>
-                        Producción
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${statusStyle.className}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        {statusStyle.label}
                       </span>
                     </td>
 
@@ -131,10 +140,6 @@ export const TenantsDirectoryTab: React.FC<Props> = ({
                           IA: ${t.totalSpentMxn.toFixed(2)} MXN <span className="text-[#747775]">(Límite: ${t.monthlyBudgetMxn.toLocaleString()})</span>
                         </p>
                       </div>
-                    </td>
-
-                    <td className="p-4 text-[#5f6368]">
-                      16 jun 2026
                     </td>
 
                     <td className="p-4 text-right">
@@ -177,8 +182,7 @@ export const TenantsDirectoryTab: React.FC<Props> = ({
           </table>
         </div>
 
-        <div className="p-3 border-t border-[#dadce0] bg-[#f8f9fa] flex items-center justify-between text-xs text-[#5f6368]">
-          <span>Mostrar filas: 10</span>
+        <div className="p-3 border-t border-[#dadce0] bg-[#f8f9fa] flex items-center justify-end text-xs text-[#5f6368]">
           <span>1 - {filteredTenants.length} de {filteredTenants.length}</span>
         </div>
       </div>

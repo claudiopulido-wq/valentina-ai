@@ -22,7 +22,7 @@ export const MOCK_TENANTS: Tenant[] = [
         id: 'ch-uges-wa',
         type: 'whatsapp',
         name: 'WhatsApp Admisiones & Control Escolar',
-        identifier: '+52 442 352 3965',
+        identifier: '+52 442 787 2176',
         status: 'connected',
         lastPing: 'Hace 2 seg',
         batteryLevel: 98,
@@ -89,7 +89,7 @@ export const MOCK_TENANTS: Tenant[] = [
         id: 'ch-conocer-wa',
         type: 'whatsapp',
         name: 'WhatsApp Citas de Evaluación & Estándares',
-        identifier: '+52 442 778 8114',
+        identifier: '+52 442 269 5793',
         status: 'connected',
         lastPing: 'Hace 5 seg',
         batteryLevel: 94,
@@ -135,33 +135,6 @@ export const MOCK_TENANTS: Tenant[] = [
     secondaryChannels: ['webchat', 'telegram'],
   },
   {
-    id: 'tenant-legal',
-    name: 'Vanguardia Jurídica',
-    slug: 'vanguardia-legal',
-    industry: 'Servicios Legales & Corporativos',
-    website: 'www.vanguardiajuridica.mx',
-    logo: '⚖️',
-    plan: 'Growth',
-    status: 'active',
-    subscriptionFeeMxn: 4500, // Facturación mensual
-    monthlyBudgetMxn: 2500,
-    totalSpentMxn: 312.40,
-    totalTokensUsed: 890400,
-    activeAgentsCount: 1,
-    channels: [
-      {
-        id: 'ch-legal-wa',
-        type: 'whatsapp',
-        name: 'Recepción Confidencial & Triage Legal',
-        identifier: '+52 55 3301 9922',
-        status: 'connected',
-        lastPing: 'Hace 25 seg',
-        batteryLevel: 88,
-        dailyMessagesCount: 95,
-      },
-    ],
-  },
-  {
     id: 'tenant-valentina-ai',
     name: 'Valentina AI México',
     slug: 'valentina-ai',
@@ -170,6 +143,7 @@ export const MOCK_TENANTS: Tenant[] = [
     logo: '🤖',
     plan: 'Enterprise',
     status: 'active',
+    railwayTenantId: 3,
     subscriptionFeeMxn: 15000,
     monthlyBudgetMxn: 1000,
     totalSpentMxn: 14.80,
@@ -605,14 +579,28 @@ export const MOCK_CONVERSATIONS: Record<string, Conversation[]> = {
   ],
 };
 
+// Etiquetas de fecha generadas en vivo (últimos 7 días reales, terminando hoy) en vez de literales
+// fijos como "Lun 01" que quedan desfasados de la fecha real con el paso del tiempo.
+const WEEKDAY_ABBR = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+function lastNDaysLabels(n: number): string[] {
+  const labels: string[] = [];
+  for (let i = n - 1; i >= 0; i -= 1) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    labels.push(`${WEEKDAY_ABBR[d.getDay()]} ${String(d.getDate()).padStart(2, '0')}`);
+  }
+  return labels;
+}
+const DEMO_TELEMETRY_DATES = lastNDaysLabels(7);
+
 export const MOCK_TELEMETRY: DailyTelemetry[] = [
-  { date: 'Lun 01', totalMessages: 480, aiHandledPercentage: 94, promptTokens: 420000, completionTokens: 110000, costMxn: 18.20, hoursSaved: 16.5 },
-  { date: 'Mar 02', totalMessages: 610, aiHandledPercentage: 96, promptTokens: 530000, completionTokens: 145000, costMxn: 23.40, hoursSaved: 21.0 },
-  { date: 'Mié 03', totalMessages: 590, aiHandledPercentage: 92, promptTokens: 510000, completionTokens: 138000, costMxn: 22.10, hoursSaved: 20.2 },
-  { date: 'Jue 04', totalMessages: 740, aiHandledPercentage: 95, promptTokens: 680000, completionTokens: 190000, costMxn: 29.80, hoursSaved: 26.4 },
-  { date: 'Vie 05', totalMessages: 890, aiHandledPercentage: 97, promptTokens: 820000, completionTokens: 240000, costMxn: 37.50, hoursSaved: 32.0 },
-  { date: 'Sáb 06', totalMessages: 520, aiHandledPercentage: 98, promptTokens: 460000, completionTokens: 125000, costMxn: 19.90, hoursSaved: 18.2 },
-  { date: 'Dom 07', totalMessages: 410, aiHandledPercentage: 99, promptTokens: 380000, completionTokens: 98000, costMxn: 15.60, hoursSaved: 14.8 },
+  { date: DEMO_TELEMETRY_DATES[0], totalMessages: 480, aiHandledPercentage: 94, promptTokens: 420000, completionTokens: 110000, costMxn: 18.20, hoursSaved: 16.5 },
+  { date: DEMO_TELEMETRY_DATES[1], totalMessages: 610, aiHandledPercentage: 96, promptTokens: 530000, completionTokens: 145000, costMxn: 23.40, hoursSaved: 21.0 },
+  { date: DEMO_TELEMETRY_DATES[2], totalMessages: 590, aiHandledPercentage: 92, promptTokens: 510000, completionTokens: 138000, costMxn: 22.10, hoursSaved: 20.2 },
+  { date: DEMO_TELEMETRY_DATES[3], totalMessages: 740, aiHandledPercentage: 95, promptTokens: 680000, completionTokens: 190000, costMxn: 29.80, hoursSaved: 26.4 },
+  { date: DEMO_TELEMETRY_DATES[4], totalMessages: 890, aiHandledPercentage: 97, promptTokens: 820000, completionTokens: 240000, costMxn: 37.50, hoursSaved: 32.0 },
+  { date: DEMO_TELEMETRY_DATES[5], totalMessages: 520, aiHandledPercentage: 98, promptTokens: 460000, completionTokens: 125000, costMxn: 19.90, hoursSaved: 18.2 },
+  { date: DEMO_TELEMETRY_DATES[6], totalMessages: 410, aiHandledPercentage: 99, promptTokens: 380000, completionTokens: 98000, costMxn: 15.60, hoursSaved: 14.8 },
 ];
 
 /**
@@ -718,18 +706,6 @@ export const MOCK_USERS: AuthUser[] = [
     status: 'active',
     createdAt: '2026-05-10',
     notes: 'Evaluador oficial: Acceso exclusivo a Base de Conocimiento y Expedientes.',
-  },
-  {
-    id: 'user-legal-admin',
-    email: 'contacto@vanguardiajuridica.mx',
-    fullName: 'Lic. Roberto Morales (Vanguardia Jurídica)',
-    tenantId: 'tenant-legal',
-    role: 'tenant_admin',
-    jobTitle: 'Socio Director & Abogado Titular',
-    level: 'director',
-    status: 'active',
-    createdAt: '2026-05-02',
-    notes: 'Cliente Legal activo',
   },
 ];
 

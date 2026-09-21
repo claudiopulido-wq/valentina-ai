@@ -1,4 +1,4 @@
-export type ChannelType = 'whatsapp' | 'web' | 'instagram' | 'telegram';
+export type ChannelType = 'whatsapp' | 'web' | 'instagram' | 'telegram' | 'messenger';
 
 export type ConversationStatus = 'ai_handling' | 'human_escalated' | 'resolved';
 

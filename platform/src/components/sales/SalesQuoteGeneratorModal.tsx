@@ -387,6 +387,10 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
       });
       const data = await res.json();
 
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'El servidor rechazó la solicitud de guardado en Drive.');
+      }
+
       if (data.folderUrl) {
         setDriveFolderUrl(data.folderUrl);
       }
@@ -407,10 +411,13 @@ export const SalesQuoteGeneratorModal: React.FC<Props> = ({
       setSavedToDrive(true);
       setQuoteSavedFeedback(`✓ Expediente preparado y respaldado para tu Unidad Compartida de Google Drive (${compiledQuote.folio}).`);
       setTimeout(() => setSavedToDrive(false), 5000);
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Error al conectar con endpoint Drive:', err);
-      setSavedToDrive(true);
-      setTimeout(() => setSavedToDrive(false), 5000);
+      setSavedToDrive(false);
+      setQuoteSavedFeedback(
+        `✗ No se pudo guardar en Google Drive: ${err?.message || 'error de red desconocido'}. Intenta de nuevo.`
+      );
+      setTimeout(() => setQuoteSavedFeedback(null), 8000);
     } finally {
       setSavingToDrive(false);
     }

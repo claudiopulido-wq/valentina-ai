@@ -36,6 +36,7 @@ export const sendMessageSchema = z.object({
   phoneNumberId: z.string().max(60).optional(),
   wabaId: z.string().max(60).optional(),
   tenantSlug: z.string().max(60).optional(),
+  railwayTenantId: z.number().int().positive().optional(),
 });
 
 // El objeto CommercialQuote completo tiene más campos numéricos/opcionales

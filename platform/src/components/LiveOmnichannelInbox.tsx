@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Conversation, ChatMessage, ChannelType, AuthUser } from '../types/platform';
 import { getUserLevelConfig } from '../lib/permissions';
+import { fetchRailwayContactHistory } from '../lib/railwayConversationsService';
 import {
   MessageSquare,
   Send,
@@ -22,12 +23,14 @@ interface Props {
   conversations: Conversation[];
   tenantName: string;
   currentUser?: AuthUser | null;
+  railwayTenantId?: number;
 }
 
 export const LiveOmnichannelInbox: React.FC<Props> = ({
   conversations: initialConversations,
   tenantName,
   currentUser,
+  railwayTenantId,
 }) => {
   const isDirector = currentUser?.level === 'director';
   const canViewFinances = currentUser?.role === 'superadmin' || isDirector;
@@ -54,6 +57,29 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
 
   // Selected conversation
   const selectedConv = conversations.find((c) => c.id === selectedConvId) || conversations[0];
+
+  // Al abrir un hilo de Railway, la lista solo trae el último mensaje —
+  // se pide el historial cronológico completo bajo demanda una sola vez.
+  useEffect(() => {
+    if (!railwayTenantId || !selectedConv) return;
+    const isRailwayThread = selectedConv.id.startsWith('railway-');
+    const onlyHasSyntheticLastMessage =
+      selectedConv.messages.length === 1 && selectedConv.messages[0].id.startsWith('hilo-last-');
+    if (!isRailwayThread || !onlyHasSyntheticLastMessage) return;
+
+    let cancelled = false;
+    fetchRailwayContactHistory(railwayTenantId, selectedConv.contact.phoneOrEmail, selectedConv.id).then(
+      (fullHistory) => {
+        if (cancelled || fullHistory.length === 0) return;
+        setConversations((prev) =>
+          prev.map((c) => (c.id === selectedConv.id ? { ...c, messages: fullHistory } : c))
+        );
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [railwayTenantId, selectedConv?.id]);
 
   // Filtering
   const filteredConversations = conversations.filter((c) => {
@@ -152,6 +178,7 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
           message: messageText,
           senderName: operatorName,
           channel: selectedConv.channel,
+          railwayTenantId,
         }),
       });
 

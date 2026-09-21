@@ -128,14 +128,12 @@ export const CloudInfrastructureTab: React.FC<Props> = ({
           </div>
 
           <div className="pt-3 border-t border-[#f1f3f4] text-[11px] text-[#5f6368] space-y-1">
-            <div className="flex justify-between">
-              <span>UGES (302 msgs en vivo):</span>
-              <span className="font-mono font-semibold text-[#1f1f1f]">${(tenants.find(t => t.id === 'tenant-uges')?.totalSpentMxn || 4.64).toFixed(2)} MXN</span>
-            </div>
-            <div className="flex justify-between">
-              <span>CONOCER:</span>
-              <span className="font-mono font-semibold text-[#1f1f1f]">${(tenants.find(t => t.id === 'tenant-conocer')?.totalSpentMxn || 18.50).toFixed(2)} MXN</span>
-            </div>
+            {tenants.map((t) => (
+              <div key={t.id} className="flex justify-between">
+                <span>{t.name}:</span>
+                <span className="font-mono font-semibold text-[#1f1f1f]">${t.totalSpentMxn.toFixed(2)} MXN</span>
+              </div>
+            ))}
           </div>
         </div>
 

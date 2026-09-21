@@ -61,7 +61,13 @@ export const SalesPipelineTab: React.FC<Props> = ({
             ).toLocaleString('es-MX')}{' '}
             <span className="text-xs font-normal text-[#5f6368]">MXN/mes</span>
           </p>
-          <p className="text-[11px] text-[#1e8e3e] font-medium mt-1">Amortización media: ~13 días</p>
+          <p className="text-[11px] text-[#1e8e3e] font-medium mt-1">
+            Amortización media: ~
+            {Math.round(
+              quotes.reduce((acc, q) => acc + q.amortizationDays, 0) / (quotes.length || 1)
+            )}{' '}
+            días
+          </p>
         </div>
 
         <div className="bg-white border border-[#dadce0] rounded-2xl p-4 shadow-xs">
