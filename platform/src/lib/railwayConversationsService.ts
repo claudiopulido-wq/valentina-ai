@@ -166,3 +166,66 @@ export async function fetchRailwayContactHistory(
     return [];
   }
 }
+
+export interface BotPauseResult {
+  success: boolean;
+  botPausadoHasta?: string | null;
+  error?: string;
+}
+
+/**
+ * Pausa al bot para un hilo específico ANTES de que el operador escriba su
+ * primer mensaje (a diferencia de enviar un mensaje, que también pausa el
+ * bot como efecto colateral). `minutos` por defecto son 30 en el servidor
+ * si se omite; máximo 1440 (24h).
+ */
+export async function pauseBot(
+  numericTenantId: number,
+  canal: string,
+  contacto: string,
+  minutos?: number
+): Promise<BotPauseResult> {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      `/api/tenants/${numericTenantId}/conversaciones/${encodeURIComponent(canal)}/${encodeURIComponent(contacto)}/pausar-bot`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(minutos ? { minutos } : {}),
+      }
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.pausado !== true) {
+      return { success: false, error: data.error || 'No se pudo pausar al bot.' };
+    }
+    return { success: true, botPausadoHasta: data.botPausadoHasta ?? null };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Error de red desconocido.' };
+  }
+}
+
+/**
+ * Le devuelve el control al bot de inmediato para ese hilo (idempotente si
+ * ya no estaba pausado).
+ */
+export async function resumeBot(
+  numericTenantId: number,
+  canal: string,
+  contacto: string
+): Promise<BotPauseResult> {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      `/api/tenants/${numericTenantId}/conversaciones/${encodeURIComponent(canal)}/${encodeURIComponent(contacto)}/reanudar-bot`,
+      { method: 'POST', headers }
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.reanudado !== true) {
+      return { success: false, error: data.error || 'No se pudo reactivar al bot.' };
+    }
+    return { success: true, botPausadoHasta: null };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Error de red desconocido.' };
+  }
+}

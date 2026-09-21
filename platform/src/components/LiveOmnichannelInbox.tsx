@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Conversation, ChatMessage, ChannelType, AuthUser } from '../types/platform';
 import { getUserLevelConfig } from '../lib/permissions';
-import { fetchRailwayContactHistory } from '../lib/railwayConversationsService';
+import { fetchRailwayContactHistory, pauseBot, resumeBot } from '../lib/railwayConversationsService';
 import { getAuthHeaders } from '../lib/adminDataService';
 import {
   MessageSquare,
@@ -97,21 +97,51 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
     return true;
   });
 
-  // Toggle Human Takeover
-  const handleToggleTakeover = (convId: string) => {
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === convId) {
-          const newStatus = c.status === 'human_escalated' ? 'ai_handling' : 'human_escalated';
-          return { ...c, status: newStatus };
-        }
-        return c;
-      })
-    );
-  };
-
   const [isSending, setIsSending] = useState(false);
   const [sendBanner, setSendBanner] = useState<{ type: 'error' | 'warning'; text: string } | null>(null);
+  const [isTogglingBot, setIsTogglingBot] = useState(false);
+
+  // Un hilo solo soporta pausar/reanudar al bot de verdad si viene del
+  // pipeline real de Railway (railwayTenantId configurado + id del formato
+  // que genera mapHiloToConversation). Para datos de demostración o el
+  // pipeline aparte de UGES, no hay garantía de que el `contacto` coincida
+  // con el formato que Railway espera, así que el botón se deshabilita en
+  // vez de fingir que pausó algo.
+  const canToggleBotControl = Boolean(railwayTenantId) && selectedConv?.id.startsWith('railway-');
+
+  // Tomar/Regresar control real del bot vía Railway (pausar-bot / reanudar-bot).
+  // Antes esto solo cambiaba un estado local que el siguiente poll (cada 4s)
+  // sobrescribía en cuestión de segundos, sin pausar nunca al bot de verdad —
+  // el cliente podía recibir respuestas duplicadas del bot y de un humano a
+  // la vez sin que el operador se enterara.
+  const handleToggleTakeover = async (conv: Conversation) => {
+    if (!railwayTenantId || isTogglingBot) return;
+
+    setIsTogglingBot(true);
+    setSendBanner(null);
+    const contacto = conv.contact.phoneOrEmail;
+    const result =
+      conv.status === 'human_escalated'
+        ? await resumeBot(railwayTenantId, conv.channel, contacto)
+        : await pauseBot(railwayTenantId, conv.channel, contacto);
+    setIsTogglingBot(false);
+
+    if (!result.success) {
+      setSendBanner({
+        type: 'error',
+        text: `No se pudo ${conv.status === 'human_escalated' ? 'reactivar la IA' : 'tomar el control'}: ${result.error}`,
+      });
+      return;
+    }
+
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conv.id
+          ? { ...c, status: conv.status === 'human_escalated' ? 'ai_handling' : 'human_escalated' }
+          : c
+      )
+    );
+  };
 
   // Send Operator Message
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -454,8 +484,14 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
                   </button>
 
                   <button
-                    onClick={() => handleToggleTakeover(selectedConv.id)}
-                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm cursor-pointer ${
+                    onClick={() => handleToggleTakeover(selectedConv)}
+                    disabled={!canToggleBotControl || isTogglingBot}
+                    title={
+                      canToggleBotControl
+                        ? undefined
+                        : 'No disponible para conversaciones de demostración o de este pipeline'
+                    }
+                    className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                       selectedConv.status === 'human_escalated'
                         ? 'bg-[#fef7e0] text-[#b06000] border border-[#feefc3] hover:bg-[#feefc3]'
                         : 'bg-[#0b57d0] text-white hover:bg-[#0842a0]'
