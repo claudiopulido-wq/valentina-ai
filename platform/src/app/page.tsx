@@ -479,9 +479,19 @@ export default function PlatformHome() {
       : (platformConversations as Conversation[])
     : MOCK_CONVERSATIONS[currentTenant.id] || [];
 
+  // Railway no expone historial diario de costos/tokens (solo lista de hilos
+  // y mensajes, sin campos de costo). Mostrar MOCK_TELEMETRY bajo el banner
+  // "Datos en vivo" habría sido la misma contradicción ya corregida en
+  // Canales & Hardware: banner real, contenido inventado debajo. En vez de
+  // fabricar un historial que no existe, se muestra vacío (la UI lo declara
+  // explícitamente en vez de aparentar datos que no hay).
   const currentTelemetry =
-    currentTenant.id === 'tenant-uges' && ugesTelemetry && ugesTelemetry.length > 0
-      ? ugesTelemetry
+    currentTenant.id === 'tenant-uges'
+      ? ugesTelemetry && ugesTelemetry.length > 0
+        ? ugesTelemetry
+        : MOCK_TELEMETRY
+      : hasRealLiveConversations
+      ? []
       : MOCK_TELEMETRY;
 
   // Canales & Hardware con datos reales: UGES ya actualiza dailyMessagesCount

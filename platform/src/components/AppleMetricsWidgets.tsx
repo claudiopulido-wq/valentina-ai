@@ -24,6 +24,7 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
   const roiMultipleExceedsCap = rawRoiMultiple > MAX_DISPLAYED_ROI_MULTIPLE;
   const displayedRoiMultiple = Math.max(1, Math.round(Math.min(rawRoiMultiple, MAX_DISPLAYED_ROI_MULTIPLE)));
 
+  const hasNoTelemetryHistory = telemetry.length === 0;
   const avgAiHandledPercentage = telemetry.length
     ? Math.round(telemetry.reduce((sum, day) => sum + day.aiHandledPercentage, 0) / telemetry.length)
     : 0;
@@ -169,16 +170,20 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
 
           <div className="space-y-1">
             <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
-              {avgAiHandledPercentage}%
+              {hasNoTelemetryHistory ? '—' : `${avgAiHandledPercentage}%`}
             </div>
             <p className="text-xs text-[#5f6368]">
-              Sin intervención humana (promedio últimos {telemetry.length} días)
+              {hasNoTelemetryHistory
+                ? 'Aún no hay historial diario disponible para este canal'
+                : `Sin intervención humana (promedio últimos ${telemetry.length} días)`}
             </p>
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#f1f3f4] flex items-center justify-between text-xs text-[#5f6368]">
             <span>Escalados a humanos:</span>
-            <span className="font-mono font-bold text-[#b06000]">{avgEscalatedPercentage}% (Casos complejos)</span>
+            <span className="font-mono font-bold text-[#b06000]">
+              {hasNoTelemetryHistory ? '—' : `${avgEscalatedPercentage}% (Casos complejos)`}
+            </span>
           </div>
         </div>
 
@@ -193,17 +198,21 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
 
           <div className="space-y-1">
             <div className="text-2xl font-bold tracking-tight font-mono text-[#1f1f1f]">
-              {totalHoursSavedWeek.toFixed(1)} hrs
+              {hasNoTelemetryHistory ? '—' : `${totalHoursSavedWeek.toFixed(1)} hrs`}
             </div>
             <p className="text-xs text-[#5f6368]">
-              Suma de horas humanas evitadas (últimos {telemetry.length} días)
+              {hasNoTelemetryHistory
+                ? 'Aún no hay historial diario disponible para este canal'
+                : `Suma de horas humanas evitadas (últimos ${telemetry.length} días)`}
             </p>
           </div>
 
           <div className="mt-4 pt-3 border-t border-[#f1f3f4] flex items-center justify-between text-xs text-[#5f6368]">
             <span>Mensajes totales del periodo:</span>
             <span className="font-mono font-bold text-[#1f1f1f]">
-              {telemetry.reduce((sum, day) => sum + day.totalMessages, 0).toLocaleString('es-MX')}
+              {hasNoTelemetryHistory
+                ? '—'
+                : telemetry.reduce((sum, day) => sum + day.totalMessages, 0).toLocaleString('es-MX')}
             </span>
           </div>
         </div>
@@ -216,17 +225,28 @@ export const AppleMetricsWidgets: React.FC<Props> = ({ tenant, telemetry }) => {
             <h3 className="text-sm font-bold text-[#1f1f1f] tracking-tight">Volumen de Mensajes y Consumo de Tokens (Últimos 7 días)</h3>
             <p className="text-xs text-[#5f6368]">Monitoreo granular del tráfico atendido por Valentina</p>
           </div>
-          <div className="flex items-center gap-3 text-xs font-medium text-[#5f6368]">
-            <span className="flex items-center gap-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#0b57d0]"></span>
-              <span>Mensajes</span>
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#137333]"></span>
-              <span>Costo MXN</span>
-            </span>
-          </div>
+          {!hasNoTelemetryHistory && (
+            <div className="flex items-center gap-3 text-xs font-medium text-[#5f6368]">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#0b57d0]"></span>
+                <span>Mensajes</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#137333]"></span>
+                <span>Costo MXN</span>
+              </span>
+            </div>
+          )}
         </div>
+
+        {hasNoTelemetryHistory && (
+          <div className="pt-4 border-t border-[#f1f3f4] text-center py-8">
+            <p className="text-sm font-medium text-[#5f6368]">Aún no hay suficiente historial diario para graficar</p>
+            <p className="text-xs text-[#9aa0a6] mt-1">
+              Este canal ya tiene conversaciones reales, pero el gateway no expone todavía un desglose de costo/tokens por día.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-7 gap-2 pt-4 border-t border-[#f1f3f4]">
           {telemetry.map((day, idx) => {
