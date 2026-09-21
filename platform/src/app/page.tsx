@@ -494,8 +494,12 @@ export default function PlatformHome() {
   const currentChannels =
     hasRealLiveConversations && currentTenant.id !== 'tenant-uges'
       ? currentTenant.channels.map((ch) => {
+          // Con datos reales disponibles para el tenant, cada canal refleja su
+          // conteo real (incluyendo 0 si genuinamente no hay actividad de ese
+          // canal todavía) en vez de conservar el valor de ejemplo sembrado
+          // manualmente — mostrar "0" real es más honesto que dejar un número
+          // fijo que ya no significa nada.
           const activeThreadsForChannel = currentConversations.filter((c) => c.channel === ch.type);
-          if (activeThreadsForChannel.length === 0) return ch;
           return {
             ...ch,
             dailyMessagesCount: activeThreadsForChannel.length,
