@@ -87,6 +87,9 @@ export async function fetchUgesLiveConversations(): Promise<Conversation[]> {
 
     // 4. Mapear cada hilo a la estructura 'Conversation'
     const conversations: Conversation[] = [];
+    // Épocas reales del último mensaje de cada hilo, para ordenar por fecha
+    // real y no por el id sintético del mensaje (ver más abajo).
+    const lastActivityEpoch = new Map<string, number>();
 
     threadsMap.forEach((msgs, contactKey) => {
       const lastMsgRow = msgs[msgs.length - 1];
@@ -185,8 +188,11 @@ export async function fetchUgesLiveConversations(): Promise<Conversation[]> {
         ? `Interesado en ${leadInfo.programa_interes} (${leadInfo.nivel_interes || 'Licenciatura'})`
         : `Interacción por WhatsApp con ${contactName}`;
 
+      const conversationId = `conv-uges-${contactKey}`;
+      lastActivityEpoch.set(conversationId, isNaN(lastDate.getTime()) ? 0 : lastDate.getTime());
+
       conversations.push({
-        id: `conv-uges-${contactKey}`,
+        id: conversationId,
         tenantId: 'tenant-uges',
         contact,
         channel: 'whatsapp',
@@ -202,12 +208,14 @@ export async function fetchUgesLiveConversations(): Promise<Conversation[]> {
       });
     });
 
-    // Ordenar de más reciente a más antigua
-    conversations.sort((a, b) => {
-      const lastA = a.messages[a.messages.length - 1]?.id || '';
-      const lastB = b.messages[b.messages.length - 1]?.id || '';
-      return lastB.localeCompare(lastA);
-    });
+    // Ordenar de más reciente a más antigua por fecha real. Antes se
+    // comparaba el id sintético del mensaje ("msg-uges-N") como texto: al
+    // ser comparación de strings, "msg-uges-99" ordenaba por encima de
+    // "msg-uges-838" (el '9' inicial "gana" alfabéticamente aunque 838 sea
+    // un mensaje muchísimo más reciente que 99), así que un hilo viejo podía
+    // quedarse fijo hasta arriba de la bandeja mientras entraban mensajes
+    // reales todos los días en otros hilos más abajo en la lista.
+    conversations.sort((a, b) => (lastActivityEpoch.get(b.id) || 0) - (lastActivityEpoch.get(a.id) || 0));
 
     return conversations;
   } catch (err) {
