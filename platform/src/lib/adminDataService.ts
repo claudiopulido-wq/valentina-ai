@@ -6,7 +6,7 @@ export interface AdminServiceError {
   status: number;
 }
 
-async function getAuthHeaders(): Promise<HeadersInit> {
+export async function getAuthHeaders(): Promise<HeadersInit> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 
   if (typeof window !== 'undefined') {

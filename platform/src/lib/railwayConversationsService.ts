@@ -1,4 +1,5 @@
 import { Conversation, ChatMessage, Contact, ConversationStatus } from '../types/platform';
+import { getAuthHeaders } from './adminDataService';
 
 /**
  * Cliente de conversaciones reales servidas por el gateway compartido de
@@ -128,7 +129,8 @@ export async function fetchRailwayTenantThreads(
   tenantId: string
 ): Promise<Conversation[]> {
   try {
-    const response = await fetch(`/api/tenants/${numericTenantId}/conversaciones`, { cache: 'no-store' });
+    const headers = await getAuthHeaders();
+    const response = await fetch(`/api/tenants/${numericTenantId}/conversaciones`, { headers, cache: 'no-store' });
     if (!response.ok) return [];
     const data = await response.json().catch(() => ({}));
     const hilos: HiloDTO[] = Array.isArray(data?.hilos) ? data.hilos : [];
@@ -150,9 +152,10 @@ export async function fetchRailwayContactHistory(
   conversationId: string
 ): Promise<ChatMessage[]> {
   try {
+    const headers = await getAuthHeaders();
     const response = await fetch(
       `/api/tenants/${numericTenantId}/conversaciones/whatsapp/${encodeURIComponent(contacto)}`,
-      { cache: 'no-store' }
+      { headers, cache: 'no-store' }
     );
     if (!response.ok) return [];
     const data = await response.json().catch(() => ({}));

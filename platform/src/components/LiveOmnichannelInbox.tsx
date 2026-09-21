@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Conversation, ChatMessage, ChannelType, AuthUser } from '../types/platform';
 import { getUserLevelConfig } from '../lib/permissions';
 import { fetchRailwayContactHistory } from '../lib/railwayConversationsService';
+import { getAuthHeaders } from '../lib/adminDataService';
 import {
   MessageSquare,
   Send,
@@ -167,11 +168,10 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
     };
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/channels/whatsapp/send-message', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           conversationId: selectedConv.id,
           recipient: selectedConv.contact.phoneOrEmail,
