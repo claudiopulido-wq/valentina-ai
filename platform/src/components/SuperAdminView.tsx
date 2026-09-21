@@ -476,12 +476,12 @@ CREATE POLICY "audit_log_service_role_write" ON audit_log
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-xl bg-[#e8f0fe] border border-[#d3e3fd] flex items-center justify-center text-[#0b57d0] text-xl font-bold">
-            🎓
+            ⚡
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-[#1f1f1f] tracking-tight">UNIVERSIDAD UGES</h1>
+            <h1 className="text-2xl font-semibold text-[#1f1f1f] tracking-tight">Panel de Administración Global</h1>
             <p className="text-xs text-[#5f6368] mt-0.5">
-              Cuenta de organización • ID de la cuenta: <span className="font-mono text-[#1f1f1f]">9080269226974788257</span>
+              Valentina AI • {tenants.length} {tenants.length === 1 ? 'empresa activa' : 'empresas activas'} • {users.length} {users.length === 1 ? 'credencial autorizada' : 'credenciales autorizadas'}
             </p>
           </div>
         </div>
@@ -562,9 +562,12 @@ CREATE POLICY "audit_log_service_role_write" ON audit_log
             ${totalOperatingCostMxn.toFixed(2)} <span className="text-xs font-normal text-[#5f6368]">MXN</span>
           </p>
           <p className="text-xs text-[#5f6368] mt-1 flex items-center justify-between">
-            <span>IA: ${totalAiCostMxn.toFixed(2)}</span>
-            <span>Cloud: ${totalFixedCloudCostMxn.toFixed(0)}</span>
+            <span title="Suma en vivo del gasto real de tokens de IA de todos los tenants">IA: ${totalAiCostMxn.toFixed(2)}</span>
+            <span title="Valor configurado manualmente en la pestaña Infraestructura Cloud, no facturación automática de Vercel/Supabase/Railway">
+              Cloud: ${totalFixedCloudCostMxn.toFixed(0)}*
+            </span>
           </p>
+          <p className="text-[10px] text-[#9aa0a6] mt-1">*Cloud = costo capturado manualmente, no facturación automática de los proveedores</p>
         </div>
 
         {/* Card 3: Utilidad Operativa Neta */}
