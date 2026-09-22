@@ -109,6 +109,13 @@ export const createUserSchema = z.object({
   password: z.string().min(8).max(200),
 });
 
+/**
+ * Alta de usuario vía invitación por correo: mismos campos que
+ * `createUserSchema` pero sin contraseña — el usuario invitado establece la
+ * suya propia al aceptar el enlace, nadie más la conoce ni la transmite.
+ */
+export const inviteUserSchema = createUserSchema.omit({ password: true });
+
 export const userPatchSchema = z
   .object({
     status: z.enum(USER_STATUS_VALUES).optional(),

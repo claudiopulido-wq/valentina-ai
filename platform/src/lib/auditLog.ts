@@ -6,7 +6,10 @@ export type AuditAction =
   | 'tenant.update'
   | 'user.create'
   | 'user.update'
-  | 'user.password_reset';
+  | 'user.password_reset'
+  | 'user.invite'
+  | 'user.invite_resend'
+  | 'user.invite_accept';
 
 interface AuditEntryInput {
   action: AuditAction;

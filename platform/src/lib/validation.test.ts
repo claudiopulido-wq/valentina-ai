@@ -5,6 +5,7 @@ import {
   knowledgeCreateSchema,
   knowledgeUpdateSchema,
   createUserSchema,
+  inviteUserSchema,
   userPatchSchema,
   tenantCreateSchema,
 } from './validation';
@@ -129,6 +130,29 @@ describe('createUserSchema', () => {
       password: 'validPassword123',
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('inviteUserSchema', () => {
+  it('accepts a payload with no password — the invited user sets their own', () => {
+    const result = inviteUserSchema.safeParse({
+      email: 'vendedor@uges.edu.mx',
+      fullName: 'Vendedor de Prueba',
+      role: 'tenant_admin',
+      tenantId: 'tenant-uges',
+      level: 'vendedor',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an unknown level, same rule as createUserSchema', () => {
+    const result = inviteUserSchema.safeParse({
+      email: 'vendedor@uges.edu.mx',
+      fullName: 'Vendedor de Prueba',
+      role: 'tenant_admin',
+      level: 'ceo_supremo',
+    });
+    expect(result.success).toBe(false);
   });
 });
 
