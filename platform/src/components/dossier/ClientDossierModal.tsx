@@ -40,32 +40,30 @@ export const ClientDossierModal: React.FC<Props> = ({
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [simulatedWebhookSent, setSimulatedWebhookSent] = useState(false);
 
-  // Fallback de usuario si no se suministra directamente
-  const effectiveUser: AuthUser = user || {
-    id: `user-${tenant.slug}-admin`,
-    email: `director@${tenant.slug}.com`,
-    password: `Val_${tenant.slug.slice(0, 4)}!2026`,
-    fullName: tenant.legalRepresentative || `${tenant.name} Administrador`,
-    tenantId: tenant.id,
-    role: 'tenant_admin',
-    jobTitle: tenant.legalRepresentativeTitle || 'Director General',
-    level: 'director',
-    status: 'active',
-    createdAt: new Date().toISOString().split('T')[0],
-  };
+  // Antes, si no se pasaba un usuario real, aquí se inventaba uno completo
+  // (correo `director@{slug}.com` y una contraseña adivinable
+  // `Val_{slug}!2026`) que se mostraba como si fueran credenciales reales —
+  // un cliente real jamás tuvo esa cuenta ni esa clave. Ahora se muestra el
+  // estado honesto: no hay usuario vinculado todavía.
+  const hasLinkedUser = Boolean(user);
+  const displayName = user?.fullName || tenant.legalRepresentative || `${tenant.name} (sin usuario asignado)`;
 
   const handlePrint = () => {
     window.print();
   };
 
   const generateWelcomeEmail = () => {
+    if (!user) {
+      return `No se puede generar el correo de bienvenida: esta empresa todavía no tiene ningún usuario dado de alta. Ve a "Agregar Usuario" en el Directorio de Credenciales primero.`;
+    }
+
     const accessUrl = typeof window !== 'undefined' ? window.location.origin : 'https://valentina-ai.mx';
     const planName = tenant.plan || 'Scale';
     const clientName = tenant.legalBusinessName || tenant.name;
 
     return `Asunto: Bienvenido a Valentina AI — Expediente Digital Oficial & Credenciales de Acceso: ${clientName}
 
-Estimado/a ${effectiveUser.fullName},
+Estimado/a ${user.fullName},
 
 En nombre de todo el equipo de ingeniería de Valentina AI, le damos la más cordial bienvenida a nuestra infraestructura de Inteligencia Artificial Enterprise.
 
@@ -80,14 +78,14 @@ Hemos generado y emitido de forma automatizada su Expediente Digital de Incorpor
 DATOS DE ACCESO A SU CONSOLA DE ADMINISTRACIÓN:
 =======================================================
 • Portal Oficial: ${accessUrl}
-• Correo Institucional: ${effectiveUser.email}
-• Contraseña Temporal: ${effectiveUser.password || '•••••••• (Definida por el usuario)'}
+• Correo Institucional: ${user.email}
+• Contraseña: ${user.password || 'Definida por el propio usuario al aceptar su invitación por correo.'}
 • Plan Asignado: Plan ${planName} Enterprise
 
 MEDIDA DE SEGURIDAD OBLIGATORIA:
 Por protocolos de ciberseguridad, esta contraseña es estrictamente provisional. Al iniciar sesión por primera vez, el portal le solicitará definir obligatoriamente su clave definitiva y confidencial.
 
-Puede descargar e imprimir su expediente completo en formato PDF o firmar digitalmente desde su consola.
+Puede descargar e imprimir su expediente completo en formato PDF desde su consola.
 
 Atentamente,
 Equipo de Arquitectura & Operaciones
@@ -97,12 +95,14 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
   };
 
   const handleCopyEmail = () => {
+    if (!hasLinkedUser) return;
     navigator.clipboard.writeText(generateWelcomeEmail());
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2500);
   };
 
   const handleSimulateWebhook = () => {
+    if (!hasLinkedUser) return;
     setSimulatedWebhookSent(true);
     setTimeout(() => setSimulatedWebhookSent(false), 4500);
   };
@@ -127,7 +127,7 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
                 </span>
               </div>
               <p className="text-[11px] text-[#5f6368]">
-                {tenant.legalBusinessName || tenant.name} &bull; {tenant.plan} Enterprise &bull; {effectiveUser.fullName}
+                {tenant.legalBusinessName || tenant.name} &bull; {tenant.plan} Enterprise &bull; {displayName}
               </p>
             </div>
           </div>
@@ -136,8 +136,13 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
             <button
               type="button"
               onClick={handleSimulateWebhook}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f8f9fa] hover:bg-[#e8f0fe] text-[#0b57d0] border border-[#d3e3fd] text-xs font-semibold transition cursor-pointer shadow-xs"
-              title="Vista previa: esta acción NO envía ningún correo o mensaje real todavía"
+              disabled={!hasLinkedUser}
+              title={
+                hasLinkedUser
+                  ? 'Vista previa: esta acción NO envía ningún correo o mensaje real todavía'
+                  : 'Esta empresa todavía no tiene un usuario dado de alta'
+              }
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f8f9fa] hover:bg-[#e8f0fe] text-[#0b57d0] border border-[#d3e3fd] text-xs font-semibold transition cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{simulatedWebhookSent ? 'Vista previa mostrada' : 'Vista previa de notificación (demo)'}</span>
@@ -146,8 +151,13 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
             <button
               type="button"
               onClick={handleCopyEmail}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#f1f3f4] text-[#1f1f1f] border border-[#dadce0] text-xs font-semibold transition cursor-pointer shadow-xs"
-              title="Copiar texto formal para correo de bienvenida"
+              disabled={!hasLinkedUser}
+              title={
+                hasLinkedUser
+                  ? 'Copiar texto formal para correo de bienvenida'
+                  : 'Esta empresa todavía no tiene un usuario dado de alta'
+              }
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#f1f3f4] text-[#1f1f1f] border border-[#dadce0] text-xs font-semibold transition cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {copiedEmail ? <CheckCircle className="w-3.5 h-3.5 text-[#137333]" /> : <Copy className="w-3.5 h-3.5 text-[#5f6368]" />}
               <span>{copiedEmail ? '¡Copiado!' : 'Copiar Correo'}</span>
@@ -174,12 +184,12 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
         </div>
 
         {/* Aviso de Vista Previa (esta acción NO despacha nada real) */}
-        {simulatedWebhookSent && (
+        {simulatedWebhookSent && user && (
           <div className="px-6 py-2.5 bg-[#fef7e0] border-b border-[#feefc3] text-[#b06000] text-xs font-medium flex items-center justify-between gap-3 animate-fadeIn print:hidden">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#b06000] shrink-0" />
               <span>
-                <strong>Vista previa únicamente:</strong> ningún correo ni mensaje de WhatsApp fue enviado de verdad a <u>{effectiveUser.email}</u>. Usa "Copiar Correo" para enviarlo tú mismo, o imprime/descarga el expediente en PDF.
+                <strong>Vista previa únicamente:</strong> ningún correo ni mensaje de WhatsApp fue enviado de verdad a <u>{user.email}</u>. Usa "Copiar Correo" para enviarlo tú mismo, o imprime/descarga el expediente en PDF.
               </span>
             </div>
             <span className="text-[10px] font-mono text-[#b06000] bg-white px-2 py-0.5 rounded border border-[#feefc3]">
@@ -264,7 +274,7 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
           {activeTab === 'agreement' && <ExecutiveAgreementSheet tenant={tenant} />}
           {activeTab === 'raci' && <ExecutiveRaciSheet tenant={tenant} />}
           {activeTab === 'credentials' && (
-            <ExecutiveCredentialSheet tenant={tenant} user={effectiveUser} />
+            <ExecutiveCredentialSheet tenant={tenant} user={user} />
           )}
 
           {activeTab === 'all' && (
@@ -279,7 +289,7 @@ contacto@valentina-ai.mx • Querétaro, Qro., México
                 <ExecutiveRaciSheet tenant={tenant} />
               </div>
               <div className="print:break-after-page">
-                <ExecutiveCredentialSheet tenant={tenant} user={effectiveUser} />
+                <ExecutiveCredentialSheet tenant={tenant} user={user} />
               </div>
             </div>
           )}

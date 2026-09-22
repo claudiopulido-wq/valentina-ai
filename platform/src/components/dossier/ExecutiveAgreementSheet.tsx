@@ -233,7 +233,7 @@ export const ExecutiveAgreementSheet: React.FC<Props> = ({ tenant }) => {
             <div className="border-b-2 border-[#1f1f1f] pb-12"></div>
             <div className="font-bold text-[#1f1f1f]">VALENTINA AI S.A.S.</div>
             <div className="text-[11px] text-[#5f6368]">Ingeniería & Representación Legal</div>
-            <div className="text-[10px] text-[#137333] font-mono">Firma Digital Verificada: SHA-256</div>
+            <div className="text-[10px] text-[#5f6368] font-mono">Firma Autógrafa</div>
           </div>
 
           <div className="space-y-2">

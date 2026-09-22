@@ -10,17 +10,38 @@ import {
   Mail,
   AlertTriangle,
   UserCheck,
+  UserX,
   Copy,
   CheckCircle
 } from 'lucide-react';
 
 interface Props {
   tenant: Tenant;
-  user: AuthUser;
+  user?: AuthUser;
 }
 
 export const ExecutiveCredentialSheet: React.FC<Props> = ({ tenant, user }) => {
   const [copiedPassword, setCopiedPassword] = useState(false);
+
+  if (!user) {
+    return (
+      <div className="bg-white p-6 sm:p-10 md:p-12 text-[#1f1f1f] space-y-6 max-w-4xl mx-auto printable-sheet font-sans border border-[#dadce0] rounded-xl shadow-sm print:shadow-none print:border-none">
+        <div className="flex flex-col items-center text-center py-12 space-y-3">
+          <div className="w-12 h-12 rounded-full bg-[#fce8e6] text-[#c5221f] flex items-center justify-center">
+            <UserX className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-[#1f1f1f]">
+            {tenant.name} todavía no tiene ningún usuario dado de alta
+          </h3>
+          <p className="text-xs text-[#5f6368] max-w-sm">
+            No existe ninguna ficha de credenciales que mostrar porque no hay ninguna cuenta real vinculada a esta
+            empresa todavía. Ve al Directorio de Credenciales y usa "Agregar Usuario" para invitar al primer
+            responsable de esta organización.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const documentFolio = `VAL-SEC-${new Date().getFullYear()}-${user.id.slice(-6).toUpperCase() || '778901'}`;
   const accessUrl = typeof window !== 'undefined' ? window.location.origin : 'https://valentina-ai.mx';
