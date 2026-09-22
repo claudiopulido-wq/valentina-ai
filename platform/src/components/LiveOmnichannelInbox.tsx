@@ -183,6 +183,16 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
     );
   };
 
+  // Cada cambio de asignación/etapa también registra una entrada en
+  // `crm_activities` en el servidor (ver updateCrmContact) — se refresca el
+  // timeline aquí para que se vea de inmediato, igual que ya pasaba al
+  // agregar una nota.
+  const refreshActivities = async (contactId: string) => {
+    if (!tenantId) return;
+    const updated = await fetchCrmActivities(tenantId, contactId);
+    setActivities(updated);
+  };
+
   const handleClaimLead = async () => {
     if (!tenantId || !selectedConv || !currentUser || isUpdatingCrm) return;
     setIsUpdatingCrm(true);
@@ -194,6 +204,7 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
       return;
     }
     applyCrmPatchToContact(selectedConv.contact.id, result.crm);
+    refreshActivities(selectedConv.contact.id);
   };
 
   const handleReassign = async (userId: string) => {
@@ -207,6 +218,7 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
       return;
     }
     applyCrmPatchToContact(selectedConv.contact.id, result.crm);
+    refreshActivities(selectedConv.contact.id);
   };
 
   const handleStageChange = async (stage: PipelineStage) => {
@@ -220,6 +232,7 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
       return;
     }
     applyCrmPatchToContact(selectedConv.contact.id, result.crm);
+    refreshActivities(selectedConv.contact.id);
   };
 
   const handleAddNote = async (e: React.FormEvent) => {
@@ -235,8 +248,7 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
       return;
     }
     setNoteText('');
-    const updated = await fetchCrmActivities(tenantId, selectedConv.contact.id);
-    setActivities(updated);
+    refreshActivities(selectedConv.contact.id);
   };
 
   const canEditThisLeadStage =
