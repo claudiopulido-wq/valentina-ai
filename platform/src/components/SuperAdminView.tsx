@@ -9,7 +9,7 @@ import {
   getLocalCloudCosts,
   setLocalCloudCosts,
 } from '../lib/quotesService';
-import { resetUserPassword as resetUserPasswordReal } from '../lib/adminDataService';
+import { resetUserPassword as resetUserPasswordReal, InviteUserPayload } from '../lib/adminDataService';
 import { ExecutiveCredentialPdf } from './ExecutiveCredentialPdf';
 import { ClientOnboardingWizard } from './onboarding/ClientOnboardingWizard';
 import { ClientDossierModal } from './dossier/ClientDossierModal';
@@ -20,6 +20,8 @@ import { CredentialsDirectoryTab } from './superadmin/CredentialsDirectoryTab';
 import { CloudInfrastructureTab } from './superadmin/CloudInfrastructureTab';
 import { SalesPipelineTab } from './superadmin/SalesPipelineTab';
 import { EditTenantModal } from './superadmin/EditTenantModal';
+import { AddUserModal } from './superadmin/AddUserModal';
+import { EditUserModal } from './superadmin/EditUserModal';
 import {
   Database,
   PlusCircle,
@@ -40,6 +42,12 @@ interface Props {
   onUpdateTenant?: (updatedTenant: Tenant) => void;
   onToggleUserStatus?: (userId: string) => void;
   onResetUserPassword?: (userId: string, newPassword: string) => void;
+  onAddUser?: (payload: InviteUserPayload) => Promise<void>;
+  onEditUser?: (
+    userId: string,
+    patch: Partial<Pick<AuthUser, 'level' | 'tenantId' | 'jobTitle' | 'notes'>>
+  ) => Promise<void>;
+  onResendInvitation?: (userId: string) => Promise<void>;
 }
 
 export const SuperAdminView: React.FC<Props> = ({
@@ -51,11 +59,16 @@ export const SuperAdminView: React.FC<Props> = ({
   onUpdateTenant,
   onToggleUserStatus,
   onResetUserPassword,
+  onAddUser,
+  onEditUser,
+  onResendInvitation,
 }) => {
   const [showSqlModal, setShowSqlModal] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
   const [showNewTenantModal, setShowNewTenantModal] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [editingUser, setEditingUser] = useState<AuthUser | null>(null);
   const [activeTab, setActiveTab] = useState<'tenants' | 'credentials' | 'infrastructure' | 'sales_pipeline'>('tenants');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -701,9 +714,12 @@ CREATE POLICY "audit_log_service_role_write" ON audit_log
           users={users}
           tenants={tenants}
           onOpenNewTenantModal={() => setShowNewTenantModal(true)}
+          onOpenAddUserModal={() => setShowAddUserModal(true)}
+          onOpenEditUserModal={(u) => setEditingUser(u)}
           onOpenDossierModal={(t, u) => setDossierModal({ tenant: t, user: u, initialTab: 'credentials' })}
           onResetPassword={handleResetPassword}
           onToggleUserStatus={onToggleUserStatus}
+          onResendInvitation={onResendInvitation || (async () => {})}
         />
       )}
 
@@ -767,6 +783,29 @@ CREATE POLICY "audit_log_service_role_write" ON audit_log
               onUpdateTenant(updated);
             }
             setEditingTenant(null);
+          }}
+        />
+      )}
+
+      {/* MODAL AGREGAR USUARIO A EMPRESA EXISTENTE (invitación por correo) */}
+      <AddUserModal
+        isOpen={showAddUserModal}
+        tenants={tenants}
+        onClose={() => setShowAddUserModal(false)}
+        onSubmit={async (payload) => {
+          if (onAddUser) await onAddUser(payload);
+        }}
+      />
+
+      {/* MODAL EDICIÓN DE USUARIO EXISTENTE */}
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          tenants={tenants}
+          isOpen={Boolean(editingUser)}
+          onClose={() => setEditingUser(null)}
+          onSave={async (userId, patch) => {
+            if (onEditUser) await onEditUser(userId, patch);
           }}
         />
       )}

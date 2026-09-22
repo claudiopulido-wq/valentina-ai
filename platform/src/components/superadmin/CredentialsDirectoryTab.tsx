@@ -1,24 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tenant, AuthUser } from '../../types/platform';
-import { Mail, FileText, KeyRound } from 'lucide-react';
+import { Mail, FileText, KeyRound, UserPlus, Pencil, Send } from 'lucide-react';
 
 interface Props {
   users: AuthUser[];
   tenants: Tenant[];
   onOpenNewTenantModal: () => void;
+  onOpenAddUserModal: () => void;
+  onOpenEditUserModal: (user: AuthUser) => void;
   onOpenDossierModal: (tenant: Tenant, user: AuthUser) => void;
   onResetPassword: (user: AuthUser) => void;
   onToggleUserStatus?: (userId: string) => void;
+  onResendInvitation: (userId: string) => Promise<void>;
 }
 
 export const CredentialsDirectoryTab: React.FC<Props> = ({
   users,
   tenants,
   onOpenNewTenantModal,
+  onOpenAddUserModal,
+  onOpenEditUserModal,
   onOpenDossierModal,
   onResetPassword,
   onToggleUserStatus,
+  onResendInvitation,
 }) => {
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const handleResend = async (userId: string) => {
+    if (resendingId) return;
+    setResendingId(userId);
+    try {
+      await onResendInvitation(userId);
+    } catch (err: any) {
+      window.alert(err?.message || 'No se pudo reenviar la invitación.');
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   return (
     <div className="bg-white border border-[#dadce0] rounded-2xl overflow-hidden shadow-sm">
       <div className="p-4 border-b border-[#dadce0] flex items-center justify-between bg-[#f8f9fa]">
@@ -26,12 +46,21 @@ export const CredentialsDirectoryTab: React.FC<Props> = ({
           <h3 className="text-sm font-semibold text-[#1f1f1f]">Directorio Maestro de Credenciales</h3>
           <p className="text-xs text-[#5f6368]">Solo las cuentas listadas aquí pueden iniciar sesión en el portal</p>
         </div>
-        <button
-          onClick={onOpenNewTenantModal}
-          className="text-[#0b57d0] font-semibold text-xs hover:underline cursor-pointer"
-        >
-          Crear empresa &amp; Credenciales
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onOpenAddUserModal}
+            className="flex items-center gap-1.5 text-[#0b57d0] font-semibold text-xs hover:underline cursor-pointer"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            Agregar Usuario
+          </button>
+          <button
+            onClick={onOpenNewTenantModal}
+            className="text-[#0b57d0] font-semibold text-xs hover:underline cursor-pointer"
+          >
+            Crear empresa &amp; Credenciales
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -148,7 +177,12 @@ export const CredentialsDirectoryTab: React.FC<Props> = ({
 
                   <td className="p-4 space-y-1">
                     <div>
-                      {u.status === 'active' ? (
+                      {u.status === 'pending' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#fef7e0] text-[#b06000] border border-[#feefc3]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#b06000] animate-pulse"></span>
+                          INVITACIÓN PENDIENTE
+                        </span>
+                      ) : u.status === 'active' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#137333]"></span>
                           AUTORIZADO
@@ -175,6 +209,27 @@ export const CredentialsDirectoryTab: React.FC<Props> = ({
                         >
                           <FileText className="w-3 h-3 text-[#0b57d0]" />
                           <span>Expediente</span>
+                        </button>
+                      )}
+                      {u.role !== 'superadmin' && (
+                        <button
+                          onClick={() => onOpenEditUserModal(u)}
+                          title="Editar nivel, empresa, puesto o notas"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white hover:bg-[#e8f0fe] text-[#0b57d0] border border-[#dadce0] transition cursor-pointer shadow-xs"
+                        >
+                          <Pencil className="w-3 h-3 text-[#0b57d0]" />
+                          <span>Editar</span>
+                        </button>
+                      )}
+                      {u.status === 'pending' && (
+                        <button
+                          onClick={() => handleResend(u.id)}
+                          disabled={resendingId === u.id}
+                          title="Reenviar el correo de invitación"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white hover:bg-[#fef7e0] text-[#b06000] border border-[#dadce0] transition cursor-pointer shadow-xs disabled:opacity-50"
+                        >
+                          <Send className="w-3 h-3 text-[#b06000]" />
+                          <span>{resendingId === u.id ? 'Reenviando...' : 'Reenviar'}</span>
                         </button>
                       )}
                       {u.role !== 'superadmin' && (

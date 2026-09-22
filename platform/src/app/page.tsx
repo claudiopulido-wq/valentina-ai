@@ -22,6 +22,9 @@ import {
   updateTenant as persistTenantUpdate,
   createUser as persistNewUser,
   updateUser as persistUserUpdate,
+  inviteUser,
+  resendInvitation as persistResendInvitation,
+  InviteUserPayload,
 } from '../lib/adminDataService';
 import {
   ClientTab,
@@ -397,6 +400,23 @@ export default function PlatformHome() {
     });
   };
 
+  const handleAddUser = async (payload: InviteUserPayload): Promise<void> => {
+    const newUser = await inviteUser(payload);
+    setUsers((prev) => [newUser, ...prev.filter((u) => u.id !== newUser.id)]);
+  };
+
+  const handleEditUser = async (
+    userId: string,
+    patch: Partial<Pick<AuthUser, 'level' | 'tenantId' | 'jobTitle' | 'notes'>>
+  ): Promise<void> => {
+    const updated = await persistUserUpdate(userId, patch);
+    setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
+  };
+
+  const handleResendInvitation = async (userId: string): Promise<void> => {
+    await persistResendInvitation(userId);
+  };
+
   const handleUpdateUserPassword = (userId: string, newPassword: string) => {
     setUsers((prev) =>
       prev.map((u) => {
@@ -679,6 +699,9 @@ export default function PlatformHome() {
               onUpdateTenant={handleUpdateTenant}
               onToggleUserStatus={handleToggleUserStatus}
               onResetUserPassword={handleResetUserPassword}
+              onAddUser={handleAddUser}
+              onEditUser={handleEditUser}
+              onResendInvitation={handleResendInvitation}
             />
           ) : (
             /* ================= CLIENT PORTAL VIEW ================= */

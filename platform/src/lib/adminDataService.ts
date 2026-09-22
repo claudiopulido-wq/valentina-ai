@@ -145,3 +145,47 @@ export async function completeForcedPasswordChange(): Promise<void> {
     // solo queda desactualizada la bandera de UI, no es un error bloqueante.
   });
 }
+
+export interface InviteUserPayload {
+  email: string;
+  fullName: string;
+  tenantId: string | null;
+  level?: AuthUser['level'];
+  jobTitle?: string;
+  notes?: string;
+}
+
+/**
+ * Agrega un usuario a una empresa YA EXISTENTE vía invitación por correo
+ * (a diferencia de `createUser`, aquí nadie ve ni transmite ninguna
+ * contraseña: el invitado pone la suya propia al aceptar el enlace).
+ */
+export async function inviteUser(payload: InviteUserPayload): Promise<AuthUser> {
+  const headers = await getAuthHeaders();
+  const response = await fetch('/api/users/invite', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) await parseErrorOrThrow(response);
+  const data = await response.json();
+  return data.user;
+}
+
+/** Regenera y reenvía el enlace de invitación de un usuario que sigue en estado `pending`. */
+export async function resendInvitation(userId: string): Promise<void> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`/api/users/${userId}/resend-invitation`, {
+    method: 'POST',
+    headers,
+  });
+  if (!response.ok) await parseErrorOrThrow(response);
+}
+
+/** Marca la invitación propia como aceptada (perfil pasa de `pending` a `active`). */
+export async function completeInvitation(): Promise<void> {
+  const headers = await getAuthHeaders();
+  await fetch('/api/users/me/complete-invitation', { method: 'POST', headers }).catch(() => {
+    // Best-effort, igual que completeForcedPasswordChange.
+  });
+}
