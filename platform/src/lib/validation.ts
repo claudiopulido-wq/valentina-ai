@@ -111,10 +111,12 @@ export const createUserSchema = z.object({
 
 /**
  * Alta de usuario vía invitación por correo: mismos campos que
- * `createUserSchema` pero sin contraseña — el usuario invitado establece la
- * suya propia al aceptar el enlace, nadie más la conoce ni la transmite.
+ * `createUserSchema` pero sin contraseña (el usuario invitado establece la
+ * suya propia al aceptar el enlace, nadie más la conoce ni la transmite) y
+ * sin `role` (siempre se fija a `'tenant_admin'` en el servidor — el cliente
+ * solo elige el `level`, que es lo que realmente distingue permisos aquí).
  */
-export const inviteUserSchema = createUserSchema.omit({ password: true });
+export const inviteUserSchema = createUserSchema.omit({ password: true, role: true });
 
 export const userPatchSchema = z
   .object({
