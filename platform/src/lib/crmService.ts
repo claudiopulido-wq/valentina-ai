@@ -329,7 +329,7 @@ export interface CrmContactListItem {
   createdAt: string;
 }
 
-interface ContactRowWithAssignee extends ContactRow {
+export interface ContactRowWithAssignee extends ContactRow {
   assigned_user?: { full_name: string } | { full_name: string }[] | null;
 }
 
@@ -392,6 +392,60 @@ export function filterContactsByVisibility<T extends { assigned_to: string | nul
 ): T[] {
   if (canManageCRM) return rows;
   return rows.filter((r) => r.assigned_to === null || r.assigned_to === userId);
+}
+
+export interface CsvContactRow {
+  name: string | null;
+  phone_or_email: string;
+  channel_origin: string;
+  pipeline_stage: string;
+  assigned_to_name: string | null;
+  qualification_score: number | null;
+  tags: string[] | null;
+  city: string | null;
+  created_at: string;
+}
+
+/**
+ * Convierte una fila cruda de `contacts` (con el join a `platform_users` ya
+ * resuelto por `listContactsForTenant`/la consulta de un solo contacto) al
+ * formato exacto que espera `buildContactsCsv`.
+ */
+export function mapContactRowToCsvRow(row: ContactRowWithAssignee): CsvContactRow {
+  const assignedUserRaw = row.assigned_user;
+  const assignedToName = Array.isArray(assignedUserRaw) ? assignedUserRaw[0]?.full_name : assignedUserRaw?.full_name;
+
+  return {
+    name: row.name,
+    phone_or_email: row.phone_or_email,
+    channel_origin: row.channel_origin,
+    pipeline_stage: row.pipeline_stage,
+    assigned_to_name: assignedToName || null,
+    qualification_score: row.qualification_score,
+    tags: row.tags,
+    city: row.city,
+    created_at: row.created_at,
+  };
+}
+
+/**
+ * Lee un solo contacto (acotado a tenant) con su nombre de asignado ya
+ * resuelto, para la exportación individual.
+ */
+export async function getContactWithAssigneeById(
+  tenantId: string,
+  contactId: string
+): Promise<ContactRowWithAssignee | null> {
+  if (!isSupabaseAdminConfigured) return null;
+
+  const { data } = await supabaseAdmin
+    .from('contacts')
+    .select('*, assigned_user:platform_users(full_name)')
+    .eq('tenant_id', tenantId)
+    .eq('id', contactId)
+    .maybeSingle();
+
+  return (data as ContactRowWithAssignee) || null;
 }
 
 /**

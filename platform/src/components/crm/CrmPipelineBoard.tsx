@@ -8,10 +8,11 @@ import {
   fetchCrmTeam,
   changePipelineStage,
   subscribeToTenantCrm,
+  downloadPipelineCsv,
   CrmContactListItem,
   CrmTeamMember,
 } from '../../lib/crmClientService';
-import { Search, RefreshCw, Users, LayoutGrid } from 'lucide-react';
+import { Search, RefreshCw, Users, LayoutGrid, Download } from 'lucide-react';
 
 interface Props {
   tenantId: string;
@@ -54,6 +55,7 @@ export const CrmPipelineBoard: React.FC<Props> = ({ tenantId, currentUser }) => 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingContactId, setUpdatingContactId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [channelFilter, setChannelFilter] = useState<'all' | ChannelType>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<'all' | 'unassigned' | string>('all');
@@ -103,6 +105,17 @@ export const CrmPipelineBoard: React.FC<Props> = ({ tenantId, currentUser }) => 
     );
   };
 
+  const handleExportPipeline = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    setError(null);
+    const result = await downloadPipelineCsv(tenantId);
+    setIsExporting(false);
+    if (!result.success) {
+      setError(result.error || 'No se pudo exportar el pipeline.');
+    }
+  };
+
   const filteredContacts = contacts.filter((c) => {
     if (channelFilter !== 'all' && c.channelOrigin !== channelFilter) return false;
     if (assigneeFilter === 'unassigned' && c.assignedTo !== null) return false;
@@ -141,13 +154,23 @@ export const CrmPipelineBoard: React.FC<Props> = ({ tenantId, currentUser }) => 
           </p>
         </div>
 
-        <button
-          onClick={loadContacts}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#dadce0] text-[#0b57d0] hover:bg-[#f8f9fa] transition cursor-pointer shadow-sm"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Actualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportPipeline}
+            disabled={isExporting}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white transition cursor-pointer shadow-sm disabled:opacity-50"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {isExporting ? 'Exportando...' : 'Exportar Pipeline (CSV)'}
+          </button>
+          <button
+            onClick={loadContacts}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#dadce0] text-[#0b57d0] hover:bg-[#f8f9fa] transition cursor-pointer shadow-sm"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {/* Filters */}

@@ -151,6 +151,53 @@ export async function fetchCrmContacts(tenantId: string): Promise<CrmContactList
   }
 }
 
+export interface CrmDownloadResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Descarga un CSV autenticado (requiere el header Authorization, así que no
+ * se puede usar un simple `<a href>`): pide el archivo con fetch, arma un
+ * blob y dispara la descarga del navegador con el nombre que envía el
+ * servidor en `Content-Disposition`.
+ */
+async function downloadCsv(url: string, filenameFallback: string): Promise<CrmDownloadResult> {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(url, { headers, cache: 'no-store' });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      return { success: false, error: data.error || 'No se pudo generar el archivo CSV.' };
+    }
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : filenameFallback;
+
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Error de red desconocido.' };
+  }
+}
+
+export function downloadContactCsv(tenantId: string, contactId: string): Promise<CrmDownloadResult> {
+  return downloadCsv(`/api/tenants/${tenantId}/crm/contacts/${contactId}/export`, `contacto-${contactId}.csv`);
+}
+
+export function downloadPipelineCsv(tenantId: string): Promise<CrmDownloadResult> {
+  return downloadCsv(`/api/tenants/${tenantId}/crm/export`, `pipeline-${tenantId}.csv`);
+}
+
 /**
  * Se suscribe a cambios en vivo de `contacts` y `crm_activities` del tenant
  * (asignaciones, etapas, notas de todo el equipo) e invoca `onChange` para

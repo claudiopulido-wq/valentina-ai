@@ -12,6 +12,7 @@ import {
   addCrmNote,
   fetchCrmActivities,
   fetchCrmTeam,
+  downloadContactCsv,
   CrmPatchResult,
   CrmTeamMember,
 } from '../lib/crmClientService';
@@ -30,6 +31,7 @@ import {
   ArrowLeft,
   UserPlus,
   StickyNote,
+  Download,
 } from 'lucide-react';
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
@@ -133,6 +135,7 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
   const [isUpdatingCrm, setIsUpdatingCrm] = useState(false);
   const [crmError, setCrmError] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<CrmTeamMember[]>([]);
+  const [isExportingContact, setIsExportingContact] = useState(false);
 
   useEffect(() => {
     if (!tenantId || !selectedConv || !hasRealCrmContact) {
@@ -249,6 +252,17 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
     }
     setNoteText('');
     refreshActivities(selectedConv.contact.id);
+  };
+
+  const handleExportContact = async () => {
+    if (!tenantId || !selectedConv || isExportingContact) return;
+    setIsExportingContact(true);
+    setCrmError(null);
+    const result = await downloadContactCsv(tenantId, selectedConv.contact.id);
+    setIsExportingContact(false);
+    if (!result.success) {
+      setCrmError(result.error || 'No se pudo descargar la ficha del contacto.');
+    }
   };
 
   const canEditThisLeadStage =
@@ -840,12 +854,24 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
 
               <div className="space-y-4">
                 {/* Contact Dossier Header */}
-                <div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5f6368]">
-                    Expediente del Prospecto
-                  </span>
-                  <h4 className="text-base font-bold text-[#1f1f1f] mt-1">{selectedConv.contact.name}</h4>
-                  <p className="text-xs text-[#5f6368] font-mono">{selectedConv.contact.phoneOrEmail}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5f6368]">
+                      Expediente del Prospecto
+                    </span>
+                    <h4 className="text-base font-bold text-[#1f1f1f] mt-1">{selectedConv.contact.name}</h4>
+                    <p className="text-xs text-[#5f6368] font-mono">{selectedConv.contact.phoneOrEmail}</p>
+                  </div>
+                  {hasRealCrmContact && (
+                    <button
+                      onClick={handleExportContact}
+                      disabled={isExportingContact}
+                      title="Descargar ficha del contacto (CSV)"
+                      className="p-1.5 rounded-lg text-[#0b57d0] hover:bg-[#e8f0fe] transition cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Lead Qualification Score */}
