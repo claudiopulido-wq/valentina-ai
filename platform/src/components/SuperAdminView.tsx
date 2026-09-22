@@ -247,14 +247,46 @@ CREATE POLICY "messages_select_authenticated" ON messages
 CREATE POLICY "messages_service_role_write" ON messages
     FOR ALL USING (auth.role() = 'service_role');
 
--- 6. Habilitar Supabase Realtime en estas tablas: sin esto, la consola NUNCA
+-- 6. CRM interno: extiende contacts con asignacion/etapa de venta, y agrega
+--    el timeline de actividad. Es el mismo ancla de identidad (tenant_id +
+--    channel_origin + phone_or_email) sin importar si la conversacion vino
+--    de Railway o del pipeline de respaldo.
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS assigned_to TEXT REFERENCES platform_users(id);
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS pipeline_stage TEXT NOT NULL DEFAULT 'nuevo';
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS stage_updated_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS lost_reason TEXT;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+CREATE UNIQUE INDEX IF NOT EXISTS contacts_tenant_channel_identity
+    ON contacts (tenant_id, channel_origin, phone_or_email);
+
+CREATE TABLE IF NOT EXISTS crm_activities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    contact_id UUID NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+    actor_id TEXT,
+    actor_name TEXT,
+    type TEXT NOT NULL, -- 'note' | 'stage_change' | 'assignment_change'
+    content TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE crm_activities ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "crm_activities_select_authenticated" ON crm_activities
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "crm_activities_service_role_write" ON crm_activities
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- 7. Habilitar Supabase Realtime en estas tablas: sin esto, la consola NUNCA
 --    recibe actualizaciones en vivo y solo se refresca al recargar la página.
 --    Si tu proyecto ya las tiene agregadas, Supabase mostrará un error de
 --    "already member of publication" que puedes ignorar sin problema.
 ALTER PUBLICATION supabase_realtime ADD TABLE messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE conversations;
+ALTER PUBLICATION supabase_realtime ADD TABLE contacts;
+ALTER PUBLICATION supabase_realtime ADD TABLE crm_activities;
 
--- 7. Cotizaciones Comerciales B2B (Pipeline)
+-- 8. Cotizaciones Comerciales B2B (Pipeline)
 CREATE TABLE IF NOT EXISTS commercial_quotes (
     id TEXT PRIMARY KEY,
     folio TEXT NOT NULL,
@@ -281,7 +313,7 @@ ALTER TABLE commercial_quotes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Superadmin full access commercial_quotes" ON commercial_quotes
     FOR ALL USING (true);
 
--- 8. Auditoría de acciones administrativas (alta/edición de tenants y
+-- 9. Auditoría de acciones administrativas (alta/edición de tenants y
 --    usuarios, reseteo de contraseñas). Solo el servidor (service_role)
 --    escribe aquí; ningún SuperAdmin puede borrar su propio rastro desde
 --    el cliente.

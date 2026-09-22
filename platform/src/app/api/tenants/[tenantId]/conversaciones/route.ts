@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authorizeConversationsRequest } from '@/lib/serverAuth';
+import { authorizeConversationsRequest, getSlugForNumericTenantId } from '@/lib/serverAuth';
+import { findOrCreateCrmContact, getCrmFieldsForContact } from '@/lib/crmService';
 import { logger } from '@/lib/logger';
 
 const PLATFORM_API_BASE_URL =
@@ -60,7 +61,28 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(data, { status: response.status });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    // Decorar cada hilo con los datos del CRM interno (asignación, etapa,
+    // etiquetas) resueltos contra la tabla `contacts` de Supabase. Railway
+    // no sabe nada de esto — es una capa que agregamos nosotros encima.
+    const hilos = Array.isArray(data?.hilos) ? data.hilos : [];
+    const internalTenantId = await getSlugForNumericTenantId(numericTenantId);
+
+    const decoratedHilos = internalTenantId
+      ? await Promise.all(
+          hilos.map(async (hilo: any) => {
+            const contactRow = await findOrCreateCrmContact({
+              tenantId: internalTenantId,
+              channel: hilo.canal,
+              phoneOrEmail: hilo.contacto,
+            });
+            if (!contactRow) return hilo;
+            const crm = await getCrmFieldsForContact(contactRow);
+            return { ...hilo, crm };
+          })
+        )
+      : hilos;
+
+    return NextResponse.json({ ...data, hilos: decoratedHilos }, { status: 200 });
   } catch (error: any) {
     logger.error('Error al conectar con Railway Conversaciones API', {
       route: '/api/tenants/[tenantId]/conversaciones',

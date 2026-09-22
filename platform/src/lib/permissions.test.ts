@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAllowedTabsForUser, canUserAccessTab, getDefaultTabForUser } from './permissions';
+import { getAllowedTabsForUser, canUserAccessTab, getDefaultTabForUser, getUserLevelConfig } from './permissions';
 import { AuthUser } from '../types/platform';
 
 function makeUser(overrides: Partial<AuthUser>): AuthUser {
@@ -22,21 +22,24 @@ describe('getAllowedTabsForUser', () => {
 
   it('gives superadmin access to every tab regardless of level', () => {
     const user = makeUser({ role: 'superadmin', level: undefined });
-    expect(getAllowedTabsForUser(user)).toEqual(['inbox', 'channels', 'knowledge', 'analytics']);
+    expect(getAllowedTabsForUser(user)).toEqual(['inbox', 'channels', 'knowledge', 'analytics', 'crm']);
   });
 
-  it('restricts a vendedor to only the inbox — the "no distracciones ni costos" rule', () => {
+  it('restricts a vendedor to the inbox and their own CRM pipeline — no costos ni canales', () => {
     const user = makeUser({ level: 'vendedor' });
-    expect(getAllowedTabsForUser(user)).toEqual(['inbox']);
+    const tabs = getAllowedTabsForUser(user);
+    expect(tabs).toEqual(['inbox', 'crm']);
+    expect(tabs).not.toContain('analytics');
+    expect(tabs).not.toContain('channels');
   });
 
   it('never grants financial visibility tabs to a coordinador', () => {
     const user = makeUser({ level: 'coordinador' });
     const tabs = getAllowedTabsForUser(user);
-    // El coordinador gestiona chats/conocimiento/canales, pero jamás 'analytics'
+    // El coordinador gestiona chats/conocimiento/canales/CRM, pero jamás 'analytics'
     // (esa pestaña es la que expone costos financieros de la empresa).
     expect(tabs).not.toContain('analytics');
-    expect(tabs).toEqual(['inbox', 'knowledge', 'channels']);
+    expect(tabs).toEqual(['inbox', 'knowledge', 'channels', 'crm']);
   });
 
   it('restricts an evaluador to only the knowledge base', () => {
@@ -50,6 +53,32 @@ describe('canUserAccessTab', () => {
     const user = makeUser({ level: 'vendedor' });
     expect(canUserAccessTab(user, 'analytics')).toBe(false);
     expect(canUserAccessTab(user, 'inbox')).toBe(true);
+  });
+});
+
+describe('CRM permissions (canManageCRM / canClaimLeads)', () => {
+  it('lets director and coordinador manage (assign/reassign) any lead, but not claim', () => {
+    expect(getUserLevelConfig(makeUser({ level: 'director' })).canManageCRM).toBe(true);
+    expect(getUserLevelConfig(makeUser({ level: 'director' })).canClaimLeads).toBe(false);
+    expect(getUserLevelConfig(makeUser({ level: 'coordinador' })).canManageCRM).toBe(true);
+  });
+
+  it('lets vendedor and asesor claim unassigned leads, but not manage the whole pipeline', () => {
+    expect(getUserLevelConfig(makeUser({ level: 'vendedor' })).canClaimLeads).toBe(true);
+    expect(getUserLevelConfig(makeUser({ level: 'vendedor' })).canManageCRM).toBe(false);
+    expect(getUserLevelConfig(makeUser({ level: 'asesor' })).canClaimLeads).toBe(true);
+  });
+
+  it('denies CRM management entirely to evaluador and soporte', () => {
+    expect(getUserLevelConfig(makeUser({ level: 'evaluador' })).canManageCRM).toBe(false);
+    expect(getUserLevelConfig(makeUser({ level: 'evaluador' })).canClaimLeads).toBe(false);
+    expect(getUserLevelConfig(makeUser({ level: 'soporte' })).canManageCRM).toBe(false);
+  });
+
+  it('gives superadmin full CRM control', () => {
+    const config = getUserLevelConfig(makeUser({ role: 'superadmin' }));
+    expect(config.canManageCRM).toBe(true);
+    expect(config.canClaimLeads).toBe(true);
   });
 });
 

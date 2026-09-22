@@ -2,6 +2,14 @@ export type ChannelType = 'whatsapp' | 'web' | 'instagram' | 'telegram' | 'messe
 
 export type ConversationStatus = 'ai_handling' | 'human_escalated' | 'resolved';
 
+/**
+ * Etapa del embudo de ventas del CRM interno. Es independiente del
+ * ConversationStatus (que describe si el bot o un humano está atendiendo
+ * ahora mismo) — el PipelineStage persiste durante toda la relación con el
+ * contacto, no solo durante una conversación puntual.
+ */
+export type PipelineStage = 'nuevo' | 'contactado' | 'calificado' | 'propuesta' | 'ganado' | 'perdido';
+
 export interface Tenant {
   id: string;
   name: string;
@@ -71,6 +79,27 @@ export interface Contact {
   city?: string;
   firstSeenAt: string;
   qualificationScore?: number; // 0 - 100 Lead Score
+
+  // Campos del CRM interno (viven en la fila real de `contacts` en Supabase,
+  // sin importar si la conversación en sí vino de Railway o del pipeline de
+  // respaldo — ver crmService.ts).
+  assignedTo?: string | null; // id de platform_users
+  assignedToName?: string | null; // denormalizado para no tener que resolverlo en cada render
+  pipelineStage?: PipelineStage;
+  stageUpdatedAt?: string;
+  lostReason?: string;
+}
+
+export interface CrmActivity {
+  id: string;
+  tenantId: string;
+  contactId: string;
+  actorId?: string;
+  actorName?: string;
+  type: 'note' | 'stage_change' | 'assignment_change';
+  content?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
 }
 
 export interface ChatMessage {

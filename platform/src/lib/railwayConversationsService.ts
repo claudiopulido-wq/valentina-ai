@@ -1,4 +1,4 @@
-import { Conversation, ChatMessage, Contact, ConversationStatus } from '../types/platform';
+import { Conversation, ChatMessage, Contact, ConversationStatus, PipelineStage } from '../types/platform';
 import { getAuthHeaders } from './adminDataService';
 
 /**
@@ -23,6 +23,15 @@ export interface HiloDTO {
   ultimoEnviadoPor: 'bot' | 'humano' | null;
   actualizadoEn: string;
   pausadoHasta: string | null;
+  // Decorado por nuestra propia ruta proxy (no viene de Railway): datos del
+  // CRM interno resueltos contra la tabla `contacts` de Supabase.
+  crm?: {
+    contactId: string;
+    assignedTo: string | null;
+    assignedToName: string | null;
+    pipelineStage: PipelineStage;
+    tags: string[];
+  };
 }
 
 export interface MensajeDTO {
@@ -60,15 +69,22 @@ export function mapHiloToConversation(hilo: HiloDTO, tenantId: string): Conversa
   const conversationId = `railway-${tenantId}-${hilo.canal}-${hilo.contacto}`;
 
   // El endpoint de lista no trae nombre de contacto, solo el identificador
-  // real (teléfono/handle) — no se inventa un nombre que no existe.
+  // real (teléfono/handle) — no se inventa un nombre que no existe. El id
+  // real del contacto CRM (UUID de la tabla `contacts`) viene decorado por
+  // nuestra propia ruta proxy en `hilo.crm`; si por lo que sea no vino
+  // (Supabase no configurado, error puntual), se cae a un id sintético que
+  // no permite acciones de CRM pero no rompe la vista de la conversación.
   const contact: Contact = {
-    id: `ct-${hilo.contacto}`,
+    id: hilo.crm?.contactId || `ct-${hilo.contacto}`,
     tenantId,
     name: hilo.contacto,
     phoneOrEmail: hilo.contacto,
     channelOrigin: hilo.canal,
-    tags: [],
+    tags: hilo.crm?.tags || [],
     firstSeenAt: 'Reciente',
+    assignedTo: hilo.crm?.assignedTo ?? null,
+    assignedToName: hilo.crm?.assignedToName ?? null,
+    pipelineStage: hilo.crm?.pipelineStage || 'nuevo',
   };
 
   const lastMessage: ChatMessage = {

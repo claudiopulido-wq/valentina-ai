@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { supabaseAdmin, isSupabaseAdminConfigured } from './supabaseAdmin';
-import { Conversation, ChatMessage, Contact, ConversationStatus } from '../types/platform';
+import { Conversation, ChatMessage, Contact, ConversationStatus, PipelineStage } from '../types/platform';
+import { findOrCreateCrmContact } from './crmService';
 
 /**
  * Persistencia real de conversaciones/mensajes multi-tenant en el proyecto
@@ -23,6 +24,11 @@ interface ContactRow {
   qualification_score: number | null;
   tags: string[] | null;
   created_at: string;
+  assigned_to?: string | null;
+  pipeline_stage?: string | null;
+  stage_updated_at?: string | null;
+  lost_reason?: string | null;
+  assigned_user?: { full_name: string } | { full_name: string }[] | null;
 }
 
 interface MessageRow {
@@ -89,6 +95,11 @@ export function mapRowToConversation(row: ConversationRow): Conversation {
   const totalTokens = messages.reduce((sum, m) => sum + m.tokensUsed.total, 0);
   const totalCostMxn = messages.reduce((sum, m) => sum + m.costMxn, 0);
 
+  const assignedUserRaw = row.contact?.assigned_user;
+  const assignedToName = Array.isArray(assignedUserRaw)
+    ? assignedUserRaw[0]?.full_name
+    : assignedUserRaw?.full_name;
+
   const contact: Contact = row.contact
     ? {
         id: row.contact.id,
@@ -102,6 +113,11 @@ export function mapRowToConversation(row: ConversationRow): Conversation {
           ? new Date(row.contact.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
           : 'Reciente',
         qualificationScore: row.contact.qualification_score ?? undefined,
+        assignedTo: row.contact.assigned_to,
+        assignedToName: assignedToName || null,
+        pipelineStage: (row.contact.pipeline_stage as PipelineStage) || 'nuevo',
+        stageUpdatedAt: row.contact.stage_updated_at || undefined,
+        lostReason: row.contact.lost_reason || undefined,
       }
     : {
         id: `ct-${row.id}`,
@@ -142,7 +158,7 @@ export async function fetchTenantConversations(tenantId: string): Promise<Conver
   try {
     const { data, error } = await supabase
       .from('conversations')
-      .select('*, contact:contacts(*), messages(*)')
+      .select('*, contact:contacts(*, assigned_user:platform_users(full_name)), messages(*)')
       .eq('tenant_id', tenantId)
       .order('updated_at', { ascending: false });
 
@@ -217,29 +233,15 @@ export async function insertInboundMessage(input: InboundMessageInput): Promise<
 
   const cleanPhone = input.contactPhone.replace(/[^0-9+]/g, '');
 
-  let { data: contact } = await supabaseAdmin
-    .from('contacts')
-    .select('id')
-    .eq('tenant_id', input.tenantId)
-    .eq('phone_or_email', cleanPhone)
-    .maybeSingle();
-
+  const contact = await findOrCreateCrmContact({
+    tenantId: input.tenantId,
+    channel: input.channel || 'whatsapp',
+    phoneOrEmail: cleanPhone,
+    name: input.contactName,
+  });
   if (!contact) {
-    const { data: newContact, error: contactError } = await supabaseAdmin
-      .from('contacts')
-      .insert({
-        tenant_id: input.tenantId,
-        name: input.contactName || null,
-        phone_or_email: cleanPhone,
-        channel_origin: input.channel || 'whatsapp',
-      })
-      .select('id')
-      .single();
-    if (contactError || !newContact) {
-      console.warn('[conversationsService] No se pudo crear el contacto entrante:', contactError?.message);
-      return;
-    }
-    contact = newContact;
+    console.warn('[conversationsService] No se pudo resolver el contacto entrante.');
+    return;
   }
 
   let { data: conversation } = await supabaseAdmin

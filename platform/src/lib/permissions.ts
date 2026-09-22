@@ -1,6 +1,6 @@
 import { AuthUser, UserLevel } from '../types/platform';
 
-export type ClientTab = 'inbox' | 'analytics' | 'channels' | 'knowledge';
+export type ClientTab = 'inbox' | 'analytics' | 'channels' | 'knowledge' | 'crm';
 
 export interface LevelConfig {
   label: string;
@@ -12,6 +12,10 @@ export interface LevelConfig {
   canViewFinances: boolean;
   canEditKnowledge: boolean;
   canManageChannels: boolean;
+  // CRM: asignar/reasignar CUALQUIER lead y cambiar cualquier etapa (Director/Coordinador).
+  canManageCRM: boolean;
+  // CRM: auto-asignarse ("reclamar") un lead que todavía no tiene dueño (Vendedor/Asesor).
+  canClaimLeads: boolean;
   description: string;
 }
 
@@ -21,51 +25,59 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     badgeLabel: '👑 Director (C-Level)',
     badgeStyle: 'bg-[#f3e8fd] text-[#7a22ce] border-[#d8b4fe]',
     // El Director ve primero métricas financieras/ROI y la bandeja en modo supervisión
-    allowedTabs: ['analytics', 'inbox'],
+    allowedTabs: ['analytics', 'inbox', 'crm'],
     defaultTab: 'analytics',
     canInterveneChat: false, // Modo auditoría ejecutiva
     canViewFinances: true,
     canEditKnowledge: false,
     canManageChannels: false,
+    canManageCRM: true, // Asigna/reasigna cualquier lead del equipo
+    canClaimLeads: false,
     description: 'Acceso estratégico a retorno de inversión, métricas y supervisión global.',
   },
   vendedor: {
     label: 'Vendedor Comercial',
     badgeLabel: '💬 Vendedor Comercial',
     badgeStyle: 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]',
-    // El Vendedor SOLO ve la bandeja de mensajes. Cero distracciones ni costos.
-    allowedTabs: ['inbox'],
+    // El Vendedor ve la bandeja de mensajes y su propio pipeline de leads.
+    allowedTabs: ['inbox', 'crm'],
     defaultTab: 'inbox',
     canInterveneChat: true,
     canViewFinances: false,
     canEditKnowledge: false,
     canManageChannels: false,
+    canManageCRM: false,
+    canClaimLeads: true, // Puede auto-asignarse un lead sin dueño
     description: 'Atención operativa y cierre comercial de prospectos en tiempo real.',
   },
   asesor: {
     label: 'Asesor de Admisiones',
     badgeLabel: '💬 Asesor de Admisiones',
     badgeStyle: 'bg-[#e8f0fe] text-[#0b57d0] border-[#d3e3fd]',
-    // El Asesor SOLO ve la bandeja de mensajes.
-    allowedTabs: ['inbox'],
+    // El Asesor ve la bandeja de mensajes y su propio pipeline de leads.
+    allowedTabs: ['inbox', 'crm'],
     defaultTab: 'inbox',
     canInterveneChat: true,
     canViewFinances: false,
     canEditKnowledge: false,
     canManageChannels: false,
+    canManageCRM: false,
+    canClaimLeads: true,
     description: 'Gestión y acompañamiento a aspirantes en la bandeja de WhatsApp.',
   },
   coordinador: {
     label: 'Coordinador / Supervisor',
     badgeLabel: '📋 Coordinador Operativo',
     badgeStyle: 'bg-[#fef7e0] text-[#b06000] border-[#fee499]',
-    // El Coordinador gestiona atención, conocimiento de la IA y canales
-    allowedTabs: ['inbox', 'knowledge', 'channels'],
+    // El Coordinador gestiona atención, conocimiento de la IA, canales y el pipeline completo
+    allowedTabs: ['inbox', 'knowledge', 'channels', 'crm'],
     defaultTab: 'inbox',
     canInterveneChat: true,
     canViewFinances: false, // Protegido: no ve costos financieros de la empresa
     canEditKnowledge: true,
     canManageChannels: false,
+    canManageCRM: true, // Supervisa y reasigna el pipeline de su equipo
+    canClaimLeads: false,
     description: 'Supervisión operativa de chats y actualización de la base de conocimiento.',
   },
   evaluador: {
@@ -79,6 +91,8 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     canViewFinances: false,
     canEditKnowledge: false,
     canManageChannels: false,
+    canManageCRM: false,
+    canClaimLeads: false,
     description: 'Dictamen de portafolios de evidencias y consulta de estándares.',
   },
   soporte: {
@@ -91,6 +105,8 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     canViewFinances: false,
     canEditKnowledge: false,
     canManageChannels: true,
+    canManageCRM: false,
+    canClaimLeads: false,
     description: 'Diagnóstico de hardware, tokens y salud de canales Meta.',
   },
 };
@@ -102,7 +118,7 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
 export function getAllowedTabsForUser(user: AuthUser | null): ClientTab[] {
   if (!user) return [];
   if (user.role === 'superadmin') {
-    return ['inbox', 'channels', 'knowledge', 'analytics'];
+    return ['inbox', 'channels', 'knowledge', 'analytics', 'crm'];
   }
   const level = user.level || 'asesor';
   const config = LEVEL_CONFIGS[level];
@@ -137,12 +153,14 @@ export function getUserLevelConfig(user: AuthUser | null): LevelConfig {
       label: 'Super Administrador Global',
       badgeLabel: '⚡ SuperAdmin HQ',
       badgeStyle: 'bg-[#fce8e6] text-[#c5221f] border-[#f5c2c7]',
-      allowedTabs: ['inbox', 'channels', 'knowledge', 'analytics'],
+      allowedTabs: ['inbox', 'channels', 'knowledge', 'analytics', 'crm'],
       defaultTab: 'inbox',
       canInterveneChat: true,
       canViewFinances: true,
       canEditKnowledge: true,
       canManageChannels: true,
+      canManageCRM: true,
+      canClaimLeads: true,
       description: 'Control total de la infraestructura y todas las empresas.',
     };
   }
