@@ -10,7 +10,7 @@ import { ChannelType, Contact, CrmActivity, PipelineStage } from '../types/platf
  * punto de escritura sobre ella para los campos de CRM.
  */
 
-interface ContactRow {
+export interface ContactRow {
   id: string;
   tenant_id: string;
   name: string | null;
@@ -38,6 +38,33 @@ export interface CrmContactFields {
 }
 
 const DEFAULT_STAGE: PipelineStage = 'nuevo';
+
+export const PIPELINE_STAGES: PipelineStage[] = [
+  'nuevo',
+  'contactado',
+  'calificado',
+  'propuesta',
+  'ganado',
+  'perdido',
+];
+
+/**
+ * Lee un contacto por id, siempre acotado a `tenant_id`, para que un
+ * `contactId` de otro tenant nunca resuelva nada (IDOR) aunque alguien lo
+ * adivine o lo copie de otra pestaña.
+ */
+export async function getContactById(tenantId: string, contactId: string): Promise<ContactRow | null> {
+  if (!isSupabaseAdminConfigured) return null;
+
+  const { data } = await supabaseAdmin
+    .from('contacts')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('id', contactId)
+    .maybeSingle();
+
+  return data || null;
+}
 
 /**
  * Busca la fila de `contacts` para (tenant, canal, identificador) y la crea

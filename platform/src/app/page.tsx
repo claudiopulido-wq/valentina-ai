@@ -864,6 +864,7 @@ export default function PlatformHome() {
                     tenantName={currentTenant.name}
                     currentUser={currentUser}
                     railwayTenantId={currentTenant.railwayTenantId}
+                    tenantId={currentTenant.id}
                   />
                 </div>
               )}

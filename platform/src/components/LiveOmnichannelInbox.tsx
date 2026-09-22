@@ -1,10 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Conversation, ChatMessage, ChannelType, AuthUser } from '../types/platform';
+import { Conversation, ChatMessage, ChannelType, AuthUser, PipelineStage, CrmActivity } from '../types/platform';
 import { getUserLevelConfig } from '../lib/permissions';
 import { fetchRailwayContactHistory, pauseBot, resumeBot } from '../lib/railwayConversationsService';
 import { getAuthHeaders } from '../lib/adminDataService';
+import {
+  claimLead,
+  reassignLead,
+  changePipelineStage,
+  addCrmNote,
+  fetchCrmActivities,
+  fetchCrmTeam,
+  CrmPatchResult,
+  CrmTeamMember,
+} from '../lib/crmClientService';
 import {
   MessageSquare,
   Send,
@@ -18,13 +28,36 @@ import {
   Zap,
   ShieldAlert,
   ArrowLeft,
+  UserPlus,
+  StickyNote,
 } from 'lucide-react';
+
+const STAGE_LABELS: Record<PipelineStage, string> = {
+  nuevo: 'Nuevo',
+  contactado: 'Contactado',
+  calificado: 'Calificado',
+  propuesta: 'Propuesta Enviada',
+  ganado: 'Inscrito / Ganado',
+  perdido: 'Perdido',
+};
+
+const STAGE_STYLES: Record<PipelineStage, string> = {
+  nuevo: 'bg-[#f1f3f4] text-[#3c4043] border-[#dadce0]',
+  contactado: 'bg-[#e8f0fe] text-[#0b57d0] border-[#d3e3fd]',
+  calificado: 'bg-[#fef7e0] text-[#b06000] border-[#feefc3]',
+  propuesta: 'bg-[#f3e8fd] text-[#7a22ce] border-[#d8b4fe]',
+  ganado: 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]',
+  perdido: 'bg-[#fce8e6] text-[#c5221f] border-[#f5c2c7]',
+};
+
+const STAGE_ORDER: PipelineStage[] = ['nuevo', 'contactado', 'calificado', 'propuesta', 'ganado', 'perdido'];
 
 interface Props {
   conversations: Conversation[];
   tenantName: string;
   currentUser?: AuthUser | null;
   railwayTenantId?: number;
+  tenantId?: string;
 }
 
 export const LiveOmnichannelInbox: React.FC<Props> = ({
@@ -32,10 +65,14 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
   tenantName,
   currentUser,
   railwayTenantId,
+  tenantId,
 }) => {
   const isDirector = currentUser?.level === 'director';
   const canViewFinances = currentUser?.role === 'superadmin' || isDirector;
   const operatorName = currentUser?.fullName || 'Operador Humano';
+  const levelConfig = getUserLevelConfig(currentUser || null);
+  const canManageCRM = levelConfig.canManageCRM;
+  const canClaimLeads = levelConfig.canClaimLeads;
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [selectedConvId, setSelectedConvId] = useState<string>(
     initialConversations[0]?.id || ''
@@ -81,6 +118,129 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
       cancelled = true;
     };
   }, [railwayTenantId, selectedConv?.id]);
+
+  // --- CRM: asignación, etapa del pipeline y actividad ---------------------
+  // Solo hay datos reales de CRM cuando el contacto viene decorado con su
+  // UUID real de `contacts` (ver findOrCreateCrmContact) — un id sintético
+  // `ct-...` significa que Supabase no está configurado o es un hilo de
+  // demostración, y las acciones de CRM no tienen a qué contacto aplicarse.
+  const hasRealCrmContact = Boolean(selectedConv) && !selectedConv.contact.id.startsWith('ct-');
+
+  const [activities, setActivities] = useState<CrmActivity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [isUpdatingCrm, setIsUpdatingCrm] = useState(false);
+  const [crmError, setCrmError] = useState<string | null>(null);
+  const [teamMembers, setTeamMembers] = useState<CrmTeamMember[]>([]);
+
+  useEffect(() => {
+    if (!tenantId || !selectedConv || !hasRealCrmContact) {
+      setActivities([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingActivities(true);
+    fetchCrmActivities(tenantId, selectedConv.contact.id).then((data) => {
+      if (!cancelled) {
+        setActivities(data);
+        setLoadingActivities(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId, selectedConv?.contact.id, hasRealCrmContact]);
+
+  useEffect(() => {
+    if (!tenantId || !canManageCRM) return;
+    let cancelled = false;
+    fetchCrmTeam(tenantId).then((members) => {
+      if (!cancelled) setTeamMembers(members);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId, canManageCRM]);
+
+  const applyCrmPatchToContact = (contactId: string, crm: NonNullable<CrmPatchResult['crm']>) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.contact.id === contactId
+          ? {
+              ...c,
+              contact: {
+                ...c.contact,
+                assignedTo: crm.assignedTo,
+                assignedToName: crm.assignedToName,
+                pipelineStage: crm.pipelineStage,
+                stageUpdatedAt: crm.stageUpdatedAt || undefined,
+                lostReason: crm.lostReason || undefined,
+              },
+            }
+          : c
+      )
+    );
+  };
+
+  const handleClaimLead = async () => {
+    if (!tenantId || !selectedConv || !currentUser || isUpdatingCrm) return;
+    setIsUpdatingCrm(true);
+    setCrmError(null);
+    const result = await claimLead(tenantId, selectedConv.contact.id, currentUser.id);
+    setIsUpdatingCrm(false);
+    if (!result.success || !result.crm) {
+      setCrmError(result.error || 'No se pudo reclamar el lead.');
+      return;
+    }
+    applyCrmPatchToContact(selectedConv.contact.id, result.crm);
+  };
+
+  const handleReassign = async (userId: string) => {
+    if (!tenantId || !selectedConv || isUpdatingCrm) return;
+    setIsUpdatingCrm(true);
+    setCrmError(null);
+    const result = await reassignLead(tenantId, selectedConv.contact.id, userId || null);
+    setIsUpdatingCrm(false);
+    if (!result.success || !result.crm) {
+      setCrmError(result.error || 'No se pudo reasignar el lead.');
+      return;
+    }
+    applyCrmPatchToContact(selectedConv.contact.id, result.crm);
+  };
+
+  const handleStageChange = async (stage: PipelineStage) => {
+    if (!tenantId || !selectedConv || isUpdatingCrm) return;
+    setIsUpdatingCrm(true);
+    setCrmError(null);
+    const result = await changePipelineStage(tenantId, selectedConv.contact.id, stage);
+    setIsUpdatingCrm(false);
+    if (!result.success || !result.crm) {
+      setCrmError(result.error || 'No se pudo cambiar la etapa.');
+      return;
+    }
+    applyCrmPatchToContact(selectedConv.contact.id, result.crm);
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantId || !selectedConv || !noteText.trim() || isSavingNote) return;
+    setIsSavingNote(true);
+    setCrmError(null);
+    const content = noteText.trim();
+    const result = await addCrmNote(tenantId, selectedConv.contact.id, content);
+    setIsSavingNote(false);
+    if (!result.success) {
+      setCrmError(result.error || 'No se pudo agregar la nota.');
+      return;
+    }
+    setNoteText('');
+    const updated = await fetchCrmActivities(tenantId, selectedConv.contact.id);
+    setActivities(updated);
+  };
+
+  const canEditThisLeadStage =
+    Boolean(selectedConv) && (canManageCRM || (canClaimLeads && selectedConv?.contact.assignedTo === currentUser?.id));
 
   // Filtering
   const filteredConversations = conversations.filter((c) => {
@@ -718,6 +878,130 @@ export const LiveOmnichannelInbox: React.FC<Props> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* CRM: Asignación del lead */}
+                <div className="p-3 rounded-xl bg-[#f8f9fa] border border-[#dadce0] space-y-2">
+                  <span className="text-[11px] font-semibold uppercase text-[#5f6368] flex items-center gap-1.5">
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Asignado a
+                  </span>
+
+                  {!hasRealCrmContact ? (
+                    <p className="text-[11px] text-[#747775]">Este hilo aún no tiene un contacto de CRM vinculado.</p>
+                  ) : canManageCRM ? (
+                    <select
+                      value={selectedConv.contact.assignedTo || ''}
+                      onChange={(e) => handleReassign(e.target.value)}
+                      disabled={isUpdatingCrm}
+                      className="w-full text-xs border border-[#dadce0] rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0b57d0] disabled:opacity-50 cursor-pointer"
+                    >
+                      <option value="">Sin asignar</option>
+                      {teamMembers.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.fullName}
+                        </option>
+                      ))}
+                    </select>
+                  ) : selectedConv.contact.assignedTo ? (
+                    <span className="text-xs font-semibold text-[#1f1f1f]">
+                      {selectedConv.contact.assignedTo === currentUser?.id
+                        ? 'Tú'
+                        : selectedConv.contact.assignedToName || 'Otro miembro del equipo'}
+                    </span>
+                  ) : canClaimLeads ? (
+                    <button
+                      onClick={handleClaimLead}
+                      disabled={isUpdatingCrm}
+                      className="w-full text-xs font-semibold text-white bg-[#0b57d0] hover:bg-[#0842a0] rounded-lg py-1.5 transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isUpdatingCrm ? 'Reclamando...' : 'Reclamar este lead'}
+                    </button>
+                  ) : (
+                    <p className="text-[11px] text-[#747775]">Sin asignar</p>
+                  )}
+                </div>
+
+                {/* CRM: Etapa del Pipeline */}
+                <div className="p-3 rounded-xl bg-[#f8f9fa] border border-[#dadce0] space-y-2">
+                  <span className="text-[11px] font-semibold uppercase text-[#5f6368]">Etapa del Pipeline</span>
+                  <div>
+                    <span
+                      className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                        STAGE_STYLES[selectedConv.contact.pipelineStage || 'nuevo']
+                      }`}
+                    >
+                      {STAGE_LABELS[selectedConv.contact.pipelineStage || 'nuevo']}
+                    </span>
+                  </div>
+                  {hasRealCrmContact && canEditThisLeadStage && (
+                    <select
+                      value={selectedConv.contact.pipelineStage || 'nuevo'}
+                      onChange={(e) => handleStageChange(e.target.value as PipelineStage)}
+                      disabled={isUpdatingCrm}
+                      className="w-full text-xs border border-[#dadce0] rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#0b57d0] disabled:opacity-50 cursor-pointer"
+                    >
+                      {STAGE_ORDER.map((stage) => (
+                        <option key={stage} value={stage}>
+                          {STAGE_LABELS[stage]}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {crmError && <p className="text-[11px] text-[#c5221f] font-medium px-1">{crmError}</p>}
+
+                {/* CRM: Notas y Actividad */}
+                {hasRealCrmContact && (
+                  <div className="space-y-2 pt-2 border-t border-[#dadce0]">
+                    <span className="text-[11px] font-semibold uppercase text-[#5f6368] flex items-center gap-1.5">
+                      <StickyNote className="w-3.5 h-3.5" />
+                      Notas y Actividad
+                    </span>
+
+                    <form onSubmit={handleAddNote} className="flex flex-col gap-1.5">
+                      <textarea
+                        value={noteText}
+                        onChange={(e) => setNoteText(e.target.value)}
+                        placeholder="Agregar una nota sobre este prospecto..."
+                        rows={2}
+                        className="w-full text-xs border border-[#dadce0] rounded-lg px-2 py-1.5 resize-none focus:outline-none focus:ring-2 focus:ring-[#0b57d0]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!noteText.trim() || isSavingNote}
+                        className="self-end px-3 py-1 text-[11px] font-semibold text-white bg-[#0b57d0] hover:bg-[#0842a0] rounded-lg transition disabled:opacity-40 cursor-pointer"
+                      >
+                        {isSavingNote ? 'Guardando...' : 'Agregar nota'}
+                      </button>
+                    </form>
+
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                      {loadingActivities ? (
+                        <p className="text-[11px] text-[#747775]">Cargando actividad...</p>
+                      ) : activities.length === 0 ? (
+                        <p className="text-[11px] text-[#747775]">Sin actividad todavía.</p>
+                      ) : (
+                        activities.map((a) => (
+                          <div key={a.id} className="text-[11px] p-2 rounded-lg bg-[#f8f9fa] border border-[#dadce0]">
+                            <div className="flex items-center justify-between text-[10px] text-[#747775] mb-0.5">
+                              <span className="font-semibold text-[#1f1f1f]">{a.actorName || 'Sistema'}</span>
+                              <span>
+                                {new Date(a.createdAt).toLocaleString('es-MX', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                            <p className="text-[#5f6368]">{a.content}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Telemetry Breakdown for this conversation */}
                 <div className="space-y-2 pt-2 border-t border-[#dadce0]">

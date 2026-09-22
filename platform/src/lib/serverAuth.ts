@@ -305,6 +305,59 @@ export async function authorizeKnowledgeRequest(
 }
 
 /**
+ * Guardián de seguridad para el CRM interno (asignación/etapa/notas de
+ * contactos). A diferencia de conversaciones/base de conocimiento, el CRM
+ * identifica al tenant por su slug interno directamente (el mismo que usa
+ * la tabla `contacts`), no por el id numérico de Railway — así funciona
+ * igual para tenants con o sin `railwayTenantId`. El control de acceso fino
+ * (quién puede tocar QUÉ contacto específico) se valida en cada Route
+ * Handler contra `canManageCRM`/`canClaimLeads` y el dueño actual del lead.
+ */
+export async function authorizeCrmRequest(
+  request: NextRequest,
+  tenantSlug: string
+): Promise<AuthzResult> {
+  const user = await getAuthenticatedUser(request);
+
+  if (!user) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        {
+          error: 'No autenticado. Debes iniciar sesión en la plataforma para realizar esta operación.',
+          code: 'UNAUTHORIZED',
+        },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const isSuperAdmin = user.role === 'superadmin';
+  if (!isSuperAdmin && user.tenantId !== tenantSlug) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Acceso denegado: No tienes autorización para gestionar el CRM de esta organización.', code: 'FORBIDDEN_TENANT_MISMATCH' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  const allowedTabs = getAllowedTabsForUser(user);
+  if (!allowedTabs.includes('crm')) {
+    return {
+      authorized: false,
+      response: NextResponse.json(
+        { error: 'Tu perfil no tiene asignado acceso al CRM.', code: 'FORBIDDEN_TAB_ACCESS' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { authorized: true, user };
+}
+
+/**
  * Guardián de seguridad para conversaciones/mensajes en vivo: autenticación +
  * aislamiento multi-tenant + RBAC por nivel (solo `canInterveneChat` puede
  * enviar mensajes como operador humano).
