@@ -82,6 +82,22 @@ describe('CRM permissions (canManageCRM / canClaimLeads)', () => {
   });
 });
 
+describe('canViewOwnDossier', () => {
+  it('is only true for director — the sole level that owns the company', () => {
+    expect(getUserLevelConfig(makeUser({ level: 'director' })).canViewOwnDossier).toBe(true);
+    expect(getUserLevelConfig(makeUser({ level: 'coordinador' })).canViewOwnDossier).toBe(false);
+    expect(getUserLevelConfig(makeUser({ level: 'vendedor' })).canViewOwnDossier).toBe(false);
+    expect(getUserLevelConfig(makeUser({ level: 'asesor' })).canViewOwnDossier).toBe(false);
+    expect(getUserLevelConfig(makeUser({ level: 'evaluador' })).canViewOwnDossier).toBe(false);
+    expect(getUserLevelConfig(makeUser({ level: 'soporte' })).canViewOwnDossier).toBe(false);
+  });
+
+  it('gives director access to the dossier tab', () => {
+    expect(getAllowedTabsForUser(makeUser({ level: 'director' }))).toContain('dossier');
+    expect(getAllowedTabsForUser(makeUser({ level: 'vendedor' }))).not.toContain('dossier');
+  });
+});
+
 describe('getDefaultTabForUser', () => {
   it('lands a director on analytics (ROI/métricas primero), not inbox', () => {
     const user = makeUser({ level: 'director' });

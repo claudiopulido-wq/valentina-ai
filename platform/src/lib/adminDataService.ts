@@ -189,3 +189,70 @@ export async function completeInvitation(): Promise<void> {
     // Best-effort, igual que completeForcedPasswordChange.
   });
 }
+
+export interface SendWelcomeEmailResult {
+  success: boolean;
+  emailSimulated?: boolean;
+  error?: string;
+}
+
+/** Envía de verdad el correo de bienvenida del Expediente Digital al usuario indicado. */
+export async function sendDossierWelcomeEmail(tenantId: string, userId: string): Promise<SendWelcomeEmailResult> {
+  const headers = await getAuthHeaders();
+  try {
+    const response = await fetch('/api/dossier/send-welcome-email', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ tenantId, userId }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { success: false, error: data.error || 'No se pudo enviar el correo.' };
+    }
+    return { success: true, emailSimulated: data.emailSimulated };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Error de red desconocido.' };
+  }
+}
+
+/** Registra en el historial de auditoría que se imprimió/copió un documento del Expediente (best-effort). */
+export async function logDossierEmission(
+  tenantId: string,
+  userId: string | null | undefined,
+  documentType: 'quote' | 'agreement' | 'raci' | 'credentials' | 'all',
+  action: 'printed' | 'copied'
+): Promise<void> {
+  try {
+    const headers = await getAuthHeaders();
+    await fetch('/api/dossier/log-emission', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ tenantId, userId: userId || null, documentType, action }),
+    });
+  } catch {
+    // Best-effort: si falla el registro de auditoría, no debe bloquear al usuario.
+  }
+}
+
+export interface DossierEmission {
+  id: string;
+  tenant_id: string;
+  user_id: string | null;
+  folio: string;
+  document_type: string;
+  action: string;
+  actor_email: string;
+  created_at: string;
+}
+
+/** Historial de auditoría de un Expediente (qué se imprimió/copió/mandó y cuándo). */
+export async function fetchDossierEmissions(tenantId: string): Promise<DossierEmission[]> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`/api/dossier/emissions?tenantId=${encodeURIComponent(tenantId)}`, {
+    headers,
+    cache: 'no-store',
+  });
+  if (!response.ok) return [];
+  const data = await response.json().catch(() => ({}));
+  return Array.isArray(data.emissions) ? data.emissions : [];
+}

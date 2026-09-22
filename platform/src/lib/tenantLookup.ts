@@ -14,6 +14,16 @@ function mapRowToTenant(row: Record<string, any>): Tenant {
   };
 }
 
+/** Lee un solo tenant por id, ya mapeado a `Tenant` (incluye los campos fiscales/plan dentro de `data`). */
+export async function getTenantById(tenantId: string): Promise<Tenant | null> {
+  if (!isSupabaseAdminConfigured || !tenantId) return null;
+
+  const { data, error } = await supabaseAdmin.from('tenants').select('*').eq('id', tenantId).maybeSingle();
+  if (error || !data) return null;
+
+  return mapRowToTenant(data);
+}
+
 /**
  * Resuelve a qué tenant pertenece un mensaje entrante de Meta/WhatsApp a
  * partir del `phone_number_id` que Meta reporta en el payload del webhook.

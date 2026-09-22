@@ -1,6 +1,6 @@
 import { AuthUser, UserLevel } from '../types/platform';
 
-export type ClientTab = 'inbox' | 'analytics' | 'channels' | 'knowledge' | 'crm';
+export type ClientTab = 'inbox' | 'analytics' | 'channels' | 'knowledge' | 'crm' | 'dossier';
 
 export interface LevelConfig {
   label: string;
@@ -16,6 +16,8 @@ export interface LevelConfig {
   canManageCRM: boolean;
   // CRM: auto-asignarse ("reclamar") un lead que todavía no tiene dueño (Vendedor/Asesor).
   canClaimLeads: boolean;
+  // Ver/imprimir su propio Expediente Digital B2B en modo solo lectura (solo el Director dueño).
+  canViewOwnDossier: boolean;
   description: string;
 }
 
@@ -25,7 +27,7 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     badgeLabel: '👑 Director (C-Level)',
     badgeStyle: 'bg-[#f3e8fd] text-[#7a22ce] border-[#d8b4fe]',
     // El Director ve primero métricas financieras/ROI y la bandeja en modo supervisión
-    allowedTabs: ['analytics', 'inbox', 'crm'],
+    allowedTabs: ['analytics', 'inbox', 'crm', 'dossier'],
     defaultTab: 'analytics',
     canInterveneChat: false, // Modo auditoría ejecutiva
     canViewFinances: true,
@@ -33,6 +35,7 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     canManageChannels: false,
     canManageCRM: true, // Asigna/reasigna cualquier lead del equipo
     canClaimLeads: false,
+    canViewOwnDossier: true, // Único nivel que puede ver su propio Expediente
     description: 'Acceso estratégico a retorno de inversión, métricas y supervisión global.',
   },
   vendedor: {
@@ -48,6 +51,7 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     canManageChannels: false,
     canManageCRM: false,
     canClaimLeads: true, // Puede auto-asignarse un lead sin dueño
+    canViewOwnDossier: false,
     description: 'Atención operativa y cierre comercial de prospectos en tiempo real.',
   },
   asesor: {
@@ -63,6 +67,7 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     canManageChannels: false,
     canManageCRM: false,
     canClaimLeads: true,
+    canViewOwnDossier: false,
     description: 'Gestión y acompañamiento a aspirantes en la bandeja de WhatsApp.',
   },
   coordinador: {
@@ -78,6 +83,7 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     canManageChannels: false,
     canManageCRM: true, // Supervisa y reasigna el pipeline de su equipo
     canClaimLeads: false,
+    canViewOwnDossier: false,
     description: 'Supervisión operativa de chats y actualización de la base de conocimiento.',
   },
   evaluador: {
@@ -93,6 +99,7 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     canManageChannels: false,
     canManageCRM: false,
     canClaimLeads: false,
+    canViewOwnDossier: false,
     description: 'Dictamen de portafolios de evidencias y consulta de estándares.',
   },
   soporte: {
@@ -107,6 +114,7 @@ export const LEVEL_CONFIGS: Record<UserLevel, LevelConfig> = {
     canManageChannels: true,
     canManageCRM: false,
     canClaimLeads: false,
+    canViewOwnDossier: false,
     description: 'Diagnóstico de hardware, tokens y salud de canales Meta.',
   },
 };
@@ -161,6 +169,7 @@ export function getUserLevelConfig(user: AuthUser | null): LevelConfig {
       canManageChannels: true,
       canManageCRM: true,
       canClaimLeads: true,
+      canViewOwnDossier: false,
       description: 'Control total de la infraestructura y todas las empresas.',
     };
   }

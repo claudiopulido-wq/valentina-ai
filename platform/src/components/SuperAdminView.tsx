@@ -344,6 +344,26 @@ CREATE POLICY "audit_log_select_authenticated" ON audit_log
     FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "audit_log_service_role_write" ON audit_log
     FOR INSERT WITH CHECK (auth.role() = 'service_role');
+
+-- 10. Historial de emisiones del Expediente Digital B2B (auditoría de qué
+--     se imprimió, copió o envió por correo a cada cliente, y cuándo).
+CREATE TABLE IF NOT EXISTS dossier_emissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id TEXT,
+    folio TEXT NOT NULL,
+    document_type TEXT NOT NULL, -- 'quote' | 'agreement' | 'raci' | 'credentials' | 'all'
+    action TEXT NOT NULL,        -- 'printed' | 'copied' | 'email_sent'
+    snapshot JSONB DEFAULT '{}'::jsonb,
+    actor_id TEXT NOT NULL,
+    actor_email TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE dossier_emissions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "dossier_emissions_select_authenticated" ON dossier_emissions
+    FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "dossier_emissions_service_role_write" ON dossier_emissions
+    FOR ALL USING (auth.role() = 'service_role');
 `;
 
   const copySql = () => {

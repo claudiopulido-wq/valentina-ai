@@ -139,6 +139,16 @@ function mapProfileRowToAuthUser(row: PlatformUserRow): AuthUser {
   };
 }
 
+/** Lee un solo `platform_users` por id, ya mapeado a `AuthUser`. */
+export async function getPlatformUserById(userId: string): Promise<AuthUser | null> {
+  if (!isSupabaseAdminConfigured || !userId) return null;
+
+  const { data } = await supabaseAdmin.from('platform_users').select('*').eq('id', userId).maybeSingle();
+  if (!data) return null;
+
+  return mapProfileRowToAuthUser(data);
+}
+
 /**
  * Extrae y valida la identidad del usuario a partir de los headers de la petición.
  * Verifica tokens criptográficos Supabase JWT en servidor.

@@ -40,6 +40,7 @@ import { SuperAdminView } from '../components/SuperAdminView';
 import { AuthModal } from '../components/AuthModal';
 import { KnowledgeBaseManager } from '../components/KnowledgeBaseManager';
 import { CrmPipelineBoard } from '../components/crm/CrmPipelineBoard';
+import { ClientDossierModal } from '../components/dossier/ClientDossierModal';
 import {
   MessageSquare,
   BarChart3,
@@ -748,6 +749,7 @@ export default function PlatformHome() {
                       {clientTab === 'analytics' && <BarChart3 className="w-4 h-4" />}
                       {clientTab === 'channels' && <Cpu className="w-4 h-4" />}
                       {clientTab === 'crm' && <Kanban className="w-4 h-4" />}
+                      {clientTab === 'dossier' && <FileText className="w-4 h-4" />}
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-[#1f1f1f] flex items-center gap-2">
@@ -757,6 +759,7 @@ export default function PlatformHome() {
                           {clientTab === 'analytics' && 'Tablero Ejecutivo de Métricas'}
                           {clientTab === 'channels' && 'Canales & Hardware'}
                           {clientTab === 'crm' && 'Pipeline CRM'}
+                          {clientTab === 'dossier' && 'Mi Expediente Digital'}
                         </span>
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#e8f0fe] text-[#0b57d0] border border-[#d3e3fd]">
                           Módulo Único Asignado
@@ -842,6 +845,20 @@ export default function PlatformHome() {
                       >
                         <Kanban className="w-3.5 h-3.5" />
                         <span>Pipeline CRM</span>
+                      </button>
+                    )}
+
+                    {allowedTabs.includes('dossier') && (
+                      <button
+                        onClick={() => setClientTab('dossier')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                          clientTab === 'dossier'
+                            ? 'bg-[#e8f0fe] text-[#0b57d0]'
+                            : 'text-[#5f6368] hover:text-[#1f1f1f]'
+                        }`}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Mi Expediente</span>
                       </button>
                     )}
                   </div>
@@ -935,6 +952,18 @@ export default function PlatformHome() {
               {clientTab === 'crm' && allowedTabs.includes('crm') && (
                 <div className="space-y-6">
                   <CrmPipelineBoard tenantId={currentTenant.id} currentUser={currentUser} />
+                </div>
+              )}
+
+              {clientTab === 'dossier' && allowedTabs.includes('dossier') && (
+                <div className="space-y-6">
+                  <ClientDossierModal
+                    tenant={currentTenant}
+                    user={currentUser || undefined}
+                    viewerContext="client"
+                    embedded
+                    onClose={() => {}}
+                  />
                 </div>
               )}
             </div>
