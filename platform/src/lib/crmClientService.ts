@@ -1,4 +1,5 @@
 import { getAuthHeaders } from './adminDataService';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { CrmActivity, PipelineStage } from '../types/platform';
 
 /**
@@ -120,4 +121,60 @@ export async function fetchCrmTeam(tenantId: string): Promise<CrmTeamMember[]> {
   } catch {
     return [];
   }
+}
+
+export interface CrmContactListItem {
+  contactId: string;
+  name: string | null;
+  phoneOrEmail: string;
+  channelOrigin: string;
+  assignedTo: string | null;
+  assignedToName: string | null;
+  pipelineStage: PipelineStage;
+  stageUpdatedAt: string | null;
+  lostReason: string | null;
+  tags: string[];
+  qualificationScore: number | null;
+  city: string | null;
+  createdAt: string;
+}
+
+export async function fetchCrmContacts(tenantId: string): Promise<CrmContactListItem[]> {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`/api/tenants/${tenantId}/crm/contacts`, { headers, cache: 'no-store' });
+    if (!response.ok) return [];
+    const data = await response.json().catch(() => ({}));
+    return Array.isArray(data?.contacts) ? data.contacts : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Se suscribe a cambios en vivo de `contacts` y `crm_activities` del tenant
+ * (asignaciones, etapas, notas de todo el equipo) e invoca `onChange` para
+ * que el tablero Kanban vuelva a pedir la lista completa — mismo patrón que
+ * `subscribeToTenantConversations` en conversationsService.ts.
+ */
+export function subscribeToTenantCrm(tenantId: string, onChange: () => void): () => void {
+  if (!isSupabaseConfigured) return () => {};
+
+  const channel = supabase
+    .channel(`crm-${tenantId}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'contacts', filter: `tenant_id=eq.${tenantId}` },
+      () => onChange()
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'crm_activities', filter: `tenant_id=eq.${tenantId}` },
+      () => onChange()
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }

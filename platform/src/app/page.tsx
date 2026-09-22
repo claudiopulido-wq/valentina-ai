@@ -36,6 +36,7 @@ import { ChannelHardwareCard } from '../components/ChannelHardwareCard';
 import { SuperAdminView } from '../components/SuperAdminView';
 import { AuthModal } from '../components/AuthModal';
 import { KnowledgeBaseManager } from '../components/KnowledgeBaseManager';
+import { CrmPipelineBoard } from '../components/crm/CrmPipelineBoard';
 import {
   MessageSquare,
   BarChart3,
@@ -58,6 +59,7 @@ import {
   Filter,
   Menu,
   AlertTriangle,
+  Kanban,
 } from 'lucide-react';
 
 export default function PlatformHome() {
@@ -722,6 +724,7 @@ export default function PlatformHome() {
                       {clientTab === 'knowledge' && <BookOpen className="w-4 h-4" />}
                       {clientTab === 'analytics' && <BarChart3 className="w-4 h-4" />}
                       {clientTab === 'channels' && <Cpu className="w-4 h-4" />}
+                      {clientTab === 'crm' && <Kanban className="w-4 h-4" />}
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-[#1f1f1f] flex items-center gap-2">
@@ -730,6 +733,7 @@ export default function PlatformHome() {
                           {clientTab === 'knowledge' && 'Base de Conocimiento & Documentos'}
                           {clientTab === 'analytics' && 'Tablero Ejecutivo de Métricas'}
                           {clientTab === 'channels' && 'Canales & Hardware'}
+                          {clientTab === 'crm' && 'Pipeline CRM'}
                         </span>
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#e8f0fe] text-[#0b57d0] border border-[#d3e3fd]">
                           Módulo Único Asignado
@@ -801,6 +805,20 @@ export default function PlatformHome() {
                       >
                         <BarChart3 className="w-3.5 h-3.5" />
                         <span>Telemetría & Métricas</span>
+                      </button>
+                    )}
+
+                    {allowedTabs.includes('crm') && (
+                      <button
+                        onClick={() => setClientTab('crm')}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                          clientTab === 'crm'
+                            ? 'bg-[#e8f0fe] text-[#0b57d0]'
+                            : 'text-[#5f6368] hover:text-[#1f1f1f]'
+                        }`}
+                      >
+                        <Kanban className="w-3.5 h-3.5" />
+                        <span>Pipeline CRM</span>
                       </button>
                     )}
                   </div>
@@ -888,6 +906,12 @@ export default function PlatformHome() {
               {clientTab === 'analytics' && allowedTabs.includes('analytics') && (
                 <div className="space-y-6">
                   <AppleMetricsWidgets tenant={currentTenant} telemetry={currentTelemetry} />
+                </div>
+              )}
+
+              {clientTab === 'crm' && allowedTabs.includes('crm') && (
+                <div className="space-y-6">
+                  <CrmPipelineBoard tenantId={currentTenant.id} currentUser={currentUser} />
                 </div>
               )}
             </div>

@@ -313,6 +313,72 @@ export async function listCrmActivities(tenantId: string, contactId: string): Pr
   return (data || []).map(mapActivityRow);
 }
 
+export interface CrmContactListItem {
+  contactId: string;
+  name: string | null;
+  phoneOrEmail: string;
+  channelOrigin: string;
+  assignedTo: string | null;
+  assignedToName: string | null;
+  pipelineStage: PipelineStage;
+  stageUpdatedAt: string | null;
+  lostReason: string | null;
+  tags: string[];
+  qualificationScore: number | null;
+  city: string | null;
+  createdAt: string;
+}
+
+interface ContactRowWithAssignee extends ContactRow {
+  assigned_user?: { full_name: string } | { full_name: string }[] | null;
+}
+
+/**
+ * Lee todos los contactos de un tenant, con el nombre del asignado resuelto
+ * en la misma consulta (join contra `platform_users`). Devuelve las filas
+ * crudas (snake_case) para que el llamador pueda aplicar
+ * `filterContactsByVisibility` ANTES de mapear al formato de respuesta —
+ * así el filtro de seguridad opera sobre el mismo campo `assigned_to` que ya
+ * usan las demás funciones de este archivo.
+ */
+export async function listContactsForTenant(tenantId: string): Promise<ContactRowWithAssignee[]> {
+  if (!isSupabaseAdminConfigured) return [];
+
+  const { data, error } = await supabaseAdmin
+    .from('contacts')
+    .select('*, assigned_user:platform_users(full_name)')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.warn('[crmService] No se pudo listar contactos del CRM:', error.message);
+    return [];
+  }
+
+  return (data || []) as ContactRowWithAssignee[];
+}
+
+export function mapContactRowToListItem(row: ContactRowWithAssignee): CrmContactListItem {
+  const assignedUserRaw = row.assigned_user;
+  const assignedToName = Array.isArray(assignedUserRaw) ? assignedUserRaw[0]?.full_name : assignedUserRaw?.full_name;
+
+  return {
+    contactId: row.id,
+    name: row.name,
+    phoneOrEmail: row.phone_or_email,
+    channelOrigin: row.channel_origin,
+    assignedTo: row.assigned_to,
+    assignedToName: assignedToName || null,
+    pipelineStage: (row.pipeline_stage as PipelineStage) || DEFAULT_STAGE,
+    stageUpdatedAt: row.stage_updated_at,
+    lostReason: row.lost_reason,
+    tags: row.tags || [],
+    qualificationScore: row.qualification_score,
+    city: row.city,
+    createdAt: row.created_at,
+  };
+}
+
 /**
  * Aplica la regla de visibilidad del CRM: quien puede administrar el
  * pipeline completo (Director/Coordinador/SuperAdmin) ve todos los
